@@ -6,6 +6,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_dialog.dart';
+import '../../core/widgets/custom_modal_sheet.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../models/account_model.dart';
 import 'account_transactions_view.dart';
@@ -35,154 +36,85 @@ class _AccountsViewState extends State<AccountsView> {
     super.dispose();
   }
 
-  void _openAddEditDialog({AccountModel? account}) {
+  void _showAddEditDialog({AccountModel? account}) {
     final nameController = TextEditingController(text: account?.name ?? '');
     final phoneController = TextEditingController(text: account?.phoneNumber ?? '');
     AccountType selectedType = account?.accountType ?? AccountType.beneficiary;
 
-    showDialog(
+    CustomModalSheet.show(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: const BorderSide(color: AppColors.border, width: 1),
+      title: account == null ? AppStrings.addAccount : AppStrings.editAccount,
+      contentBuilder: (ctx, setModalState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CustomModalSheet.buildTextField(
+              label: AppStrings.accountName,
+              controller: nameController,
             ),
-            titlePadding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  account == null ? AppStrings.addAccount : AppStrings.editAccount,
-                  style: AppTextStyles.heading2,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
-                ),
-              ],
-            ),
-            content: SingleChildScrollView(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.85,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CustomTextField(
-                      label: AppStrings.accountName,
-                      controller: nameController,
-                      hint: 'أدخل الاسم كاملاً...',
+            const SizedBox(height: 12),
+            CustomModalSheet.buildLabel(AppStrings.accountType),
+            Container(
+              height: 46,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: CustomModalSheet.fieldBorderColor, width: 1.2),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<AccountType>(
+                  isExpanded: true,
+                  value: selectedType,
+                  icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B), size: 18),
+                  items: const [
+                    DropdownMenuItem(
+                      value: AccountType.beneficiary,
+                      child: Text(AppStrings.typeBeneficiary, style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      AppStrings.accountType,
-                      style: AppTextStyles.bodySecondary.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.border, width: 1.2),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<AccountType>(
-                          isExpanded: true,
-                          value: selectedType,
-                          items: const [
-                            DropdownMenuItem(
-                              value: AccountType.beneficiary,
-                              child: Text(AppStrings.typeBeneficiary, style: AppTextStyles.body),
-                            ),
-                            DropdownMenuItem(
-                              value: AccountType.supplier,
-                              child: Text(AppStrings.typeSupplier, style: AppTextStyles.body),
-                            ),
-                          ],
-                          onChanged: (val) {
-                            if (val != null) {
-                              setDialogState(() {
-                                selectedType = val;
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    CustomTextField(
-                      label: AppStrings.phoneNumber,
-                      controller: phoneController,
-                      keyboardType: TextInputType.phone,
-                      hint: 'رقم الهاتف (اختياري)',
+                    DropdownMenuItem(
+                      value: AccountType.supplier,
+                      child: Text(AppStrings.typeSupplier, style: TextStyle(fontSize: 13, color: Color(0xFF1E293B))),
                     ),
                   ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setModalState(() {
+                        selectedType = val;
+                      });
+                    }
+                  },
                 ),
               ),
             ),
-            actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            actions: [
-              Row(
-                children: [
-                  // زر الحفظ على اليمين
-                  Expanded(
-                    flex: 5,
-                    child: CustomButton(
-                      text: AppStrings.save,
-                      variant: ButtonVariant.primary,
-                      onPressed: () async {
-                        final name = nameController.text.trim();
-                        if (name.isEmpty) return;
+            const SizedBox(height: 12),
+            CustomModalSheet.buildTextField(
+              label: AppStrings.phoneNumber,
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+            ),
+          ],
+        );
+      },
+      onSave: (ctx) async {
+        final name = nameController.text.trim();
+        if (name.isEmpty) return;
 
-                        final navigator = Navigator.of(dialogCtx);
-                        final controller = this.context.read<AccountsController>();
-                        if (account == null) {
-                          await controller.addAccount(
-                            name,
-                            selectedType,
-                            phoneController.text,
-                          );
-                        } else {
-                          await controller.updateAccount(
-                            account.copyWith(
-                              name: name,
-                              accountType: selectedType,
-                              phoneNumber: phoneController.text.trim().isEmpty
-                                  ? null
-                                  : phoneController.text.trim(),
-                            ),
-                          );
-                        }
-                        if (mounted) navigator.pop();
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // زر الإلغاء على اليسار
-                  Expanded(
-                    flex: 3,
-                    child: CustomButton(
-                      text: AppStrings.cancel,
-                      variant: ButtonVariant.secondary,
-                      onPressed: () => Navigator.of(dialogCtx).pop(),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+        final navigator = Navigator.of(ctx);
+        final controller = context.read<AccountsController>();
+        if (account == null) {
+          await controller.addAccount(name, selectedType, phoneController.text);
+        } else {
+          await controller.updateAccount(
+            account.copyWith(
+              name: name,
+              accountType: selectedType,
+              phoneNumber: phoneController.text.trim().isEmpty ? null : phoneController.text.trim(),
+            ),
           );
-        },
-      ),
+        }
+        navigator.pop();
+      },
     );
   }
 
@@ -228,7 +160,7 @@ class _AccountsViewState extends State<AccountsView> {
                       text: 'إضافة',
                       icon: Icons.add,
                       variant: ButtonVariant.primary,
-                      onPressed: () => _openAddEditDialog(),
+                      onPressed: () => _showAddEditDialog(),
                     ),
                   ],
                 ),
@@ -400,7 +332,7 @@ class _AccountsViewState extends State<AccountsView> {
                   if (action == 'transactions') {
                     _navigateToTransactions(account);
                   } else if (action == 'edit') {
-                    _openAddEditDialog(account: account);
+                    _showAddEditDialog(account: account);
                   } else if (action == 'delete') {
                     _deleteAccount(account);
                   }

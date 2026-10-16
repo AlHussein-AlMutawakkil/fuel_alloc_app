@@ -3,6 +3,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/custom_button.dart';
+import '../../core/widgets/custom_dialog.dart';
+import '../../core/widgets/custom_modal_sheet.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../data/local/database_helper.dart';
 
@@ -48,114 +50,87 @@ class _StationsViewState extends State<StationsView> {
           : '2.0',
     );
 
-    showDialog(
+    CustomModalSheet.show(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: AppColors.border, width: 1),
-        ),
-        title: Text(
-          station == null ? 'إضافة محطة جديدة' : 'تعديل بيانات المحطة',
-          style: AppTextStyles.heading2,
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CustomTextField(
-                label: 'اسم المحطة',
-                controller: nameController,
-                hint: 'مثال: محطة تعز المركزية...',
-              ),
-              const SizedBox(height: 10),
-              CustomTextField(
-                label: 'الموقع / المدينة',
-                controller: locationController,
-                hint: 'مثال: تعز - الحوبان...',
-              ),
-              const SizedBox(height: 10),
-              CustomTextField(
-                label: 'رقم الهاتف',
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                hint: 'هاتف المسؤول في المحطة...',
-              ),
-              const SizedBox(height: 10),
-              CustomTextField(
-                label: 'نسبة عمولة التهوية (%)',
-                controller: commissionController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                hint: 'النسبة المئوية (افتراضياً 2%)',
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: CustomButton(
-                  text: AppStrings.cancel,
-                  variant: ButtonVariant.secondary,
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CustomButton(
-                  text: AppStrings.save,
-                  variant: ButtonVariant.primary,
-                  onPressed: () async {
-                    final name = nameController.text.trim();
-                    if (name.isEmpty) return;
+      title: station == null ? 'إضافة محطة' : 'تعديل محطة',
+      contentBuilder: (ctx, setModalState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CustomModalSheet.buildTextField(
+              label: 'اسم المحطة',
+              controller: nameController,
+            ),
+            const SizedBox(height: 12),
+            CustomModalSheet.buildTextField(
+              label: 'الموقع / المدينة',
+              controller: locationController,
+            ),
+            const SizedBox(height: 12),
+            CustomModalSheet.buildTextField(
+              label: 'رقم الهاتف',
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 12),
+            CustomModalSheet.buildTextField(
+              label: 'نسبة عمولة التهوية (%)',
+              controller: commissionController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            ),
+          ],
+        );
+      },
+      onSave: (ctx) async {
+        final name = nameController.text.trim();
+        if (name.isEmpty) return;
 
-                    final navigator = Navigator.of(dialogCtx);
-                    final commRate = double.tryParse(commissionController.text.trim()) ?? 2.0;
-                    final db = await DatabaseHelper.instance.database;
+        final navigator = Navigator.of(ctx);
+        final commRate = double.tryParse(commissionController.text.trim()) ?? 2.0;
+        final db = await DatabaseHelper.instance.database;
 
-                    if (station == null) {
-                      await db.insert('stations', {
-                        'name': name,
-                        'location': locationController.text.trim(),
-                        'phone_number': phoneController.text.trim(),
-                        'default_commission_rate': commRate,
-                        'is_active': 1,
-                        'created_at': DateTime.now().toIso8601String(),
-                      });
-                    } else {
-                      await db.update(
-                        'stations',
-                        {
-                          'name': name,
-                          'location': locationController.text.trim(),
-                          'phone_number': phoneController.text.trim(),
-                          'default_commission_rate': commRate,
-                        },
-                        where: 'id = ?',
-                        whereArgs: [station['id']],
-                      );
-                    }
-                    if (mounted) {
-                      navigator.pop();
-                      _loadStations();
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        if (station == null) {
+          await db.insert('stations', {
+            'name': name,
+            'location': locationController.text.trim(),
+            'phone_number': phoneController.text.trim(),
+            'default_commission_rate': commRate,
+            'is_active': 1,
+            'created_at': DateTime.now().toIso8601String(),
+          });
+        } else {
+          await db.update(
+            'stations',
+            {
+              'name': name,
+              'location': locationController.text.trim(),
+              'phone_number': phoneController.text.trim(),
+              'default_commission_rate': commRate,
+            },
+            where: 'id = ?',
+            whereArgs: [station['id']],
+          );
+        }
+        navigator.pop();
+        _loadStations();
+      },
     );
   }
 
   void _deleteStation(int id) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.update('stations', {'is_active': 0}, where: 'id = ?', whereArgs: [id]);
-    _loadStations();
+    final confirm = await CustomDialog.showConfirmation(
+      context: context,
+      title: 'تأكيد!',
+      message: 'هل تريد حذف هذه المحطة؟',
+      confirmText: 'حسناً',
+      cancelText: 'إلغاء',
+      isDanger: true,
+    );
+    if (confirm) {
+      final db = await DatabaseHelper.instance.database;
+      await db.update('stations', {'is_active': 0}, where: 'id = ?', whereArgs: [id]);
+      _loadStations();
+    }
   }
 
   @override

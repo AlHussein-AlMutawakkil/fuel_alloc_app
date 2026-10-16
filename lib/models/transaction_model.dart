@@ -19,6 +19,7 @@ class TransactionModel {
   final double? unitFactor;
   final double enteredQuantity;
   final double baseQuantityLiters;
+  final String? referenceNumber;
   final int? parentTransactionId;
   final String? notes;
   final String? createdAt;
@@ -43,6 +44,7 @@ class TransactionModel {
     this.unitFactor,
     required this.enteredQuantity,
     required this.baseQuantityLiters,
+    this.referenceNumber,
     this.parentTransactionId,
     this.notes,
     this.createdAt,
@@ -61,6 +63,7 @@ class TransactionModel {
       'unit_id': unitId,
       'entered_quantity': enteredQuantity,
       'base_quantity_liters': baseQuantityLiters,
+      'reference_number': referenceNumber,
       'parent_transaction_id': parentTransactionId,
       'notes': notes,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),
@@ -88,6 +91,7 @@ class TransactionModel {
       unitFactor: (map['unit_factor'] as num?)?.toDouble(),
       enteredQuantity: (map['entered_quantity'] as num).toDouble(),
       baseQuantityLiters: (map['base_quantity_liters'] as num).toDouble(),
+      referenceNumber: map['reference_number'] as String?,
       parentTransactionId: map['parent_transaction_id'] as int?,
       notes: map['notes'] as String?,
       createdAt: map['created_at'] as String?,

@@ -3,6 +3,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/custom_button.dart';
+import '../../core/widgets/custom_dialog.dart';
+import '../../core/widgets/custom_modal_sheet.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../data/local/database_helper.dart';
 
@@ -39,90 +41,67 @@ class _UnitsViewState extends State<UnitsView> {
       text: unit != null ? unit['conversion_factor'].toString() : '',
     );
 
-    showDialog(
+    CustomModalSheet.show(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: AppColors.border, width: 1),
-        ),
-        title: Text(
-          unit == null ? 'إضافة وحدة جديدة' : 'تعديل الوحدة',
-          style: AppTextStyles.heading2,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      title: unit == null ? 'إضافة وحدة' : 'تعديل وحدة',
+      contentBuilder: (ctx, setModalState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            CustomTextField(
+            CustomModalSheet.buildTextField(
               label: 'اسم الوحدة',
               controller: nameController,
-              hint: 'مثال: جالون، كرتون...',
             ),
             const SizedBox(height: 12),
-            CustomTextField(
+            CustomModalSheet.buildTextField(
               label: 'معامل التحويل إلى لتر',
               controller: factorController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              hint: 'كم لتراً تعادل هذه الوحدة؟',
             ),
           ],
-        ),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: CustomButton(
-                  text: AppStrings.cancel,
-                  variant: ButtonVariant.secondary,
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CustomButton(
-                  text: AppStrings.save,
-                  variant: ButtonVariant.primary,
-                  onPressed: () async {
-                    final name = nameController.text.trim();
-                    final factor = double.tryParse(factorController.text.trim()) ?? 1.0;
-                    if (name.isEmpty) return;
+        );
+      },
+      onSave: (ctx) async {
+        final name = nameController.text.trim();
+        final factor = double.tryParse(factorController.text.trim()) ?? 1.0;
+        if (name.isEmpty) return;
 
-                    final navigator = Navigator.of(dialogCtx);
-                    final db = await DatabaseHelper.instance.database;
-                    if (unit == null) {
-                      await db.insert('units', {
-                        'name': name,
-                        'conversion_factor': factor,
-                        'is_base_unit': 0,
-                      });
-                    } else {
-                      await db.update(
-                        'units',
-                        {'name': name, 'conversion_factor': factor},
-                        where: 'id = ?',
-                        whereArgs: [unit['id']],
-                      );
-                    }
-                    if (mounted) {
-                      navigator.pop();
-                      _loadUnits();
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        final navigator = Navigator.of(ctx);
+        final db = await DatabaseHelper.instance.database;
+        if (unit == null) {
+          await db.insert('units', {
+            'name': name,
+            'conversion_factor': factor,
+            'is_base_unit': 0,
+          });
+        } else {
+          await db.update(
+            'units',
+            {'name': name, 'conversion_factor': factor},
+            where: 'id = ?',
+            whereArgs: [unit['id']],
+          );
+        }
+        navigator.pop();
+        _loadUnits();
+      },
     );
   }
 
   void _deleteUnit(int id) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.delete('units', where: 'id = ?', whereArgs: [id]);
-    _loadUnits();
+    final confirm = await CustomDialog.showConfirmation(
+      context: context,
+      title: 'تأكيد!',
+      message: 'هل تريد حذف هذه الوحدة؟',
+      confirmText: 'حسناً',
+      cancelText: 'إلغاء',
+      isDanger: true,
+    );
+    if (confirm) {
+      final db = await DatabaseHelper.instance.database;
+      await db.delete('units', where: 'id = ?', whereArgs: [id]);
+      _loadUnits();
+    }
   }
 
   @override

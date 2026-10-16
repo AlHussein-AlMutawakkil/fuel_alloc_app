@@ -122,6 +122,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
               AppStrings.labelEquivalentLiters,
               '${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter}',
             ),
+            if (tx.referenceNumber != null && tx.referenceNumber!.isNotEmpty)
+              _buildDetailRow('رقم المرجع:', tx.referenceNumber!),
             if (tx.notes != null && tx.notes!.isNotEmpty)
               _buildDetailRow(AppStrings.labelStatement, tx.notes!),
           ],
@@ -479,18 +481,22 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
 
   /// بناء بطاقة العملية الفردية (بدون رقم العملية كما طُلب)
   Widget _buildTransactionCard(TransactionModel tx) {
-    Color badgeColor = AppColors.primary;
-    Color badgeBg = const Color(0xFFEFF6FF);
-    if (tx.isSupply) {
-      badgeColor = AppColors.supplyGreen;
-      badgeBg = AppColors.supplyLight;
-    } else if (tx.isDispense) {
-      badgeColor = AppColors.dispenseRed;
-      badgeBg = AppColors.dispenseLight;
-    } else if (tx.isAeration) {
-      badgeColor = AppColors.warning;
-      badgeBg = const Color(0xFFFEF3C7);
-    }
+    // صرف اعتماد وتوريد اعتماد وتوريد فعلي تكون باللون الأخضر (+)
+    // صرف فعلي فقط يكون باللون الأحمر (-)
+    // عمولة التهوية تكون باللون البرتقالي التحذيري (-)
+    final bool isPositive = tx.typeId == 1 || tx.typeId == 2 || tx.typeId == 4;
+    final bool isActualDispense = tx.typeId == 5;
+    final bool isAeration = tx.typeId == 3;
+
+    final Color badgeColor = isActualDispense
+        ? AppColors.dispenseRed
+        : (isAeration ? AppColors.warning : AppColors.supplyGreen);
+
+    final Color badgeBg = isActualDispense
+        ? AppColors.dispenseLight
+        : (isAeration ? const Color(0xFFFEF3C7) : AppColors.supplyLight);
+
+    final String sign = isPositive ? '+' : '-';
 
     return Container(
       decoration: BoxDecoration(
@@ -596,7 +602,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '${tx.isSupply ? '+' : '-'} ${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? ''}',
+                                '$sign ${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? ''}',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.bold,

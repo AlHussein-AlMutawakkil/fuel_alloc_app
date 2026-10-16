@@ -3,6 +3,8 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/custom_button.dart';
+import '../../core/widgets/custom_dialog.dart';
+import '../../core/widgets/custom_modal_sheet.dart';
 import '../../core/widgets/custom_text_field.dart';
 import '../../data/local/database_helper.dart';
 
@@ -41,73 +43,51 @@ class _FuelTypesViewState extends State<FuelTypesView> {
   void _openAddEditDialog({Map<String, dynamic>? item}) {
     final nameController = TextEditingController(text: item?['name']?.toString() ?? '');
 
-    showDialog(
+    CustomModalSheet.show(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogCtx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: AppColors.border, width: 1),
-        ),
-        title: Text(
-          item == null ? 'إضافة صنف جديد' : 'تعديل اسم الصنف',
-          style: AppTextStyles.heading2,
-        ),
-        content: CustomTextField(
+      title: item == null ? 'إضافة صنف' : 'تعديل صنف',
+      contentBuilder: (ctx, setModalState) {
+        return CustomModalSheet.buildTextField(
           label: 'اسم الصنف',
           controller: nameController,
-          hint: 'مثال: بترول، ديزل، كيروسين...',
-        ),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: CustomButton(
-                  text: AppStrings.cancel,
-                  variant: ButtonVariant.secondary,
-                  onPressed: () => Navigator.of(dialogCtx).pop(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CustomButton(
-                  text: AppStrings.save,
-                  variant: ButtonVariant.primary,
-                  onPressed: () async {
-                    final name = nameController.text.trim();
-                    if (name.isEmpty) return;
+        );
+      },
+      onSave: (ctx) async {
+        final name = nameController.text.trim();
+        if (name.isEmpty) return;
 
-                    final navigator = Navigator.of(dialogCtx);
-                    final db = await DatabaseHelper.instance.database;
-                    if (item == null) {
-                      await db.insert('fuel_types', {'name': name, 'is_active': 1});
-                    } else {
-                      await db.update(
-                        'fuel_types',
-                        {'name': name},
-                        where: 'id = ?',
-                        whereArgs: [item['id']],
-                      );
-                    }
-                    if (mounted) {
-                      navigator.pop();
-                      _loadFuelTypes();
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        final navigator = Navigator.of(ctx);
+        final db = await DatabaseHelper.instance.database;
+        if (item == null) {
+          await db.insert('fuel_types', {'name': name, 'is_active': 1});
+        } else {
+          await db.update(
+            'fuel_types',
+            {'name': name},
+            where: 'id = ?',
+            whereArgs: [item['id']],
+          );
+        }
+        navigator.pop();
+        _loadFuelTypes();
+      },
     );
   }
 
   void _deleteFuelType(int id) async {
-    final db = await DatabaseHelper.instance.database;
-    await db.update('fuel_types', {'is_active': 0}, where: 'id = ?', whereArgs: [id]);
-    _loadFuelTypes();
+    final confirm = await CustomDialog.showConfirmation(
+      context: context,
+      title: 'تأكيد!',
+      message: 'هل تريد حذف هذا الصنف؟',
+      confirmText: 'حسناً',
+      cancelText: 'إلغاء',
+      isDanger: true,
+    );
+    if (confirm) {
+      final db = await DatabaseHelper.instance.database;
+      await db.update('fuel_types', {'is_active': 0}, where: 'id = ?', whereArgs: [id]);
+      _loadFuelTypes();
+    }
   }
 
   @override

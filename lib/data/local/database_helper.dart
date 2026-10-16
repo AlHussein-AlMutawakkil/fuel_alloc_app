@@ -22,6 +22,13 @@ class DatabaseHelper {
       path,
       version: 1,
       onCreate: _onCreate,
+      onOpen: (db) async {
+        final columns = await db.rawQuery('PRAGMA table_info(transactions)');
+        final hasRef = columns.any((c) => c['name'] == 'reference_number');
+        if (!hasRef) {
+          await db.execute('ALTER TABLE transactions ADD COLUMN reference_number TEXT;');
+        }
+      },
     );
   }
 
@@ -93,6 +100,7 @@ class DatabaseHelper {
         unit_id INTEGER NOT NULL,
         entered_quantity REAL NOT NULL,
         base_quantity_liters REAL NOT NULL,
+        reference_number TEXT,
         parent_transaction_id INTEGER,
         notes TEXT,
         created_at TEXT NOT NULL,
