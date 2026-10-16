@@ -12,6 +12,7 @@ import '../../models/station_model.dart';
 import 'account_transactions_view.dart';
 import 'station_transactions_view.dart';
 import 'widgets/slidable_account_tile.dart';
+import '../../core/widgets/one_ui_card.dart';
 
 enum AccountFilterTab { beneficiaries, suppliers, stations }
 
@@ -329,13 +330,7 @@ class _AccountsViewState extends State<AccountsView> {
         return Scaffold(
           backgroundColor: const Color(0xfff8f8f8),
           appBar: AppBar(
-            leading: Builder(
-              builder: (ctx) => IconButton(
-                icon: const Icon(Icons.menu),
-                tooltip: 'القائمة',
-                onPressed: () => Scaffold.of(ctx).openDrawer(),
-              ),
-            ),
+            automaticallyImplyLeading: false,
             title: _isSearching
                 ? TextField(
                     controller: _searchController,
@@ -412,18 +407,10 @@ class _AccountsViewState extends State<AccountsView> {
 
               // 2. كرت القائمة الأبيض الموحد ذو الزوايا الدائرية الكاملة One UI
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: isStationTab
-                        ? _buildStationsList(stationsController)
-                        : _buildAccountsList(accController),
-                  ),
+                child: OneUiListContainer(
+                  child: isStationTab
+                      ? _buildStationsList(stationsController)
+                      : _buildAccountsList(accController),
                 ),
               ),
             ],
@@ -543,13 +530,7 @@ class _AccountsViewState extends State<AccountsView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildAccountRow(account),
-            const Divider(
-              height: 1.5,
-              thickness: 1.5,
-              color: AppColors.divider,
-              indent: 12,
-              endIndent: 12,
-            ),
+            const OneUiDivider(indent: 12, endIndent: 12),
           ],
         );
       },
@@ -626,13 +607,7 @@ class _AccountsViewState extends State<AccountsView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildStationRow(station),
-            const Divider(
-              height: 1.5,
-              thickness: 1.5,
-              color: AppColors.divider,
-              indent: 12,
-              endIndent: 12,
-            ),
+            const OneUiDivider(indent: 12, endIndent: 12),
           ],
         );
       },

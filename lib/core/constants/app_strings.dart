@@ -124,4 +124,28 @@ class AppStrings {
   static const String requiredField = 'هذا الحقل مطلوب';
   static const String operationSuccess = 'تمت العملية بنجاح';
   static const String operationFailed = 'حدث خطأ أثناء تنفيذ العملية';
+
+  // الإعدادات
+  static const String navSettings = 'الإعدادات';
+  static const String settingsTitle = 'الإعدادات';
+  static const String profileTitle = 'الحسين علي المتوكل';
+  static const String editProfile = 'تعديل الملف الشخصي';
+  static const String account = 'الحساب';
+  static const String theme = 'المظهر';
+  static const String themeSystem = 'النظام';
+  static const String themeLight = 'فاتح';
+  static const String themeDark = 'مظلم';
+  static const String appLanguage = 'لغة التطبيق';
+  static const String languageArabic = 'العربية (Arabic)';
+  static const String hapticFeedback = 'ردود فعل لمسية';
+  static const String permissionsManagement = 'إدارة الأذونات';
+  static const String permissionsTitle = 'الأذونات';
+  static const String micPermission = 'ميكروفون';
+  static const String cameraPermission = 'كاميرا';
+  static const String photosPermission = 'صور';
+  static const String permissionOn = 'تشغيل';
+  static const String permissionOff = 'أغلاق';
+  static const String aboutApp = 'حول التطبيق';
+  static const String logout = 'تسجيل الخروج';
+  static const String underDevelopment = 'تحت التطوير';
 }
