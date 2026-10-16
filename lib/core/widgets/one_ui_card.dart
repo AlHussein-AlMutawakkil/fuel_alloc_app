@@ -122,7 +122,7 @@ class OneUiTile extends StatelessWidget {
     this.valueText,
     this.trailing,
     this.onTap,
-    this.showChevron = true,
+    this.showChevron = false,
     this.titleColor,
   });
 

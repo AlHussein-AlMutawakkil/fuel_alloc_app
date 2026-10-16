@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/constants/app_text_styles.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
+import '../../core/widgets/one_ui_card.dart';
 import '../../data/local/database_helper.dart';
 
 /// واجهة إدارة الأصناف (المشتقات النفطية: بترول، ديزل...)
@@ -91,102 +91,138 @@ class _FuelTypesViewState extends State<FuelTypesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xfff8f8f8),
       appBar: AppBar(
         title: const Text('دليل أصناف الوقود'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add_rounded),
             tooltip: 'إضافة صنف',
             onPressed: () => _openAddEditDialog(),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : ListView(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
               children: [
-                const Text('الأصناف المسجلة', style: AppTextStyles.heading2),
-                Text(
-                  'العدد: ${_fuelTypes.length}',
-                  style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'الأصناف المسجلة',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      Text(
+                        'العدد: ${_fuelTypes.length}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _fuelTypes.isEmpty
-                      ? const Center(child: Text('لا توجد أصناف مسجلة بعد', style: AppTextStyles.bodySecondary))
-                      : ListView.separated(
-                          itemCount: _fuelTypes.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, index) {
-                            final f = _fuelTypes[index];
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.border, width: 1),
+                if (_fuelTypes.isEmpty)
+                  const OneUiCard(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 36.0, horizontal: 20.0),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.local_gas_station_outlined,
+                                size: 40,
+                                color: Color(0xFF94A3B8),
                               ),
+                              SizedBox(height: 10),
+                              Text(
+                                'لا توجد أصناف مسجلة بعد',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  OneUiCard(
+                    children: _fuelTypes.map((f) {
+                      return OneUiTile(
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.local_gas_station_rounded,
+                            color: Color(0xFF102A43),
+                            size: 20,
+                          ),
+                        ),
+                        title: f['name'].toString(),
+                        onTap: () => _openAddEditDialog(item: f),
+                        trailing: PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_vert,
+                            color: Color(0xFF94A3B8),
+                            size: 20,
+                          ),
+                          color: Colors.white,
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          onSelected: (action) {
+                            if (action == 'edit') {
+                              _openAddEditDialog(item: f);
+                            } else if (action == 'delete') {
+                              _deleteFuelType(f['id'] as int);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
                               child: Row(
                                 children: [
-                                  const Icon(Icons.local_gas_station_outlined, color: AppColors.primary, size: 22),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(f['name'].toString(), style: AppTextStyles.heading3),
-                                  ),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 20),
-                                    color: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      side: const BorderSide(color: AppColors.border, width: 1),
-                                    ),
-                                    onSelected: (action) {
-                                      if (action == 'edit') {
-                                        _openAddEditDialog(item: f);
-                                      } else if (action == 'delete') {
-                                        _deleteFuelType(f['id'] as int);
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'edit',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
-                                            SizedBox(width: 8),
-                                            Text(AppStrings.edit, style: AppTextStyles.body),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.delete_outline, size: 18, color: AppColors.dispenseRed),
-                                            SizedBox(width: 8),
-                                            Text(AppStrings.delete, style: TextStyle(color: AppColors.dispenseRed)),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  Icon(Icons.edit_outlined, size: 18, color: Color(0xFF475569)),
+                                  SizedBox(width: 8),
+                                  Text(AppStrings.edit, style: TextStyle(fontSize: 14)),
                                 ],
                               ),
-                            );
-                          },
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_outline, size: 18, color: Color(0xFFB91C1C)),
+                                  SizedBox(width: 8),
+                                  Text(AppStrings.delete, style: TextStyle(color: Color(0xFFB91C1C), fontSize: 14)),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
+                      );
+                    }).toList(),
+                  ),
+              ],
             ),
-          ],
-        ),
-      ),
     );
   }
 }

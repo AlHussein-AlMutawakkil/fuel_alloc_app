@@ -48,23 +48,12 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
                   ),
                 ),
               ),
-              Text(
-                isEnabled
-                    ? AppStrings.permissionOn
-                    : AppStrings.permissionOff,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: isEnabled
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFF94A3B8),
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.chevron_left,
-                color: Color(0xFF94A3B8),
-                size: 20,
+              Icon(
+                isEnabled ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                color: isEnabled
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFF94A3B8),
+                size: 17,
               ),
             ],
           ),
