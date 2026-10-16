@@ -34,7 +34,8 @@ class _UnitsViewState extends State<UnitsView> {
   }
 
   void _openAddEditDialog({Map<String, dynamic>? unit}) {
-    final nameController = TextEditingController(text: unit?['name']?.toString() ?? '');
+    final nameController =
+        TextEditingController(text: unit?['name']?.toString() ?? '');
     final factorController = TextEditingController(
       text: unit != null ? unit['conversion_factor'].toString() : '',
     );
@@ -54,7 +55,8 @@ class _UnitsViewState extends State<UnitsView> {
             CustomModalSheet.buildTextField(
               label: 'معامل التحويل إلى لتر',
               controller: factorController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
             ),
           ],
         );
@@ -106,8 +108,8 @@ class _UnitsViewState extends State<UnitsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff8f8f8),
-      appBar: AppBar(
-        title: const Text('دليل الوحدات والتحويلات'),
+      appBar: OneUiAppBar(
+        title: 'دليل الوحدات',
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
@@ -117,12 +119,14 @@ class _UnitsViewState extends State<UnitsView> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary))
           : ListView(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0, vertical: 6.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -149,7 +153,8 @@ class _UnitsViewState extends State<UnitsView> {
                   const OneUiCard(
                     children: [
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 36.0, horizontal: 20.0),
+                        padding: EdgeInsets.symmetric(
+                            vertical: 36.0, horizontal: 20.0),
                         child: Center(
                           child: Column(
                             children: [
@@ -243,9 +248,11 @@ class _UnitsViewState extends State<UnitsView> {
                                   value: 'edit',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.edit_outlined, size: 18, color: Color(0xFF475569)),
+                                      Icon(Icons.edit_outlined,
+                                          size: 18, color: Color(0xFF475569)),
                                       SizedBox(width: 8),
-                                      Text(AppStrings.edit, style: TextStyle(fontSize: 14)),
+                                      Text(AppStrings.edit,
+                                          style: TextStyle(fontSize: 14)),
                                     ],
                                   ),
                                 ),
@@ -254,9 +261,13 @@ class _UnitsViewState extends State<UnitsView> {
                                     value: 'delete',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.delete_outline, size: 18, color: Color(0xFFB91C1C)),
+                                        Icon(Icons.delete_outline,
+                                            size: 18, color: Color(0xFFB91C1C)),
                                         SizedBox(width: 8),
-                                        Text(AppStrings.delete, style: TextStyle(color: Color(0xFFB91C1C), fontSize: 14)),
+                                        Text(AppStrings.delete,
+                                            style: TextStyle(
+                                                color: Color(0xFFB91C1C),
+                                                fontSize: 14)),
                                       ],
                                     ),
                                   ),

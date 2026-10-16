@@ -19,8 +19,8 @@ class _ThemeSettingsViewState extends State<ThemeSettingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff8f8f8),
-      appBar: AppBar(
-        title: const Text('سمة الألوان'),
+      appBar: const OneUiAppBar(
+        title: 'المظهر',
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16.0),

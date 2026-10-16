@@ -66,8 +66,8 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff8f8f8),
-      appBar: AppBar(
-        title: const Text('الأذونات'),
+      appBar: const OneUiAppBar(
+        title: 'الأذونات',
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 16.0),

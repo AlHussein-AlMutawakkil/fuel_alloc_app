@@ -259,3 +259,59 @@ class OneUiSelectionTile extends StatelessWidget {
     );
   }
 }
+
+/// شريط علوي بنمط One UI مطابق للقطات الشاشة
+class OneUiAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final List<Widget>? actions;
+  final bool showBackButton;
+  final VoidCallback? onBackPressed;
+
+  const OneUiAppBar({
+    super.key,
+    required this.title,
+    this.actions,
+    this.showBackButton = true,
+    this.onBackPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final canPop = showBackButton && Navigator.canPop(context);
+    return AppBar(
+      backgroundColor: const Color(0xfff8f8f8),
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: false,
+      titleSpacing: canPop ? 6 : 20,
+      leadingWidth: canPop ? 42 : null,
+      iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+      leading: canPop
+          ? IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+              icon: const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 20,
+                color: Color(0xFF0F172A),
+              ),
+              tooltip: 'رجوع',
+              onPressed: onBackPressed ?? () => Navigator.of(context).maybePop(),
+            )
+          : null,
+      title: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF0F172A),
+        ),
+      ),
+      actions: actions,
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+

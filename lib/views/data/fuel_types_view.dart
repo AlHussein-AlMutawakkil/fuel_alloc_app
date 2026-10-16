@@ -92,8 +92,8 @@ class _FuelTypesViewState extends State<FuelTypesView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff8f8f8),
-      appBar: AppBar(
-        title: const Text('دليل أصناف الوقود'),
+      appBar: OneUiAppBar(
+        title: 'دليل أصناف الوقود',
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),

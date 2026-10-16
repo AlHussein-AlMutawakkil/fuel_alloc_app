@@ -84,8 +84,9 @@ class _SettingsViewState extends State<SettingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff8f8f8),
-      appBar: AppBar(
-        title: const Text(AppStrings.settingsTitle),
+      appBar: const OneUiAppBar(
+        title: AppStrings.settingsTitle,
+        showBackButton: false,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 12.0),
