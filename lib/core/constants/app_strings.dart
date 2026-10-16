@@ -4,7 +4,7 @@ class AppStrings {
 
   // اسم التطبيق والعناوين العامة
   static const String appTitle = 'نظام مخصصات الوقود';
-  
+
   // شريط التبويب السفلي
   static const String navHome = 'الرئيسية';
   static const String navAccounts = 'الحسابات';
@@ -29,8 +29,8 @@ class AppStrings {
   static const String phoneNumber = 'رقم الهاتف';
   static const String searchAccountHint = 'بحث بالاسم أو رقم الهاتف...';
   static const String noAccountsFound = 'لا توجد حسابات مسجلة';
-  static const String typeBeneficiary = 'مستفيد (عميل)';
-  static const String typeSupplier = 'مورد (جهة عليا)';
+  static const String typeBeneficiary = 'مستفيد';
+  static const String typeSupplier = 'مورد';
 
   // العمليات
   static const String supplyQuota = 'توريد اعتماد';
@@ -69,7 +69,8 @@ class AppStrings {
   static const String statement = 'البيان';
   static const String notes = 'البيان';
   static const String confirmDeleteTransactionTitle = 'تأكيد حذف العملية';
-  static const String confirmDeleteTransactionMsg = 'هل أنت متأكد من حذف هذا القيد من سجل الحساب؟';
+  static const String confirmDeleteTransactionMsg =
+      'هل أنت متأكد من حذف هذا القيد من سجل الحساب؟';
   static const String quotaFilter = 'الاعتمادات';
   static const String actualFilter = 'الفعلي';
   static const String allFilter = 'الكل';
