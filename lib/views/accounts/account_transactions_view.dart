@@ -7,7 +7,6 @@ import '../../core/constants/app_text_styles.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_dialog.dart';
-import '../../core/widgets/custom_text_field.dart';
 import '../../core/widgets/operation_entry_sheet.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
@@ -27,6 +26,9 @@ class AccountTransactionsView extends StatefulWidget {
 
 class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   final TextEditingController _searchController = TextEditingController();
+  final PageController _fuelPageController = PageController();
+  bool _isSearching = false;
+  int _selectedFuelPage = 0;
 
   @override
   void initState() {
@@ -41,18 +43,35 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   @override
   void dispose() {
     _searchController.dispose();
+    _fuelPageController.dispose();
     super.dispose();
   }
 
   /// فتح نافذة تسجيل القيد والعملية المطابقة للصورة 100%
   void _openAddTransactionDialog() async {
     final isSupplier = widget.account.accountType == AccountType.supplier;
+    final controller = context.read<TransactionsController>();
+    final fuelTypes = controller.fuelTypes;
+    int? currentFuelId;
+    if (fuelTypes.isNotEmpty && _selectedFuelPage < fuelTypes.length) {
+      currentFuelId = fuelTypes[_selectedFuelPage]['id'] as int;
+    } else {
+      currentFuelId = controller.selectedFuelTypeId;
+    }
+
     await OperationEntrySheet.show(
       context: context,
       account: widget.account,
       initialTabIndex: 0,
       initialDirection: isSupplier ? 0 : 1, // المورد افتراضياً توريد، العميل افتراضياً صرف
+      initialFuelTypeId: currentFuelId,
     );
+    if (widget.account.id != null && mounted) {
+      context.read<TransactionsController>().fetchAccountTransactions(
+            widget.account.id!,
+            defaultFuelTypeId: currentFuelId,
+          );
+    }
   }
 
   /// حذف عملية مع نافذة تأكيد مطابقة تماماً للصورة 1
@@ -169,11 +188,42 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
         return Scaffold(
           backgroundColor: AppColors.background,
           appBar: AppBar(
-            title: Text(
-              '${AppStrings.accountOperations}: ${widget.account.name}',
-              style: AppTextStyles.appBarTitle,
-            ),
+            title: _isSearching
+                ? TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    style: const TextStyle(color: Colors.white, fontSize: 15),
+                    cursorColor: Colors.white,
+                    decoration: InputDecoration(
+                      hintText: AppStrings.searchTransactionHint,
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                      border: InputBorder.none,
+                    ),
+                    onChanged: (val) => controller.setSearchQuery(val),
+                  )
+                : Text(
+                    '${AppStrings.accountOperations}: ${widget.account.name}',
+                    style: AppTextStyles.appBarTitle,
+                  ),
             actions: [
+              IconButton(
+                icon: Icon(_isSearching ? Icons.close : Icons.search),
+                tooltip: _isSearching ? 'إغلاق البحث' : 'بحث',
+                onPressed: () {
+                  setState(() {
+                    _isSearching = !_isSearching;
+                    if (!_isSearching) {
+                      _searchController.clear();
+                      controller.setSearchQuery('');
+                    }
+                  });
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.add),
+                tooltip: AppStrings.addOperation,
+                onPressed: () => _openAddTransactionDialog(),
+              ),
               IconButton(
                 icon: const Icon(Icons.refresh),
                 tooltip: AppStrings.refresh,
@@ -190,30 +240,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. بطاقة ملخص الحساب والأرصدة
+                // 1. بطاقة ملخص الحساب والأرصدة (تتغير حسب الصنف بالسحب)
                 _buildSummaryCard(controller, isSupplier),
-                const SizedBox(height: 16),
-
-                // 2. شريط البحث وزر إضافة عملية
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomTextField(
-                        controller: _searchController,
-                        hint: AppStrings.searchTransactionHint,
-                        prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textMuted),
-                        onChanged: (val) => controller.setSearchQuery(val),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    CustomButton(
-                      text: AppStrings.addOperation,
-                      icon: Icons.add,
-                      variant: ButtonVariant.primary,
-                      onPressed: () => _openAddTransactionDialog(),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 12),
 
                 // 3. تبويبات الفلترة
@@ -293,133 +321,207 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     );
   }
 
-  /// بطاقة إحصائيات رصيد الحساب الموحدة
+  /// بطاقة إحصائيات رصيد الحساب الموحدة (تتغير بالسحب بين الأصناف: بترول / ديزل)
   Widget _buildSummaryCard(TransactionsController controller, bool isSupplier) {
-    final balanceColor = controller.balanceLiters >= 0
-        ? AppColors.primary
-        : AppColors.dispenseRed;
+    final fuelTypes = controller.fuelTypes.isNotEmpty
+        ? controller.fuelTypes
+        : [
+            {'id': 1, 'name': 'بترول'},
+            {'id': 2, 'name': 'ديزل'},
+          ];
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border, width: 1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // رأس البطاقة: نوع الحساب والهاتف
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isSupplier ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: isSupplier ? const Color(0xFFBFDBFE) : AppColors.border,
-                        width: 0.8,
-                      ),
-                    ),
-                    child: Text(
-                      isSupplier ? AppStrings.typeSupplier : AppStrings.typeBeneficiary,
-                      style: AppTextStyles.caption.copyWith(
-                        color: isSupplier ? AppColors.primary : AppColors.textSecondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.account.name,
-                    style: AppTextStyles.heading2,
-                  ),
-                ],
-              ),
-              if (widget.account.phoneNumber != null && widget.account.phoneNumber!.isNotEmpty)
-                Row(
+    return Column(
+      children: [
+        SizedBox(
+          height: 188,
+          child: PageView.builder(
+            controller: _fuelPageController,
+            itemCount: fuelTypes.length,
+            onPageChanged: (index) {
+              setState(() {
+                _selectedFuelPage = index;
+              });
+              if (index < fuelTypes.length) {
+                final fuelId = fuelTypes[index]['id'] as int;
+                controller.setSelectedFuelTypeId(fuelId);
+              }
+            },
+            itemBuilder: (context, index) {
+              final ft = fuelTypes[index];
+              final fuelId = ft['id'] as int;
+              final fuelName = ft['name'] as String;
+
+              final quota = controller.getQuotaLitersForFuel(fuelId);
+              final actual = controller.getActualLitersForFuel(fuelId);
+              final balance = controller.getBalanceLitersForFuel(fuelId);
+
+              final balanceColor = balance >= 0
+                  ? const Color(0xFF15803D)
+                  : const Color(0xFFB91C1C);
+
+              final isPetrol = fuelName.contains('بترول') || fuelName.contains('بنزين');
+              final fuelBadgeBg = isPetrol ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF);
+              final fuelBadgeBorder = isPetrol ? const Color(0xFFFDE68A) : const Color(0xFFBFDBFE);
+              final fuelBadgeText = isPetrol ? const Color(0xFFB45309) : const Color(0xFF1D4ED8);
+
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF64748B), width: 1.2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.phone_outlined, size: 14, color: AppColors.textMuted),
-                    const SizedBox(width: 4),
-                    Text(
-                      widget.account.phoneNumber!,
-                      style: AppTextStyles.caption,
+                    // رأس البطاقة: نوع الحساب واسم الحساب + شارة الصنف المستقل
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: isSupplier ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(4),
+                                border: Border.all(
+                                  color: isSupplier ? const Color(0xFFBFDBFE) : const Color(0xFFCBD5E1),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                isSupplier ? AppStrings.typeSupplier : AppStrings.typeBeneficiary,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSupplier ? AppColors.primary : AppColors.textSecondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.account.name,
+                              style: AppTextStyles.heading2,
+                            ),
+                          ],
+                        ),
+                        // شارة الصنف مع أيقونة المحطة
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: fuelBadgeBg,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: fuelBadgeBorder, width: 0.8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.local_gas_station, size: 14, color: fuelBadgeText),
+                              const SizedBox(width: 4),
+                              Text(
+                                'صنف: $fuelName',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: fuelBadgeText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      child: Divider(height: 1, color: AppColors.divider),
+                    ),
+
+                    // شبكة المؤشرات المالية الخاصة بهذا الصنف
+                    Row(
+                      children: [
+                        // إجمالي الاعتماد لهذا الصنف
+                        Expanded(
+                          child: _buildMetricItem(
+                            title: isSupplier ? AppStrings.suppliedQuota : AppStrings.totalQuota,
+                            liters: quota,
+                            color: const Color(0xFF15803D),
+                          ),
+                        ),
+                        Container(width: 1, height: 40, color: AppColors.divider),
+
+                        // إجمالي المنفذ الفعلي لهذا الصنف
+                        Expanded(
+                          child: _buildMetricItem(
+                            title: isSupplier ? AppStrings.suppliedActual : AppStrings.totalActual,
+                            liters: actual,
+                            color: isSupplier ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                          ),
+                        ),
+                        Container(width: 1, height: 40, color: AppColors.divider),
+
+                        // الرصيد المتبقي لهذا الصنف
+                        Expanded(
+                          child: _buildMetricItem(
+                            title: isSupplier ? AppStrings.differenceBalance : AppStrings.balanceQuota,
+                            liters: balance,
+                            color: balanceColor,
+                            isBold: true,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // مكافئ الرصيد بالدباب والبراميل لهذا الصنف
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'المكافئ لرصيد $fuelName المتبقي:',
+                            style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                          ),
+                          Text(
+                            AppFormatters.formatEquivalents(balance.abs()),
+                            style: AppTextStyles.caption.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-            ],
+              );
+            },
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(height: 1, color: AppColors.divider),
-          ),
-
-          // شبكة المؤشرات المالية الثلاثة
-          Row(
-            children: [
-              // إجمالي الاعتماد
-              Expanded(
-                child: _buildMetricItem(
-                  title: isSupplier ? AppStrings.suppliedQuota : AppStrings.totalQuota,
-                  liters: controller.totalQuotaLiters,
-                  color: AppColors.supplyGreen,
-                ),
+        ),
+        // مؤشر التنقل بين الأصناف (نقطتان فقط بدون أسهم أو نصوص)
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(fuelTypes.length, (i) {
+            final isSelected = i == _selectedFuelPage;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: isSelected ? 16 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(3),
               ),
-              Container(width: 1, height: 40, color: AppColors.divider),
-
-              // إجمالي المنفذ الفعلي
-              Expanded(
-                child: _buildMetricItem(
-                  title: isSupplier ? AppStrings.suppliedActual : AppStrings.totalActual,
-                  liters: controller.totalActualLiters,
-                  color: AppColors.dispenseRed,
-                ),
-              ),
-              Container(width: 1, height: 40, color: AppColors.divider),
-
-              // الرصيد المتبقي
-              Expanded(
-                child: _buildMetricItem(
-                  title: isSupplier ? AppStrings.differenceBalance : AppStrings.balanceQuota,
-                  liters: controller.balanceLiters,
-                  color: balanceColor,
-                  isBold: true,
-                ),
-              ),
-            ],
-          ),
-
-          // مكافئ الرصيد بالدباب والبراميل
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  AppStrings.equivalentBalanceLabel,
-                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-                ),
-                Text(
-                  AppFormatters.formatEquivalents(controller.balanceLiters.abs()),
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+            );
+          }),
+        ),
+      ],
     );
   }
 

@@ -33,6 +33,34 @@ class TransactionRepository {
     return maps.map((m) => TransactionModel.fromMap(m)).toList();
   }
 
+  /// جلب كافة عمليات محطة معينة (وارد فعلي، منصرف فعلي، عمولة تهوية، مقاصات)
+  Future<List<TransactionModel>> getTransactionsByStationId(int stationId) async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        t.*,
+        tt.name AS type_name,
+        tt.code AS type_code,
+        s.name AS station_name,
+        rs.name AS reference_station_name,
+        ft.name AS fuel_type_name,
+        u.name AS unit_name,
+        u.conversion_factor AS unit_factor,
+        a.name AS account_name
+      FROM transactions t
+      LEFT JOIN transaction_types tt ON t.type_id = tt.id
+      LEFT JOIN stations s ON t.station_id = s.id
+      LEFT JOIN stations rs ON t.reference_station_id = rs.id
+      LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
+      LEFT JOIN units u ON t.unit_id = u.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      WHERE t.station_id = ? OR t.reference_station_id = ?
+      ORDER BY t.transaction_date DESC, t.id DESC
+    ''', [stationId, stationId]);
+
+    return maps.map((m) => TransactionModel.fromMap(m)).toList();
+  }
+
   /// حساب رصيد المحطة الفعلي المتاح حالياً باللتر
   /// (التوريدات الفعلية) - (عمولات التهوية) - (المنصرف الفعلي منها أو من مرجعها)
   Future<double> getStationBalance(int stationId) async {

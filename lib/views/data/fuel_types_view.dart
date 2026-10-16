@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
-import '../../core/widgets/custom_text_field.dart';
 import '../../data/local/database_helper.dart';
 
 /// واجهة إدارة الأصناف (المشتقات النفطية: بترول، ديزل...)
@@ -96,6 +94,13 @@ class _FuelTypesViewState extends State<FuelTypesView> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('دليل أصناف الوقود'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'إضافة صنف',
+            onPressed: () => _openAddEditDialog(),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -105,14 +110,13 @@ class _FuelTypesViewState extends State<FuelTypesView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('الأصناف المسجلة', style: AppTextStyles.heading2),
-                CustomButton(
-                  text: 'إضافة صنف',
-                  icon: Icons.add,
-                  onPressed: () => _openAddEditDialog(),
+                Text(
+                  'العدد: ${_fuelTypes.length}',
+                  style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))

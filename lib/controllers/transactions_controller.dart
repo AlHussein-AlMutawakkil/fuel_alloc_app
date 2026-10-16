@@ -9,7 +9,8 @@ class TransactionsController extends ChangeNotifier {
   List<TransactionModel> _allTransactions = [];
   bool _isLoading = false;
   String _searchQuery = '';
-  String _selectedFilter = 'ALL'; // ALL, QUOTA, ACTUAL
+  String _selectedFilter = 'ALL'; // ALL, QUOTA, ACTUAL, SUPPLY, DISPENSE, AERATION
+  int? _selectedFuelTypeId;
 
   List<Map<String, dynamic>> _stations = [];
   List<Map<String, dynamic>> _fuelTypes = [];
@@ -20,24 +21,44 @@ class TransactionsController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
   String get selectedFilter => _selectedFilter;
+  int? get selectedFuelTypeId => _selectedFuelTypeId;
 
   List<Map<String, dynamic>> get stations => _stations;
   List<Map<String, dynamic>> get fuelTypes => _fuelTypes;
   List<Map<String, dynamic>> get units => _units;
   List<Map<String, dynamic>> get transactionTypes => _transactionTypes;
 
-  /// قائمة العمليات المفلترة
+  void setSelectedFuelTypeId(int? fuelTypeId) {
+    if (_selectedFuelTypeId != fuelTypeId) {
+      _selectedFuelTypeId = fuelTypeId;
+      notifyListeners();
+    }
+  }
+
+  /// قائمة العمليات المفلترة بحسب نوع الحركة وصنف الوقود والبحث
   List<TransactionModel> get transactions {
     return _allTransactions.where((tx) {
-      // فلترة بالنوع
+      // 1. فلترة بالنوع
       bool matchesFilter = true;
       if (_selectedFilter == 'QUOTA') {
         matchesFilter = tx.isQuota;
       } else if (_selectedFilter == 'ACTUAL') {
         matchesFilter = tx.isActual;
+      } else if (_selectedFilter == 'SUPPLY') {
+        matchesFilter = tx.typeId == 2;
+      } else if (_selectedFilter == 'DISPENSE') {
+        matchesFilter = tx.typeId == 5;
+      } else if (_selectedFilter == 'AERATION') {
+        matchesFilter = tx.typeId == 3;
       }
 
-      // فلترة بالبحث
+      // 2. فلترة بصنف الوقود المعروض بالكرت (بترول / ديزل)
+      bool matchesFuel = true;
+      if (_selectedFuelTypeId != null) {
+        matchesFuel = tx.fuelTypeId == _selectedFuelTypeId;
+      }
+
+      // 3. فلترة بالبحث
       bool matchesSearch = true;
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
@@ -49,7 +70,7 @@ class TransactionsController extends ChangeNotifier {
             tx.transactionDate.contains(q);
       }
 
-      return matchesFilter && matchesSearch;
+      return matchesFilter && matchesFuel && matchesSearch;
     }).toList();
   }
 
@@ -79,6 +100,64 @@ class TransactionsController extends ChangeNotifier {
         .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
   }
 
+  /// إجمالي الاعتماد لصنف معين باللتر
+  double getQuotaLitersForFuel(int fuelTypeId) {
+    return _allTransactions
+        .where((tx) => tx.isQuota && tx.fuelTypeId == fuelTypeId)
+        .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
+  }
+
+  /// إجمالي المنفذ الفعلي لصنف معين باللتر
+  double getActualLitersForFuel(int fuelTypeId) {
+    return _allTransactions
+        .where((tx) => tx.isActual && tx.fuelTypeId == fuelTypeId)
+        .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
+  }
+
+  /// الرصيد المتبقي لصنف معين باللتر
+  double getBalanceLitersForFuel(int fuelTypeId) {
+    return getQuotaLitersForFuel(fuelTypeId) - getActualLitersForFuel(fuelTypeId);
+  }
+
+  /// الوارد الفعلي لمحطة لصنف معين
+  double getStationSupplyForFuel(int fuelTypeId) {
+    if (_currentStationId == null) return 0.0;
+    return _allTransactions
+        .where((tx) =>
+            tx.typeId == 2 &&
+            tx.stationId == _currentStationId &&
+            tx.fuelTypeId == fuelTypeId)
+        .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
+  }
+
+  /// المنصرف الفعلي من محطة لصنف معين
+  double getStationDispenseForFuel(int fuelTypeId) {
+    if (_currentStationId == null) return 0.0;
+    return _allTransactions
+        .where((tx) =>
+            tx.typeId == 5 &&
+            (tx.referenceStationId ?? tx.stationId) == _currentStationId &&
+            tx.fuelTypeId == fuelTypeId)
+        .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
+  }
+
+  /// عمولة التهوية لمحطة لصنف معين
+  double getStationAerationForFuel(int fuelTypeId) {
+    if (_currentStationId == null) return 0.0;
+    return _allTransactions
+        .where((tx) =>
+            tx.typeId == 3 &&
+            tx.stationId == _currentStationId &&
+            tx.fuelTypeId == fuelTypeId)
+        .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
+  }
+
+  /// الرصيد المتبقي بمحطة لصنف معين
+  double getStationBalanceForFuel(int fuelTypeId) {
+    return getStationSupplyForFuel(fuelTypeId) -
+        (getStationDispenseForFuel(fuelTypeId) + getStationAerationForFuel(fuelTypeId));
+  }
+
   /// رصيد محطة معينة حالياً
   Future<double> getStationBalance(int stationId) async {
     return await _repository.getStationBalance(stationId);
@@ -89,16 +168,87 @@ class TransactionsController extends ChangeNotifier {
     return await _repository.getAccountBalance(accountId, isSupplier);
   }
 
+  int? _currentAccountId;
+  int? _currentStationId;
+
+  int? get currentAccountId => _currentAccountId;
+  int? get currentStationId => _currentStationId;
+
+  /// إحصائيات كشف المحطة باللتر
+  double get stationTotalSupplyLiters {
+    if (_currentStationId == null) return 0.0;
+    return _allTransactions
+        .where((tx) => tx.typeId == 2 && tx.stationId == _currentStationId)
+        .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
+  }
+
+  double get stationTotalDispenseLiters {
+    if (_currentStationId == null) return 0.0;
+    return _allTransactions
+        .where((tx) =>
+            tx.typeId == 5 &&
+            (tx.referenceStationId ?? tx.stationId) == _currentStationId)
+        .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
+  }
+
+  double get stationTotalAerationLiters {
+    if (_currentStationId == null) return 0.0;
+    return _allTransactions
+        .where((tx) => tx.typeId == 3 && tx.stationId == _currentStationId)
+        .fold(0.0, (sum, tx) => sum + tx.baseQuantityLiters);
+  }
+
+  double get stationNetBalanceLiters {
+    return stationTotalSupplyLiters -
+        (stationTotalDispenseLiters + stationTotalAerationLiters);
+  }
+
   /// جلب عمليات حساب معين
-  Future<void> fetchAccountTransactions(int accountId) async {
+  Future<void> fetchAccountTransactions(int accountId, {int? defaultFuelTypeId}) async {
+    _currentAccountId = accountId;
+    _currentStationId = null;
     _isLoading = true;
     notifyListeners();
 
     try {
       _allTransactions = await _repository.getTransactionsByAccountId(accountId);
       await loadFormData();
+      if (defaultFuelTypeId != null) {
+        _selectedFuelTypeId = defaultFuelTypeId;
+      } else if (_fuelTypes.isNotEmpty) {
+        final exists = _fuelTypes.any((ft) => ft['id'] == _selectedFuelTypeId);
+        if (!exists) {
+          _selectedFuelTypeId = _fuelTypes.first['id'] as int;
+        }
+      }
     } catch (e) {
       debugPrint('Error fetching account transactions: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// جلب كافة عمليات محطة معينة (للمطابقة والمحاسبة)
+  Future<void> fetchStationTransactions(int stationId, {int? defaultFuelTypeId}) async {
+    _currentStationId = stationId;
+    _currentAccountId = null;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _allTransactions = await _repository.getTransactionsByStationId(stationId);
+      await loadFormData();
+      if (defaultFuelTypeId != null) {
+        _selectedFuelTypeId = defaultFuelTypeId;
+      } else if (_fuelTypes.isNotEmpty) {
+        final exists = _fuelTypes.any((ft) => ft['id'] == _selectedFuelTypeId);
+        if (!exists) {
+          _selectedFuelTypeId = _fuelTypes.first['id'] as int;
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching station transactions: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -129,14 +279,23 @@ class TransactionsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// إضافة عملية لحساب
+  /// إعادة تحميل العمليات النشطة حالياً (لحساب أو لمحطة)
+  Future<void> reloadCurrentView() async {
+    if (_currentAccountId != null) {
+      _allTransactions =
+          await _repository.getTransactionsByAccountId(_currentAccountId!);
+    } else if (_currentStationId != null) {
+      _allTransactions =
+          await _repository.getTransactionsByStationId(_currentStationId!);
+    }
+    notifyListeners();
+  }
+
+  /// إضافة عملية لحساب أو محطة
   Future<bool> addTransaction(TransactionModel tx) async {
     try {
       await _repository.insertTransaction(tx);
-      if (tx.accountId != null) {
-        _allTransactions = await _repository.getTransactionsByAccountId(tx.accountId!);
-      }
-      notifyListeners();
+      await reloadCurrentView();
       return true;
     } catch (e) {
       debugPrint('Error adding transaction: $e');
@@ -148,10 +307,7 @@ class TransactionsController extends ChangeNotifier {
   Future<bool> updateTransaction(TransactionModel tx) async {
     try {
       await _repository.updateTransaction(tx);
-      if (tx.accountId != null) {
-        _allTransactions = await _repository.getTransactionsByAccountId(tx.accountId!);
-      }
-      notifyListeners();
+      await reloadCurrentView();
       return true;
     } catch (e) {
       debugPrint('Error updating transaction: $e');
@@ -159,7 +315,7 @@ class TransactionsController extends ChangeNotifier {
     }
   }
 
-  /// حذف عملية
+  /// حذف عملية لحساب
   Future<bool> deleteTransaction(int id, int accountId) async {
     try {
       await _repository.deleteTransaction(id);
@@ -168,6 +324,19 @@ class TransactionsController extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error deleting transaction: $e');
+      return false;
+    }
+  }
+
+  /// حذف عملية لمحطة
+  Future<bool> deleteStationTransaction(int id, int stationId) async {
+    try {
+      await _repository.deleteTransaction(id);
+      _allTransactions = await _repository.getTransactionsByStationId(stationId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting station transaction: $e');
       return false;
     }
   }

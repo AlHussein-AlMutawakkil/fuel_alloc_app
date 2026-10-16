@@ -10,6 +10,9 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('الرئيسية'),
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

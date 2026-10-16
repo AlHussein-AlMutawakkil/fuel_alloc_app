@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
-import '../../core/widgets/custom_text_field.dart';
 import '../../data/local/database_helper.dart';
 
 /// واجهة إدارة الوحدات (الوحدات ومعاملات التحويل للتر)
@@ -110,6 +108,13 @@ class _UnitsViewState extends State<UnitsView> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text('دليل الوحدات والتحويلات'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'إضافة وحدة',
+            onPressed: () => _openAddEditDialog(),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -119,14 +124,13 @@ class _UnitsViewState extends State<UnitsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('قائمة الوحدات المعتمدة', style: AppTextStyles.heading2),
-                CustomButton(
-                  text: 'إضافة وحدة',
-                  icon: Icons.add,
-                  onPressed: () => _openAddEditDialog(),
+                Text(
+                  'العدد: ${_units.length}',
+                  style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))

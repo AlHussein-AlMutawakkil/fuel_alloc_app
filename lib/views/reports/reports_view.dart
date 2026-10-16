@@ -10,6 +10,9 @@ class ReportsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: const Text('التقارير'),
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

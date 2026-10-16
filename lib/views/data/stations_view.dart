@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_text_styles.dart';
-import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
-import '../../core/widgets/custom_text_field.dart';
 import '../../data/local/database_helper.dart';
+import '../../models/station_model.dart';
+import '../accounts/station_transactions_view.dart';
 
 /// واجهة إدارة المحطات
 class StationsView extends StatefulWidget {
@@ -17,13 +17,22 @@ class StationsView extends StatefulWidget {
 }
 
 class _StationsViewState extends State<StationsView> {
+  final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _stations = [];
   bool _isLoading = true;
+  bool _isSearching = false;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadStations();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadStations() async {
@@ -135,10 +144,57 @@ class _StationsViewState extends State<StationsView> {
 
   @override
   Widget build(BuildContext context) {
+    final filteredStations = _stations.where((s) {
+      if (_searchQuery.isEmpty) return true;
+      final name = (s['name'] ?? '').toString().toLowerCase();
+      final loc = (s['location'] ?? '').toString().toLowerCase();
+      final phone = (s['phone_number'] ?? '').toString().toLowerCase();
+      return name.contains(_searchQuery) ||
+          loc.contains(_searchQuery) ||
+          phone.contains(_searchQuery);
+    }).toList();
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('دليل محطات الوقود'),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 15),
+                cursorColor: Colors.white,
+                decoration: InputDecoration(
+                  hintText: 'بحث في المحطات أو الموقع أو الهاتف...',
+                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                  border: InputBorder.none,
+                ),
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val.trim().toLowerCase();
+                  });
+                },
+              )
+            : const Text('دليل محطات الوقود'),
+        actions: [
+          IconButton(
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
+            tooltip: _isSearching ? 'إغلاق البحث' : 'بحث',
+            onPressed: () {
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear();
+                  _searchQuery = '';
+                }
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'إضافة محطة',
+            onPressed: () => _openAddEditDialog(),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -148,94 +204,128 @@ class _StationsViewState extends State<StationsView> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('قائمة المحطات المعتمدة', style: AppTextStyles.heading2),
-                CustomButton(
-                  text: 'إضافة محطة',
-                  icon: Icons.add,
-                  onPressed: () => _openAddEditDialog(),
+                Text(
+                  'العدد: ${filteredStations.length}',
+                  style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _stations.isEmpty
+                  : filteredStations.isEmpty
                       ? const Center(child: Text('لا توجد محطات مسجلة بعد', style: AppTextStyles.bodySecondary))
                       : ListView.separated(
-                          itemCount: _stations.length,
+                          itemCount: filteredStations.length,
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (context, index) {
-                            final s = _stations[index];
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
+                            final s = filteredStations[index];
+                            return Material(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              child: InkWell(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => StationTransactionsView(
+                                        station: StationModel.fromMap(s),
+                                      ),
+                                    ),
+                                  ).then((_) => _loadStations());
+                                },
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.border, width: 1),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(s['name'].toString(), style: AppTextStyles.heading3),
-                                        const SizedBox(height: 4),
-                                        Row(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppColors.border, width: 1),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            if (s['location'] != null && s['location'].toString().isNotEmpty) ...[
-                                              const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
-                                              const SizedBox(width: 4),
-                                              Text(s['location'].toString(), style: AppTextStyles.caption),
-                                              const SizedBox(width: 12),
-                                            ],
-                                            Text(
-                                              'عمولة التهوية: ${s['default_commission_rate']}%',
-                                              style: AppTextStyles.caption.copyWith(color: AppColors.supplyGreen),
+                                            Text(s['name'].toString(), style: AppTextStyles.heading3),
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                if (s['location'] != null && s['location'].toString().isNotEmpty) ...[
+                                                  const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
+                                                  const SizedBox(width: 4),
+                                                  Text(s['location'].toString(), style: AppTextStyles.caption),
+                                                  const SizedBox(width: 12),
+                                                ],
+                                                Text(
+                                                  'عمولة التهوية: ${s['default_commission_rate']}%',
+                                                  style: AppTextStyles.caption.copyWith(color: AppColors.supplyGreen),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
-                                      ],
-                                    ),
-                                  ),
-                                  PopupMenuButton<String>(
-                                    icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 20),
-                                    color: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                      side: const BorderSide(color: AppColors.border, width: 1),
-                                    ),
-                                    onSelected: (action) {
-                                      if (action == 'edit') {
-                                        _openAddEditDialog(station: s);
-                                      } else if (action == 'delete') {
-                                        _deleteStation(s['id'] as int);
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      const PopupMenuItem(
-                                        value: 'edit',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
-                                            SizedBox(width: 8),
-                                            Text(AppStrings.edit, style: AppTextStyles.body),
-                                          ],
-                                        ),
                                       ),
-                                      const PopupMenuItem(
-                                        value: 'delete',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.delete_outline, size: 18, color: AppColors.dispenseRed),
-                                            SizedBox(width: 8),
-                                            Text(AppStrings.delete, style: TextStyle(color: AppColors.dispenseRed)),
-                                          ],
+                                      const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textMuted),
+                                      const SizedBox(width: 4),
+                                      PopupMenuButton<String>(
+                                        icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 20),
+                                        color: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          side: const BorderSide(color: AppColors.border, width: 1),
                                         ),
+                                        onSelected: (action) {
+                                          if (action == 'transactions') {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => StationTransactionsView(
+                                                  station: StationModel.fromMap(s),
+                                                ),
+                                              ),
+                                            ).then((_) => _loadStations());
+                                          } else if (action == 'edit') {
+                                            _openAddEditDialog(station: s);
+                                          } else if (action == 'delete') {
+                                            _deleteStation(s['id'] as int);
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          const PopupMenuItem(
+                                            value: 'transactions',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.receipt_long_outlined, size: 18, color: AppColors.primary),
+                                                SizedBox(width: 8),
+                                                Text('كشف حساب المحطة', style: AppTextStyles.body),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'edit',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+                                                SizedBox(width: 8),
+                                                Text(AppStrings.edit, style: AppTextStyles.body),
+                                              ],
+                                            ),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'delete',
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.delete_outline, size: 18, color: AppColors.dispenseRed),
+                                                SizedBox(width: 8),
+                                                Text(AppStrings.delete, style: TextStyle(color: AppColors.dispenseRed)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
-                                ],
+                                ),
                               ),
                             );
                           },

@@ -14,6 +14,8 @@ class OperationEntrySheet extends StatefulWidget {
   final TransactionModel? editTransaction;
   final int initialTabIndex; // 0: اعتماد, 1: فعلي, 2: نسبة
   final int initialDirection; // 0: توريد, 1: صرف
+  final int? initialFuelTypeId;
+  final int? initialStationId;
 
   const OperationEntrySheet({
     super.key,
@@ -21,6 +23,8 @@ class OperationEntrySheet extends StatefulWidget {
     this.editTransaction,
     this.initialTabIndex = 0,
     this.initialDirection = 0,
+    this.initialFuelTypeId,
+    this.initialStationId,
   });
 
   /// فتح نافذة تسجيل القيد بتنسيق نافذة منبثقة مطابقة للصورة المعتمدة
@@ -30,6 +34,8 @@ class OperationEntrySheet extends StatefulWidget {
     TransactionModel? editTransaction,
     int initialTabIndex = 0,
     int initialDirection = 0,
+    int? initialFuelTypeId,
+    int? initialStationId,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
@@ -41,6 +47,8 @@ class OperationEntrySheet extends StatefulWidget {
         editTransaction: editTransaction,
         initialTabIndex: initialTabIndex,
         initialDirection: initialDirection,
+        initialFuelTypeId: initialFuelTypeId,
+        initialStationId: initialStationId,
       ),
     );
   }
@@ -118,6 +126,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     } else {
       _selectedTab = widget.initialTabIndex;
       _selectedDirection = widget.initialDirection;
+      _selectedFuelTypeId = widget.initialFuelTypeId;
+      _selectedStationId = widget.initialStationId;
 
       final now = DateTime.now();
       _dateController.text =
@@ -452,7 +462,9 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: _selectedDirection == 1
-                                      ? const Color(0xFFB91C1C)
+                                      ? (_selectedTab == 0
+                                          ? const Color(0xFF15803D)
+                                          : const Color(0xFFB91C1C))
                                       : Colors.transparent,
                                   borderRadius: BorderRadius.circular(5),
                                 ),

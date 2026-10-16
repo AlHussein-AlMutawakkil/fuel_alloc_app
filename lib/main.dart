@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/accounts_controller.dart';
+import 'controllers/stations_controller.dart';
 import 'controllers/transactions_controller.dart';
 import 'core/constants/app_strings.dart';
 import 'core/theme/app_theme.dart';
@@ -19,6 +20,7 @@ class FuelAllocApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AccountsController()),
+        ChangeNotifierProvider(create: (_) => StationsController()),
         ChangeNotifierProvider(create: (_) => TransactionsController()),
       ],
       child: MaterialApp(

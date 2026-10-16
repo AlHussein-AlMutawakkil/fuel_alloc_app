@@ -27,19 +27,10 @@ class _MainLayoutViewState extends State<MainLayoutView> {
     ReportsView(),
   ];
 
-  final List<String> _titles = const [
-    AppStrings.navHome,
-    AppStrings.accountsTitle,
-    AppStrings.navReports,
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(_titles[_currentIndex]),
-      ),
       drawer: _buildAppDrawer(context),
       body: _screens[_currentIndex],
       floatingActionButton: FloatingActionButton(
