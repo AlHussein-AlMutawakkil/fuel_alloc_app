@@ -10,6 +10,7 @@ import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/operation_entry_sheet.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
+import 'widgets/fuel_summary_card.dart';
 
 /// واجهة كشف حساب وعمليات الحساب (توريد / صرف)
 class AccountTransactionsView extends StatefulWidget {
@@ -27,9 +28,7 @@ class AccountTransactionsView extends StatefulWidget {
 
 class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   final TextEditingController _searchController = TextEditingController();
-  final PageController _fuelPageController = PageController();
   bool _isSearching = false;
-  int _selectedFuelPage = 0;
 
   @override
   void initState() {
@@ -46,7 +45,6 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   @override
   void dispose() {
     _searchController.dispose();
-    _fuelPageController.dispose();
     super.dispose();
   }
 
@@ -54,13 +52,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   void _openAddTransactionDialog() async {
     final isSupplier = widget.account.accountType == AccountType.supplier;
     final controller = context.read<TransactionsController>();
-    final fuelTypes = controller.fuelTypes;
-    int? currentFuelId;
-    if (fuelTypes.isNotEmpty && _selectedFuelPage < fuelTypes.length) {
-      currentFuelId = fuelTypes[_selectedFuelPage]['id'] as int;
-    } else {
-      currentFuelId = controller.selectedFuelTypeId;
-    }
+    final currentFuelId = controller.selectedFuelTypeId;
 
     await OperationEntrySheet.show(
       context: context,
@@ -337,228 +329,33 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     );
   }
 
-  /// بطاقة إحصائيات رصيد الحساب الموحدة (مطابقة تماماً لتصميم الصورة)
+  /// بطاقة إحصائيات رصيد الحساب الموحدة (مكون مرن ومشترك FuelSummarySlider)
   Widget _buildSummaryCard(TransactionsController controller, bool isSupplier) {
-    final fuelTypes = controller.fuelTypes.isNotEmpty
-        ? controller.fuelTypes
-        : [
-            {'id': 1, 'name': 'بترول'},
-            {'id': 2, 'name': 'ديزل'},
-          ];
+    return FuelSummarySlider(
+      fuelTypes: controller.fuelTypes,
+      selectedFuelId: controller.selectedFuelTypeId,
+      onFuelChanged: (fuelId) => controller.setSelectedFuelTypeId(fuelId),
+      cardBuilder: (fuelId, fuelName) {
+        final quota = controller.getQuotaLitersForFuel(fuelId);
+        final actual = controller.getActualLitersForFuel(fuelId);
+        final balance = controller.getBalanceLitersForFuel(fuelId);
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 208,
-          child: PageView.builder(
-            controller: _fuelPageController,
-            itemCount: fuelTypes.length,
-            onPageChanged: (index) {
-              setState(() {
-                _selectedFuelPage = index;
-              });
-              if (index < fuelTypes.length) {
-                final fuelId = fuelTypes[index]['id'] as int;
-                controller.setSelectedFuelTypeId(fuelId);
-              }
-            },
-            itemBuilder: (context, index) {
-              final ft = fuelTypes[index];
-              final fuelId = ft['id'] as int;
-              final fuelName = ft['name'] as String;
-
-              final quota = controller.getQuotaLitersForFuel(fuelId);
-              final actual = controller.getActualLitersForFuel(fuelId);
-              final balance = controller.getBalanceLitersForFuel(fuelId);
-
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // الصف العلوي: اسم الحساب (يمين في RTL) + شارة الصنف البيضاوية السوداء (يسار في RTL)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // اسم الحساب (بدل Free)
-                        Expanded(
-                          child: Text(
-                            widget.account.name,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        // شارة الصنف البيضاوية السوداء (بدل ترقية): بترول / ديزل مباشرة بدون كلمة الصنف
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E1E1E),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            fuelName,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // خط فاصل ناعم وخفيف تحت الصف العلوي
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Divider(
-                        height: 1,
-                        thickness: 0.8,
-                        color: Color(0xFFF1F5F9),
-                      ),
-                    ),
-
-                    // الجزء الأوسط: الرصيد المتبقي مع أيقونة النجمة ✦ (بدل 40 الأرصدة ✦)
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.auto_awesome,
-                          size: 18,
-                          color: Color(0xFF1E293B),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          AppFormatters.formatQuantity(balance),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'الرصيد المتبقي',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-
-                    // الجزء السفلي: المربع الرمادي الفاتح (بدل الاشتراك والمكافأة)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF4F5F7),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          // اليمين (بدل الاشتراك): إجمالي الاعتماد / التوريد
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  AppFormatters.formatQuantity(quota),
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  isSupplier
-                                      ? 'إجمالي التوريد'
-                                      : 'إجمالي الاعتماد',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF94A3B8),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // اليسار (بدل مكافأة): إجمالي الفعلي / الصرف
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  AppFormatters.formatQuantity(actual),
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  isSupplier
-                                      ? 'إجمالي الصرف'
-                                      : 'إجمالي الفعلي',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF94A3B8),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        // مؤشر التنقل بين الأصناف (نقطتان فقط بدون أسهم أو نصوص)
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(fuelTypes.length, (i) {
-            final isSelected = i == _selectedFuelPage;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: isSelected ? 16 : 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(3),
-              ),
-            );
-          }),
-        ),
-      ],
+        return FuelCardData(
+          title: widget.account.name,
+          fuelName: fuelName,
+          balance: balance,
+          metrics: [
+            FuelCardMetric(
+              value: quota,
+              label: isSupplier ? 'توريد اعتماد' : 'صرف اعتماد',
+            ),
+            FuelCardMetric(
+              value: actual,
+              label: isSupplier ? 'توريد فعلي' : 'صرف فعلي',
+            ),
+          ],
+        );
+      },
     );
   }
 

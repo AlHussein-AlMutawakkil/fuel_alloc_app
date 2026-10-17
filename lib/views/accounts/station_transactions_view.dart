@@ -10,6 +10,7 @@ import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/operation_entry_sheet.dart';
 import '../../models/station_model.dart';
 import '../../models/transaction_model.dart';
+import 'widgets/fuel_summary_card.dart';
 
 /// واجهة كشف حساب وعمليات المحطة (وارد فعلي، منصرف فعلي، عمولة تهوية، ومقاصات)
 /// مخصصة للمطابقة والمحاسبة الدورية مع المحطة
@@ -28,9 +29,7 @@ class StationTransactionsView extends StatefulWidget {
 
 class _StationTransactionsViewState extends State<StationTransactionsView> {
   final TextEditingController _searchController = TextEditingController();
-  final PageController _fuelPageController = PageController();
   bool _isSearching = false;
-  int _selectedFuelPage = 0;
 
   @override
   void initState() {
@@ -47,19 +46,12 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
   @override
   void dispose() {
     _searchController.dispose();
-    _fuelPageController.dispose();
     super.dispose();
   }
 
   void _openAddTransactionDialog() async {
     final controller = context.read<TransactionsController>();
-    final fuelTypes = controller.fuelTypes;
-    int? currentFuelId;
-    if (fuelTypes.isNotEmpty && _selectedFuelPage < fuelTypes.length) {
-      currentFuelId = fuelTypes[_selectedFuelPage]['id'] as int;
-    } else {
-      currentFuelId = controller.selectedFuelTypeId;
-    }
+    final currentFuelId = controller.selectedFuelTypeId;
 
     await OperationEntrySheet.show(
       context: context,
@@ -193,7 +185,7 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
     return Consumer<TransactionsController>(
       builder: (context, controller, child) {
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: const Color(0xFFF8F8F8),
           appBar: AppBar(
             title: _isSearching
                 ? TextField(
@@ -346,305 +338,35 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
     return controller.transactions;
   }
 
-  /// بطاقة إحصائيات المحطة الموحدة للمحاسبة (تتغير بالسحب بين الأصناف: بترول / ديزل)
+  /// بطاقة إحصائيات رصيد المحطة الموحدة (مكون مرن ومشترك FuelSummarySlider)
   Widget _buildStationSummaryCard(TransactionsController controller) {
-    final fuelTypes = controller.fuelTypes.isNotEmpty
-        ? controller.fuelTypes
-        : [
-            {'id': 1, 'name': 'بترول'},
-            {'id': 2, 'name': 'ديزل'},
-          ];
+    return FuelSummarySlider(
+      fuelTypes: controller.fuelTypes,
+      selectedFuelId: controller.selectedFuelTypeId,
+      onFuelChanged: (fuelId) => controller.setSelectedFuelTypeId(fuelId),
+      cardBuilder: (fuelId, fuelName) {
+        final supply = controller.getStationSupplyForFuel(fuelId);
+        final aeration = controller.getStationAerationForFuel(fuelId);
+        final dispense = controller.getStationDispenseForFuel(fuelId);
+        final balance = controller.getStationBalanceForFuel(fuelId);
 
-    return Column(
-      children: [
-        SizedBox(
-          height: 200,
-          child: PageView.builder(
-            controller: _fuelPageController,
-            itemCount: fuelTypes.length,
-            onPageChanged: (index) {
-              setState(() {
-                _selectedFuelPage = index;
-              });
-              if (index < fuelTypes.length) {
-                final fuelId = fuelTypes[index]['id'] as int;
-                controller.setSelectedFuelTypeId(fuelId);
-              }
-            },
-            itemBuilder: (context, index) {
-              final ft = fuelTypes[index];
-              final fuelId = ft['id'] as int;
-              final fuelName = ft['name'] as String;
-
-              final supply = controller.getStationSupplyForFuel(fuelId);
-              final aeration = controller.getStationAerationForFuel(fuelId);
-              final dispense = controller.getStationDispenseForFuel(fuelId);
-              final balance = controller.getStationBalanceForFuel(fuelId);
-
-              final balanceColor = balance >= 0
-                  ? const Color(0xFF15803D)
-                  : const Color(0xFFB91C1C);
-
-              final isPetrol =
-                  fuelName.contains('بترول') || fuelName.contains('بنزين');
-              final fuelBadgeBg =
-                  isPetrol ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF);
-              final fuelBadgeBorder =
-                  isPetrol ? const Color(0xFFFDE68A) : const Color(0xFFBFDBFE);
-              final fuelBadgeText =
-                  isPetrol ? const Color(0xFFB45309) : const Color(0xFF1D4ED8);
-
-              return Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border:
-                      Border.all(color: const Color(0xFF64748B), width: 1.2),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // رأس البطاقة: اسم المحطة والتهوية + شارة صنف الوقود
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 7, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFEFF6FF),
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(
-                                      color: const Color(0xFFBFDBFE),
-                                      width: 0.8),
-                                ),
-                                child: Text(
-                                  'محطة وقود',
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  widget.station.name,
-                                  style: AppTextStyles.heading2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // شارة الصنف المستقل
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: fuelBadgeBg,
-                            borderRadius: BorderRadius.circular(4),
-                            border:
-                                Border.all(color: fuelBadgeBorder, width: 0.8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.local_gas_station,
-                                  size: 14, color: fuelBadgeText),
-                              const SizedBox(width: 4),
-                              Text(
-                                'صنف: $fuelName',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: fuelBadgeText,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        if (widget.station.location != null &&
-                            widget.station.location!.isNotEmpty)
-                          Expanded(
-                            child: Row(
-                              children: [
-                                const Icon(Icons.location_on_outlined,
-                                    size: 13, color: AppColors.textMuted),
-                                const SizedBox(width: 4),
-                                Flexible(
-                                  child: Text(
-                                    widget.station.location!,
-                                    style: AppTextStyles.caption,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          const SizedBox(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'نسبة التهوية: ${widget.station.defaultCommissionRate}%',
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFD97706),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Divider(height: 1, color: AppColors.divider),
-                    ),
-
-                    // شبكة المؤشرات الأربعة للمحطة الخاصة بهذا الصنف
-                    Row(
-                      children: [
-                        // 1. الوارد الفعلي (أخضر +)
-                        Expanded(
-                          child: _buildMetricItem(
-                            title: 'الوارد الفعلي',
-                            liters: supply,
-                            color: const Color(0xFF15803D),
-                          ),
-                        ),
-                        Container(
-                            width: 1, height: 38, color: AppColors.divider),
-
-                        // 2. عمولة التهوية (برتقالي -)
-                        Expanded(
-                          child: _buildMetricItem(
-                            title: 'عمولة التهوية',
-                            liters: aeration,
-                            color: const Color(0xFFD97706),
-                          ),
-                        ),
-                        Container(
-                            width: 1, height: 38, color: AppColors.divider),
-
-                        // 3. المنصرف الفعلي (أحمر -)
-                        Expanded(
-                          child: _buildMetricItem(
-                            title: 'المنصرف الفعلي',
-                            liters: dispense,
-                            color: const Color(0xFFB91C1C),
-                          ),
-                        ),
-                        Container(
-                            width: 1, height: 38, color: AppColors.divider),
-
-                        // 4. الرصيد المتبقي
-                        Expanded(
-                          child: _buildMetricItem(
-                            title: 'الرصيد المتبقي',
-                            liters: balance,
-                            color: balanceColor,
-                            isBold: true,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // مكافئ الرصيد بالدباب والبراميل
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardBg,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'المكافئ لرصيد $fuelName المتبقي:',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.textSecondary),
-                          ),
-                          Text(
-                            AppFormatters.formatEquivalents(balance.abs()),
-                            style: AppTextStyles.caption.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        // مؤشر التنقل بين الأصناف (نقطتان فقط بدون أسهم أو نصوص)
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(fuelTypes.length, (i) {
-            final isSelected = i == _selectedFuelPage;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: isSelected ? 16 : 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(3),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMetricItem({
-    required String title,
-    required double liters,
-    required Color color,
-    bool isBold = false,
-  }) {
-    return Column(
-      children: [
-        Text(
-          title,
-          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${AppFormatters.formatQuantity(liters)} لتر',
-          style: TextStyle(
-            fontSize: isBold ? 14 : 12,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: color,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
+        return FuelCardData(
+          title: widget.station.name,
+          fuelName: fuelName,
+          balance: balance,
+          secondaryTag:
+              'التهوية: ${widget.station.defaultCommissionRate}%',
+          metrics: [
+            FuelCardMetric(value: supply, label: 'الوارد الفعلي'),
+            FuelCardMetric(
+              value: aeration,
+              label: 'عمولة التهوية',
+              valueColor: const Color(0xFFD97706),
+            ),
+            FuelCardMetric(value: dispense, label: 'المنصرف الفعلي'),
+          ],
+        );
+      },
     );
   }
 
