@@ -10,7 +10,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: AppColors.background,
       primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,

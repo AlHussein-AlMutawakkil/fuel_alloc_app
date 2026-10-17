@@ -11,13 +11,12 @@ class AppColors {
   static const Color primaryLight = Color(0xFF243B53);
 
   // الخلفيات
-  static const Color background = Color(0xFFFFFFFF);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color cardBg = Color(0xFFF8FAFC);
-  static const Color scaffoldBackground = Color(0xFFF8F8F8);
-  static const Color segmentBackground = Color(0xFFF1F1F1);
+  static const Color background = Color(0xFFf8f8f8);
+  static const Color surface = Color(0xFFffffff);
+  static const Color segmentBackground = Color(0xFFeaeaea);
+
   static const Color chipBackground = Color(0xFFF1F5F9);
-  static const Color highlightBackground = Color(0xFFF4F5F7);
+  static const Color highlightBackground = Color(0xFff8f8f8);
   static const Color charcoal = Color(0xFF1E1E1E);
 
   // عمليات التوريد: أخضر

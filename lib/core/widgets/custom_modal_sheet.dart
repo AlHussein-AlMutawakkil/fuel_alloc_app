@@ -110,7 +110,7 @@ class CustomModalSheet {
                                   child: Container(
                                     height: AppDimensions.inputHeight,
                                     decoration: const BoxDecoration(
-                                      color: AppColors.scaffoldBackground,
+                                      color: AppColors.background,
                                       borderRadius:
                                           AppDimensions.borderRadius2XL,
                                     ),

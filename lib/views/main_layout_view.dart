@@ -30,7 +30,7 @@ class _MainLayoutViewState extends State<MainLayoutView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: AppColors.background,
       body: _screens[_currentIndex],
       floatingActionButton: _currentIndex != 3
           ? FloatingActionButton(

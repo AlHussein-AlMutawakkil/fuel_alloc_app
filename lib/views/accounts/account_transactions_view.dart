@@ -154,7 +154,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     return Consumer<TransactionsController>(
       builder: (context, controller, child) {
         return Scaffold(
-          backgroundColor: AppColors.scaffoldBackground,
+          backgroundColor: AppColors.background,
           appBar: AppBar(
             title: _isSearching
                 ? TextField(

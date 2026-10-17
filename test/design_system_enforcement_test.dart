@@ -12,7 +12,7 @@ void main() {
     test('1. Centralized Design Tokens are fully defined and non-empty', () {
       // AppColors
       expect(AppColors.primary, isNotNull);
-      expect(AppColors.scaffoldBackground, isNotNull);
+      expect(AppColors.background, isNotNull);
       expect(AppColors.surface, isNotNull);
       expect(AppColors.supplyGreen, isNotNull);
       expect(AppColors.dispenseRed, isNotNull);

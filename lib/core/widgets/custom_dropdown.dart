@@ -220,7 +220,7 @@ class CustomDropdown<T> extends StatelessWidget {
       padding: padding ?? AppDimensions.paddingInputDense,
       decoration: BoxDecoration(
         color: enabled
-            ? (backgroundColor ?? AppColors.scaffoldBackground)
+            ? (backgroundColor ?? AppColors.background)
             : AppColors.chipBackground,
         borderRadius: effectiveBorderRadius,
         border: Border.all(

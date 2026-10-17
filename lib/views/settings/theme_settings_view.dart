@@ -20,7 +20,7 @@ class _ThemeSettingsViewState extends State<ThemeSettingsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: AppColors.background,
       appBar: const OneUiAppBar(
         title: AppStrings.themeTitle,
       ),

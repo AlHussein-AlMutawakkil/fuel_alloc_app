@@ -77,7 +77,7 @@ class _AccountsViewState extends State<AccountsView> {
             CustomDropdown<AccountType>(
               value: selectedType,
               borderColor: CustomModalSheet.fieldBorderColor,
-              backgroundColor: AppColors.scaffoldBackground,
+              backgroundColor: AppColors.background,
               items: const [
                 CustomDropdownItem(
                   value: AccountType.beneficiary,
@@ -303,7 +303,7 @@ class _AccountsViewState extends State<AccountsView> {
         final isStationTab = _activeTab == AccountFilterTab.stations;
 
         return Scaffold(
-          backgroundColor: AppColors.scaffoldBackground,
+          backgroundColor: AppColors.background,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: _isSearching

@@ -113,7 +113,7 @@ class _UnitsViewState extends State<UnitsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: AppColors.background,
       appBar: OneUiAppBar(
         title: AppStrings.unitsDirectory,
         actions: [

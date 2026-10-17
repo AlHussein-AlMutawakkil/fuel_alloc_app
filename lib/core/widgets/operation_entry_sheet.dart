@@ -352,7 +352,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   // 2. التبويبات الثلاثة العلوية (اعتماد / فعلي / نسبة)
                   Container(
                     decoration: BoxDecoration(
-                      color: AppColors.scaffoldBackground,
+                      color: AppColors.background,
                       borderRadius: AppDimensions.borderRadius2XL,
                       border: Border.all(
                         color: _fieldBorderColor,
@@ -393,7 +393,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       height: AppDimensions.segmentHeight,
                       padding: AppDimensions.paddingAllXS,
                       decoration: BoxDecoration(
-                        color: AppColors.scaffoldBackground,
+                        color: AppColors.background,
                         borderRadius: AppDimensions.borderRadius2XL,
                         border: Border.all(
                           color: _fieldBorderColor,
@@ -527,7 +527,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       height: AppDimensions.inputHeight,
                       padding: AppDimensions.paddingInputDense,
                       decoration: BoxDecoration(
-                        color: AppColors.scaffoldBackground,
+                        color: AppColors.background,
                         borderRadius: AppDimensions.borderRadius2XL,
                         border: Border.all(
                           color: _fieldBorderColor,
@@ -605,7 +605,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             Container(
                               height: AppDimensions.inputHeight,
                               decoration: BoxDecoration(
-                                color: AppColors.scaffoldBackground,
+                                color: AppColors.background,
                                 borderRadius: AppDimensions.borderRadius2XL,
                                 border: Border.all(
                                   color: _fieldBorderColor,
@@ -703,7 +703,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             CustomDropdown<int>(
                               value: _selectedFuelTypeId,
                               borderColor: _fieldBorderColor,
-                              backgroundColor: AppColors.scaffoldBackground,
+                              backgroundColor: AppColors.background,
                               items: fuelTypes.map((ft) {
                                 return CustomDropdownItem<int>(
                                   value: ft['id'] as int,
@@ -767,7 +767,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             hint: AppStrings.station,
                             value: _selectedStationId,
                             borderColor: _fieldBorderColor,
-                            backgroundColor: AppColors.scaffoldBackground,
+                            backgroundColor: AppColors.background,
                             items: txController.stations.map((st) {
                               return CustomDropdownItem<int?>(
                                 value: st['id'] as int,
@@ -812,7 +812,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               hint: AppStrings.referenceStationShort,
                               value: _selectedReferenceStationId,
                               borderColor: _fieldBorderColor,
-                              backgroundColor: AppColors.scaffoldBackground,
+                              backgroundColor: AppColors.background,
                               items: txController.stations.map((st) {
                                 return CustomDropdownItem<int?>(
                                   value: st['id'] as int,
@@ -844,7 +844,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             decoration: BoxDecoration(
                               color: _showReferenceStation
                                   ? AppColors.charcoal
-                                  : AppColors.scaffoldBackground,
+                                  : AppColors.background,
                               borderRadius: AppDimensions.borderRadius2XL,
                               border: Border.all(
                                 color: _showReferenceStation
@@ -903,7 +903,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                   horizontal: AppDimensions.spaceL,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppColors.scaffoldBackground,
+                                  color: AppColors.background,
                                   borderRadius: AppDimensions.borderRadius2XL,
                                   border: Border.all(
                                     color: _fieldBorderColor,
@@ -955,7 +955,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             Container(
                               height: AppDimensions.inputHeight,
                               decoration: BoxDecoration(
-                                color: AppColors.scaffoldBackground,
+                                color: AppColors.background,
                                 borderRadius: AppDimensions.borderRadius2XL,
                                 border: Border.all(
                                   color: _fieldBorderColor,
@@ -1004,7 +1004,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   Container(
                     height: 65,
                     decoration: BoxDecoration(
-                      color: AppColors.scaffoldBackground,
+                      color: AppColors.background,
                       borderRadius: AppDimensions.borderRadius2XL,
                       border: Border.all(
                         color: _fieldBorderColor,
@@ -1036,7 +1036,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           child: Container(
                             height: AppDimensions.inputHeight,
                             decoration: const BoxDecoration(
-                              color: AppColors.scaffoldBackground,
+                              color: AppColors.background,
                               borderRadius: AppDimensions.borderRadius2XL,
                             ),
                             alignment: Alignment.center,
@@ -1145,7 +1145,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                         color: AppColors.textTertiary,
                       ),
                       filled: true,
-                      fillColor: AppColors.scaffoldBackground,
+                      fillColor: AppColors.background,
                       contentPadding: AppDimensions.paddingInputDense,
                       border: OutlineInputBorder(
                         borderRadius: AppDimensions.borderRadius2XL,

@@ -98,7 +98,7 @@ class _FuelTypesViewState extends State<FuelTypesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: AppColors.background,
       appBar: OneUiAppBar(
         title: AppStrings.fuelTypesDirectory,
         actions: [

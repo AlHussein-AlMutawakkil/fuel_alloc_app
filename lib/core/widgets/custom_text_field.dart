@@ -123,7 +123,7 @@ class CustomTextField extends StatelessWidget {
   Widget _buildOneUiVariant() {
     final effectiveBorderRadius = borderRadius ?? AppDimensions.borderRadius2XL;
     final effectiveBorderColor = borderColor ?? AppColors.borderLight;
-    final effectiveFillColor = fillColor ?? AppColors.scaffoldBackground;
+    final effectiveFillColor = fillColor ?? AppColors.background;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

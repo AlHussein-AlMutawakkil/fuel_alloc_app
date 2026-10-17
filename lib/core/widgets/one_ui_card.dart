@@ -294,7 +294,7 @@ class OneUiAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final canPop = showBackButton && Navigator.canPop(context);
     return AppBar(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: AppColors.background,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
