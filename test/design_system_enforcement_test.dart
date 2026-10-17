@@ -6,6 +6,7 @@ import 'package:fuel_alloc_app/core/constants/app_dimensions.dart';
 import 'package:fuel_alloc_app/core/constants/app_icons.dart';
 import 'package:fuel_alloc_app/core/constants/app_strings.dart';
 import 'package:fuel_alloc_app/core/constants/app_typography.dart';
+import 'package:fuel_alloc_app/core/utils/formatters.dart';
 import 'package:fuel_alloc_app/core/widgets/widgets.dart';
 
 void main() {
@@ -207,6 +208,39 @@ void main() {
       // Verify item was selected and sheet closed
       expect(selectedValue, equals('حساب الأمانة'));
       expect(find.text(AppStrings.account), findsNothing);
+    });
+
+    test('6. AppFormatters.formatTafqeetQuantity formats Arabic words properly',
+        () {
+      expect(
+        AppFormatters.formatTafqeetQuantity(1,
+            unitName: 'لتر', fuelTypeName: 'بترول'),
+        equals('واحد لتر بترول'),
+      );
+      expect(
+        AppFormatters.formatTafqeetQuantity(20,
+            unitName: 'لتر', fuelTypeName: 'بترول'),
+        equals('عشرون لتر بترول'),
+      );
+      expect(
+        AppFormatters.formatTafqeetQuantity(1,
+            unitName: 'دبة', fuelTypeName: 'بترول'),
+        equals('واحد دبة بترول'),
+      );
+      expect(
+        AppFormatters.formatTafqeetQuantity(1000000,
+            unitName: 'ريال', fuelTypeName: 'يمني'),
+        equals('مليون ريال يمني'),
+      );
+      expect(
+        AppFormatters.formatTafqeetQuantity(5000,
+            unitName: 'لتر', fuelTypeName: 'ديزل'),
+        equals('خمسة آلاف لتر ديزل'),
+      );
+      expect(
+        AppFormatters.formatTafqeetQuantity(0),
+        equals(''),
+      );
     });
   });
 }

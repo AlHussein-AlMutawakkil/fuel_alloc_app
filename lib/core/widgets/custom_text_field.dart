@@ -121,7 +121,7 @@ class CustomTextField extends StatelessWidget {
   }
 
   Widget _buildOneUiVariant() {
-    final effectiveBorderRadius = borderRadius ?? AppDimensions.borderRadius2XL;
+    final effectiveBorderRadius = borderRadius ?? AppDimensions.borderRadiusL;
     final effectiveBorderColor = borderColor ?? AppColors.borderLight;
     final effectiveFillColor = fillColor ?? AppColors.background;
 

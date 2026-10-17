@@ -289,6 +289,17 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       orElse: () => {'name': AppStrings.unitLiter},
     )['name'] as String;
 
+    final currentFuelTypeName = fuelTypes.firstWhere(
+      (e) => e['id'] == _selectedFuelTypeId,
+      orElse: () => {'name': ''},
+    )['name'] as String;
+
+    final tafqeetText = AppFormatters.formatTafqeetQuantity(
+      enteredQty,
+      unitName: currentUnitName,
+      fuelTypeName: currentFuelTypeName,
+    );
+
     return Center(
       child: Container(
         margin: const EdgeInsets.symmetric(
@@ -558,30 +569,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               ),
                             ),
                           ),
-                          if (_accountBalanceLiters != null) ...[
-                            Container(
-                              padding: AppDimensions.paddingTag,
-                              decoration: BoxDecoration(
-                                color: AppColors.chipBackground,
-                                borderRadius: AppDimensions.borderRadiusXS,
-                                border: Border.all(
-                                  color: _fieldBorderColor,
-                                  width: AppDimensions.borderWidthThin,
-                                ),
-                              ),
-                              child: Text(
-                                '${AppFormatters.formatQuantity(_accountBalanceLiters!)} ${AppStrings.unitLiter}',
-                                style: TextStyle(
-                                  fontSize: AppTypography.sizeCaption,
-                                  fontWeight: AppTypography.weightBold,
-                                  color: _accountBalanceLiters! >= 0
-                                      ? AppColors.supplyGreen
-                                      : AppColors.dispenseRed,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: AppDimensions.spaceS),
-                          ],
                           const Icon(
                             AppIcons.dropdownArrowPlain,
                             color: AppColors.textTertiary,
@@ -591,6 +578,22 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       ),
                     ),
                   ),
+                  if (_accountBalanceLiters != null) ...[
+                    const SizedBox(height: AppDimensions.spaceS),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.spaceXS,
+                      ),
+                      child: Text(
+                        '${AppStrings.accountBalance} ${AppFormatters.formatQuantity(_accountBalanceLiters!)} ${AppStrings.unitLiter}',
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeBodySecondary,
+                          fontWeight: AppTypography.weightSemiBold,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: AppDimensions.spaceL),
 
                   // 5. صف: الكمية والصنف
@@ -607,7 +610,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               height: AppDimensions.inputHeight,
                               decoration: BoxDecoration(
                                 color: AppColors.background,
-                                borderRadius: AppDimensions.borderRadius2XL,
+                                borderRadius: AppDimensions.borderRadiusL,
                                 border: Border.all(
                                   color: _fieldBorderColor,
                                   width: AppDimensions.borderWidthThin,
@@ -723,6 +726,24 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                     ],
                   ),
 
+                  // تفقيط الكمية نصاً أسفل الصف كاملاً
+                  if (tafqeetText.isNotEmpty) ...[
+                    const SizedBox(height: AppDimensions.spaceS),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.spaceXS,
+                      ),
+                      child: Text(
+                        tafqeetText,
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeBodySecondary,
+                          fontWeight: AppTypography.weightSemiBold,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+
                   // عرض المعادل باللتر
                   if (_selectedUnitId != 1 && calculatedLiters > 0) ...[
                     const SizedBox(height: AppDimensions.spaceXXS + 1),
@@ -775,28 +796,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 label: st['name'] as String,
                               );
                             }).toList(),
-                            trailing: (!_showReferenceStation &&
-                                    _stationBalanceLiters != null)
-                                ? Container(
-                                    padding: AppDimensions.paddingMiniTag,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.surface,
-                                      borderRadius: AppDimensions.borderRadiusM,
-                                      border: Border.all(
-                                        color: _fieldBorderColor,
-                                        width: AppDimensions.borderWidthLight,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      '${AppFormatters.formatQuantity(_stationBalanceLiters!)} ${AppStrings.unitLiter}',
-                                      style: const TextStyle(
-                                        fontSize: AppTypography.sizeSmall,
-                                        fontWeight: AppTypography.weightBold,
-                                        color: AppColors.textDarkSlate,
-                                      ),
-                                    ),
-                                  )
-                                : null,
                             onChanged: (val) {
                               setState(() {
                                 _selectedStationId = val;
@@ -868,6 +867,22 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                         ),
                       ],
                     ),
+                    if (!_showReferenceStation && _stationBalanceLiters != null) ...[
+                      const SizedBox(height: AppDimensions.spaceS),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.spaceXS,
+                        ),
+                        child: Text(
+                          '${AppStrings.stationBalance} ${AppFormatters.formatQuantity(_stationBalanceLiters!)} ${AppStrings.unitLiter}',
+                          style: const TextStyle(
+                            fontSize: AppTypography.sizeBodySecondary,
+                            fontWeight: AppTypography.weightSemiBold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: AppDimensions.spaceL),
                   ],
 
@@ -1006,7 +1021,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                     height: 65,
                     decoration: BoxDecoration(
                       color: AppColors.background,
-                      borderRadius: AppDimensions.borderRadius2XL,
+                      borderRadius: AppDimensions.borderRadiusL,
                       border: Border.all(
                         color: _fieldBorderColor,
                         width: AppDimensions.borderWidthThin,
