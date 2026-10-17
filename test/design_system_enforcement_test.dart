@@ -63,6 +63,8 @@ void main() {
       expect(AppStrings.searchHere.isNotEmpty, isTrue);
 
       // AppTypography
+      expect(AppTypography.fontFamily, equals('Cairo'));
+      expect(AppTypography.body.fontFamily, equals('Cairo'));
       expect(AppTypography.heading1.fontSize, greaterThan(0));
       expect(AppTypography.body.fontSize, greaterThan(0));
       expect(AppTypography.caption.fontSize, greaterThan(0));

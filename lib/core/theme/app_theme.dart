@@ -10,6 +10,10 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: AppTypography.fontFamily,
+      textTheme: ThemeData.light().textTheme.apply(
+            fontFamily: AppTypography.fontFamily,
+          ),
       scaffoldBackgroundColor: AppColors.background,
       primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.light(
@@ -42,10 +46,14 @@ class AppTheme {
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textMuted,
         selectedLabelStyle: TextStyle(
+          fontFamily: AppTypography.fontFamily,
           fontWeight: AppTypography.weightBold,
           fontSize: AppTypography.sizeCaption,
         ),
-        unselectedLabelStyle: TextStyle(fontSize: AppTypography.sizeCaption),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: AppTypography.fontFamily,
+          fontSize: AppTypography.sizeCaption,
+        ),
         elevation: 8,
         type: BottomNavigationBarType.fixed,
       ),
