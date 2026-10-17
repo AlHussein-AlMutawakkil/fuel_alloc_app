@@ -197,7 +197,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     return Consumer<TransactionsController>(
       builder: (context, controller, child) {
         return Scaffold(
-          backgroundColor: AppColors.background,
+          backgroundColor: const Color(0xFFF8F8F8),
           appBar: AppBar(
             title: _isSearching
                 ? TextField(
@@ -337,7 +337,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     );
   }
 
-  /// بطاقة إحصائيات رصيد الحساب الموحدة (تتغير بالسحب بين الأصناف: بترول / ديزل)
+  /// بطاقة إحصائيات رصيد الحساب الموحدة (مطابقة تماماً لتصميم الصورة)
   Widget _buildSummaryCard(TransactionsController controller, bool isSupplier) {
     final fuelTypes = controller.fuelTypes.isNotEmpty
         ? controller.fuelTypes
@@ -349,7 +349,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     return Column(
       children: [
         SizedBox(
-          height: 188,
+          height: 208,
           child: PageView.builder(
             controller: _fuelPageController,
             itemCount: fuelTypes.length,
@@ -371,172 +371,164 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
               final actual = controller.getActualLitersForFuel(fuelId);
               final balance = controller.getBalanceLitersForFuel(fuelId);
 
-              final balanceColor = balance >= 0
-                  ? const Color(0xFF15803D)
-                  : const Color(0xFFB91C1C);
-
-              final isPetrol =
-                  fuelName.contains('بترول') || fuelName.contains('بنزين');
-              final fuelBadgeBg =
-                  isPetrol ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF);
-              final fuelBadgeBorder =
-                  isPetrol ? const Color(0xFFFDE68A) : const Color(0xFFBFDBFE);
-              final fuelBadgeText =
-                  isPetrol ? const Color(0xFFB45309) : const Color(0xFF1D4ED8);
-
               return Container(
-                padding: const EdgeInsets.all(16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border:
-                      Border.all(color: const Color(0xFF64748B), width: 1.2),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // رأس البطاقة: نوع الحساب واسم الحساب + شارة الصنف المستقل
+                    // الصف العلوي: اسم الحساب (يمين في RTL) + شارة الصنف البيضاوية السوداء (يسار في RTL)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isSupplier
-                                    ? const Color(0xFFEFF6FF)
-                                    : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(4),
-                                border: Border.all(
-                                  color: isSupplier
-                                      ? const Color(0xFFBFDBFE)
-                                      : const Color(0xFFCBD5E1),
-                                  width: 0.8,
-                                ),
-                              ),
-                              child: Text(
-                                isSupplier
-                                    ? AppStrings.typeSupplier
-                                    : AppStrings.typeBeneficiary,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isSupplier
-                                      ? AppColors.primary
-                                      : AppColors.textSecondary,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                        // اسم الحساب (بدل Free)
+                        Expanded(
+                          child: Text(
+                            widget.account.name,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              widget.account.name,
-                              style: AppTextStyles.heading2,
-                            ),
-                          ],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        // شارة الصنف مع أيقونة المحطة
+                        const SizedBox(width: 12),
+                        // شارة الصنف البيضاوية السوداء (بدل ترقية): بترول / ديزل مباشرة بدون كلمة الصنف
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
+                              horizontal: 18, vertical: 6),
                           decoration: BoxDecoration(
-                            color: fuelBadgeBg,
-                            borderRadius: BorderRadius.circular(4),
-                            border:
-                                Border.all(color: fuelBadgeBorder, width: 0.8),
+                            color: const Color(0xFF1E1E1E),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.local_gas_station,
-                                  size: 14, color: fuelBadgeText),
-                              const SizedBox(width: 4),
-                              Text(
-                                'صنف: $fuelName',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: fuelBadgeText,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            fuelName,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ],
                     ),
+
+                    // خط فاصل ناعم وخفيف تحت الصف العلوي
                     const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Divider(height: 1, color: AppColors.divider),
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Divider(
+                        height: 1,
+                        thickness: 0.8,
+                        color: Color(0xFFF1F5F9),
+                      ),
                     ),
 
-                    // شبكة المؤشرات المالية الخاصة بهذا الصنف
+                    // الجزء الأوسط: الرصيد المتبقي مع أيقونة النجمة ✦ (بدل 40 الأرصدة ✦)
                     Row(
                       children: [
-                        // إجمالي الاعتماد لهذا الصنف
-                        Expanded(
-                          child: _buildMetricItem(
-                            title: isSupplier
-                                ? AppStrings.suppliedQuota
-                                : AppStrings.totalQuota,
-                            liters: quota,
-                            color: const Color(0xFF15803D),
+                        const Icon(
+                          Icons.auto_awesome,
+                          size: 18,
+                          color: Color(0xFF1E293B),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppFormatters.formatQuantity(balance),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
                           ),
                         ),
-                        Container(
-                            width: 1, height: 40, color: AppColors.divider),
-
-                        // إجمالي المنفذ الفعلي لهذا الصنف
-                        Expanded(
-                          child: _buildMetricItem(
-                            title: isSupplier
-                                ? AppStrings.suppliedActual
-                                : AppStrings.totalActual,
-                            liters: actual,
-                            color: isSupplier
-                                ? const Color(0xFF15803D)
-                                : const Color(0xFFB91C1C),
-                          ),
-                        ),
-                        Container(
-                            width: 1, height: 40, color: AppColors.divider),
-
-                        // الرصيد المتبقي لهذا الصنف
-                        Expanded(
-                          child: _buildMetricItem(
-                            title: isSupplier
-                                ? AppStrings.differenceBalance
-                                : AppStrings.balanceQuota,
-                            liters: balance,
-                            color: balanceColor,
-                            isBold: true,
+                        const SizedBox(width: 6),
+                        const Text(
+                          'الرصيد المتبقي',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 14),
 
-                    // مكافئ الرصيد بالدباب والبراميل لهذا الصنف
-                    const SizedBox(height: 8),
+                    // الجزء السفلي: المربع الرمادي الفاتح (بدل الاشتراك والمكافأة)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
+                          vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(
-                        color: AppColors.cardBg,
-                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0xFFF4F5F7),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'المكافئ لرصيد $fuelName المتبقي:',
-                            style: AppTextStyles.caption
-                                .copyWith(color: AppColors.textSecondary),
+                          // اليمين (بدل الاشتراك): إجمالي الاعتماد / التوريد
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppFormatters.formatQuantity(quota),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isSupplier
+                                      ? 'إجمالي التوريد'
+                                      : 'إجمالي الاعتماد',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF94A3B8),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          Text(
-                            AppFormatters.formatEquivalents(balance.abs()),
-                            style: AppTextStyles.caption.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
+                          // اليسار (بدل مكافأة): إجمالي الفعلي / الصرف
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppFormatters.formatQuantity(actual),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isSupplier
+                                      ? 'إجمالي الصرف'
+                                      : 'إجمالي الفعلي',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF94A3B8),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -565,33 +557,6 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
               ),
             );
           }),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMetricItem({
-    required String title,
-    required double liters,
-    required Color color,
-    bool isBold = false,
-  }) {
-    return Column(
-      children: [
-        Text(
-          title,
-          style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '${AppFormatters.formatQuantity(liters)} ${AppStrings.unitLiter}',
-          style: TextStyle(
-            fontSize: isBold ? 15 : 13,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: color,
-          ),
-          textAlign: TextAlign.center,
         ),
       ],
     );
