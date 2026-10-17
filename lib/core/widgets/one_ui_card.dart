@@ -296,7 +296,8 @@ class OneUiAppBar extends StatelessWidget implements PreferredSizeWidget {
                 color: Color(0xFF0F172A),
               ),
               tooltip: 'رجوع',
-              onPressed: onBackPressed ?? () => Navigator.of(context).maybePop(),
+              onPressed:
+                  onBackPressed ?? () => Navigator.of(context).maybePop(),
             )
           : null,
       title: Text(
@@ -314,4 +315,3 @@ class OneUiAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
-

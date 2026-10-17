@@ -37,7 +37,8 @@ class AppTheme {
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textMuted,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        selectedLabelStyle:
+            TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
         unselectedLabelStyle: TextStyle(fontSize: 12),
         elevation: 8,
         type: BottomNavigationBarType.fixed,

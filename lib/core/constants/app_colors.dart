@@ -31,7 +31,7 @@ class AppColors {
   // الحدود والفواصل
   static const Color border = Color(0xFFCBD5E1);
   static const Color divider = Color(0xFFE2E8F0);
-  
+
   // حالات النظام
   static const Color warning = Color(0xFFD97706);
   static const Color info = Color(0xFF2563EB);

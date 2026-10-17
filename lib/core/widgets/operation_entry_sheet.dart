@@ -89,7 +89,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
   final TextEditingController _quantityController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _statementController = TextEditingController();
-  final TextEditingController _referenceNumberController = TextEditingController();
+  final TextEditingController _referenceNumberController =
+      TextEditingController();
 
   bool _isEdit = false;
 
@@ -114,7 +115,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
       _selectedStationId = tx.stationId;
       _selectedReferenceStationId = tx.referenceStationId;
-      _showReferenceStation = tx.referenceStationId != null && tx.referenceStationId != tx.stationId;
+      _showReferenceStation = tx.referenceStationId != null &&
+          tx.referenceStationId != tx.stationId;
 
       _selectedFuelTypeId = tx.fuelTypeId;
       _selectedUnitId = tx.unitId;
@@ -146,7 +148,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       }
 
       // مطابقة الحساب إذا تم التمرير في التعديل
-      if (_selectedAccount == null && widget.editTransaction?.accountId != null) {
+      if (_selectedAccount == null &&
+          widget.editTransaction?.accountId != null) {
         final matches = accController.accounts.where(
           (a) => a.id == widget.editTransaction!.accountId,
         );
@@ -197,10 +200,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     }
     if (_selectedDirection == 0) {
       // توريد: الموردين فقط
-      return accounts.where((a) => a.accountType == AccountType.supplier).toList();
+      return accounts
+          .where((a) => a.accountType == AccountType.supplier)
+          .toList();
     } else {
       // صرف: العملاء والمستفيدين فقط
-      return accounts.where((a) => a.accountType == AccountType.beneficiary).toList();
+      return accounts
+          .where((a) => a.accountType == AccountType.beneficiary)
+          .toList();
     }
   }
 
@@ -210,7 +217,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
     if (_selectedAccount?.id != null) {
       final isSupplier = _selectedAccount!.accountType == AccountType.supplier;
-      final bal = await txController.getAccountBalance(_selectedAccount!.id!, isSupplier);
+      final bal = await txController.getAccountBalance(
+          _selectedAccount!.id!, isSupplier);
       if (mounted) {
         setState(() {
           _accountBalanceLiters = bal;
@@ -268,7 +276,11 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         : [
             {'id': 1, 'name': AppStrings.unitLiter, 'conversion_factor': 1.0},
             {'id': 2, 'name': AppStrings.unitDabba, 'conversion_factor': 20.0},
-            {'id': 3, 'name': AppStrings.unitBarrel, 'conversion_factor': 200.0},
+            {
+              'id': 3,
+              'name': AppStrings.unitBarrel,
+              'conversion_factor': 200.0
+            },
           ];
 
     _selectedFuelTypeId ??= fuelTypes.first['id'] as int?;
@@ -395,7 +407,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFf8f8f8),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _fieldBorderColor, width: 1.0),
+                        border:
+                            Border.all(color: _fieldBorderColor, width: 1.0),
                       ),
                       child: Row(
                         children: [
@@ -406,9 +419,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 setState(() {
                                   _selectedDirection = 0;
                                   // تصفية الحساب الذكي تلقائياً
-                                  final validAccounts = _getFilteredAccounts(accController.accounts);
-                                  if (_selectedAccount == null || !validAccounts.contains(_selectedAccount)) {
-                                    _selectedAccount = validAccounts.isNotEmpty ? validAccounts.first : null;
+                                  final validAccounts = _getFilteredAccounts(
+                                      accController.accounts);
+                                  if (_selectedAccount == null ||
+                                      !validAccounts
+                                          .contains(_selectedAccount)) {
+                                    _selectedAccount = validAccounts.isNotEmpty
+                                        ? validAccounts.first
+                                        : null;
                                   }
                                 });
                                 _updateLiveBalances();
@@ -456,9 +474,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 setState(() {
                                   _selectedDirection = 1;
                                   // تصفية الحساب الذكي تلقائياً
-                                  final validAccounts = _getFilteredAccounts(accController.accounts);
-                                  if (_selectedAccount == null || !validAccounts.contains(_selectedAccount)) {
-                                    _selectedAccount = validAccounts.isNotEmpty ? validAccounts.first : null;
+                                  final validAccounts = _getFilteredAccounts(
+                                      accController.accounts);
+                                  if (_selectedAccount == null ||
+                                      !validAccounts
+                                          .contains(_selectedAccount)) {
+                                    _selectedAccount = validAccounts.isNotEmpty
+                                        ? validAccounts.first
+                                        : null;
                                   }
                                 });
                                 _updateLiveBalances();
@@ -509,7 +532,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   // 4. حقل الحساب مع الرصيد المباشر وحدود واضحة
                   _buildFieldLabel('الحساب'),
                   InkWell(
-                    onTap: () => _openAccountPicker(_getFilteredAccounts(accController.accounts)),
+                    onTap: () => _openAccountPicker(
+                        _getFilteredAccounts(accController.accounts)),
                     borderRadius: BorderRadius.circular(14),
                     child: Container(
                       height: 48,
@@ -517,11 +541,13 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFf8f8f8),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: _fieldBorderColor, width: 1.0),
+                        border:
+                            Border.all(color: _fieldBorderColor, width: 1.0),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.person, color: Color(0xFF64748B), size: 20),
+                          const Icon(Icons.person,
+                              color: Color(0xFF64748B), size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -540,11 +566,13 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           // عرض رصيد الحساب المباشر بشكل أنيق ومختصر
                           if (_accountBalanceLiters != null) ...[
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: _fieldBorderColor, width: 1),
+                                border: Border.all(
+                                    color: _fieldBorderColor, width: 1),
                               ),
                               child: Text(
                                 '${AppFormatters.formatQuantity(_accountBalanceLiters!)} لتر',
@@ -559,7 +587,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             ),
                             const SizedBox(width: 6),
                           ],
-                          const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B), size: 18),
+                          const Icon(Icons.keyboard_arrow_down,
+                              color: Color(0xFF64748B), size: 18),
                         ],
                       ),
                     ),
@@ -582,22 +611,30 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFf8f8f8),
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: _fieldBorderColor, width: 1.0),
+                                border: Border.all(
+                                    color: _fieldBorderColor, width: 1.0),
                               ),
                               child: Row(
                                 children: [
                                   Expanded(
                                     child: TextField(
                                       controller: _quantityController,
-                                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                              decimal: true),
+                                      style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A)),
                                       textAlign: TextAlign.start,
                                       decoration: const InputDecoration(
                                         isDense: true,
                                         border: InputBorder.none,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 14),
+                                        contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 14),
                                         hintText: '0.00',
-                                        hintStyle: TextStyle(color: Color(0xFF94A3B8)),
+                                        hintStyle:
+                                            TextStyle(color: Color(0xFF94A3B8)),
                                       ),
                                       onChanged: (_) => setState(() {}),
                                     ),
@@ -617,10 +654,13 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                       );
                                     }).toList(),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 8),
                                       decoration: const BoxDecoration(
                                         border: Border(
-                                          right: BorderSide(color: _fieldBorderColor, width: 1.0),
+                                          right: BorderSide(
+                                              color: _fieldBorderColor,
+                                              width: 1.0),
                                         ),
                                       ),
                                       child: Row(
@@ -635,7 +675,9 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                             ),
                                           ),
                                           const SizedBox(width: 2),
-                                          const Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF64748B)),
+                                          const Icon(Icons.arrow_drop_down,
+                                              size: 16,
+                                              color: Color(0xFF64748B)),
                                         ],
                                       ),
                                     ),
@@ -656,18 +698,21 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           children: [
                             _buildFieldLabel('الصنف'),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
                               height: 48,
                               decoration: BoxDecoration(
                                 color: const Color(0xFFf8f8f8),
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: _fieldBorderColor, width: 1.0),
+                                border: Border.all(
+                                    color: _fieldBorderColor, width: 1.0),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<int>(
                                   isExpanded: true,
                                   value: _selectedFuelTypeId,
-                                  icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B), size: 18),
+                                  icon: const Icon(Icons.keyboard_arrow_down,
+                                      color: Color(0xFF64748B), size: 18),
                                   items: fuelTypes.map((ft) {
                                     return DropdownMenuItem<int>(
                                       value: ft['id'] as int,
@@ -704,7 +749,10 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       padding: const EdgeInsets.symmetric(horizontal: 4.0),
                       child: Text(
                         'المعادل: ${AppFormatters.formatQuantity(calculatedLiters)} لتر',
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -719,7 +767,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                         children: [
                           Expanded(flex: 5, child: _buildFieldLabel('المحطة')),
                           const SizedBox(width: 8),
-                          Expanded(flex: 5, child: _buildFieldLabel('مرجع المحطة')),
+                          Expanded(
+                              flex: 5, child: _buildFieldLabel('مرجع المحطة')),
                           const SizedBox(width: 52), // موازنة زر التحويل
                         ],
                       ),
@@ -734,7 +783,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             decoration: BoxDecoration(
                               color: const Color(0xFFf8f8f8),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: _fieldBorderColor, width: 1.0),
+                              border: Border.all(
+                                  color: _fieldBorderColor, width: 1.0),
                             ),
                             child: Row(
                               children: [
@@ -743,14 +793,21 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                     child: DropdownButton<int?>(
                                       isExpanded: true,
                                       value: _selectedStationId,
-                                      hint: const Text('المحطة', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
-                                      icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B), size: 18),
+                                      hint: const Text('المحطة',
+                                          style: TextStyle(
+                                              color: Color(0xFF94A3B8),
+                                              fontSize: 13)),
+                                      icon: const Icon(
+                                          Icons.keyboard_arrow_down,
+                                          color: Color(0xFF64748B),
+                                          size: 18),
                                       items: txController.stations.map((st) {
                                         return DropdownMenuItem<int?>(
                                           value: st['id'] as int,
                                           child: Text(
                                             st['name'] as String,
-                                            style: const TextStyle(fontSize: 13),
+                                            style:
+                                                const TextStyle(fontSize: 13),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         );
@@ -765,14 +822,17 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                   ),
                                 ),
                                 // عرض الرصيد المتبقي في المحطة إذا لم يكن حقل المرجع مفتوحاً
-                                if (!_showReferenceStation && _stationBalanceLiters != null) ...[
+                                if (!_showReferenceStation &&
+                                    _stationBalanceLiters != null) ...[
                                   const SizedBox(width: 4),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 3),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(color: _fieldBorderColor, width: 0.8),
+                                      border: Border.all(
+                                          color: _fieldBorderColor, width: 0.8),
                                     ),
                                     child: Text(
                                       '${AppFormatters.formatQuantity(_stationBalanceLiters!)} لتر',
@@ -795,19 +855,25 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           Expanded(
                             flex: 5,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 14),
                               height: 48,
                               decoration: BoxDecoration(
                                 color: const Color(0xFFf8f8f8),
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: _fieldBorderColor, width: 1.0),
+                                border: Border.all(
+                                    color: _fieldBorderColor, width: 1.0),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<int?>(
                                   isExpanded: true,
                                   value: _selectedReferenceStationId,
-                                  hint: const Text('محطة المرجع', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 13)),
-                                  icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B), size: 18),
+                                  hint: const Text('محطة المرجع',
+                                      style: TextStyle(
+                                          color: Color(0xFF94A3B8),
+                                          fontSize: 13)),
+                                  icon: const Icon(Icons.keyboard_arrow_down,
+                                      color: Color(0xFF64748B), size: 18),
                                   items: txController.stations.map((st) {
                                     return DropdownMenuItem<int?>(
                                       value: st['id'] as int,
@@ -846,18 +912,26 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             width: 48,
                             height: 48,
                             decoration: BoxDecoration(
-                              color: _showReferenceStation ? const Color(0xFF1E1E1E) : const Color(0xFFf8f8f8),
+                              color: _showReferenceStation
+                                  ? const Color(0xFF1E1E1E)
+                                  : const Color(0xFFf8f8f8),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: _showReferenceStation ? const Color(0xFF1E1E1E) : _fieldBorderColor,
+                                color: _showReferenceStation
+                                    ? const Color(0xFF1E1E1E)
+                                    : _fieldBorderColor,
                                 width: 1.0,
                               ),
                             ),
                             alignment: Alignment.center,
                             child: Icon(
-                              _showReferenceStation ? Icons.close : Icons.swap_horiz,
+                              _showReferenceStation
+                                  ? Icons.close
+                                  : Icons.swap_horiz,
                               size: 20,
-                              color: _showReferenceStation ? Colors.white : const Color(0xFF64748B),
+                              color: _showReferenceStation
+                                  ? Colors.white
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ),
@@ -896,26 +970,37 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               borderRadius: BorderRadius.circular(14),
                               child: Container(
                                 height: 48,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFf8f8f8),
                                   borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(color: _fieldBorderColor, width: 1.0),
+                                  border: Border.all(
+                                      color: _fieldBorderColor, width: 1.0),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Row(
                                       children: [
-                                        const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF64748B)),
+                                        const Icon(
+                                            Icons.calendar_today_outlined,
+                                            size: 16,
+                                            color: Color(0xFF64748B)),
                                         const SizedBox(width: 8),
                                         Text(
                                           _dateController.text,
-                                          style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                                          style: const TextStyle(
+                                              fontSize: 13,
+                                              color: Color(0xFF1E293B)),
                                         ),
                                       ],
                                     ),
-                                    const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B), size: 18),
+                                    const Icon(
+                                        Icons.keyboard_arrow_down_rounded,
+                                        color: Color(0xFF64748B),
+                                        size: 18),
                                   ],
                                 ),
                               ),
@@ -937,13 +1022,16 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFf8f8f8),
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: _fieldBorderColor, width: 1.0),
+                                border: Border.all(
+                                    color: _fieldBorderColor, width: 1.0),
                               ),
                               child: Row(
                                 children: [
                                   const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 10.0),
-                                    child: Icon(Icons.tag, color: Color(0xFF64748B), size: 18),
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 10.0),
+                                    child: Icon(Icons.tag,
+                                        color: Color(0xFF64748B), size: 18),
                                   ),
                                   Expanded(
                                     child: TextField(
@@ -951,7 +1039,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                       style: const TextStyle(fontSize: 13),
                                       decoration: const InputDecoration(
                                         border: InputBorder.none,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 2),
+                                        contentPadding:
+                                            EdgeInsets.symmetric(horizontal: 2),
                                       ),
                                     ),
                                   ),
@@ -1075,13 +1164,17 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _selectedDirection == 0 ? 'اختر المورد' : 'اختر العميل المستفيد',
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        _selectedDirection == 0
+                            ? 'اختر المورد'
+                            : 'اختر العميل المستفيد',
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, size: 20),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints:
+                            const BoxConstraints(minWidth: 32, minHeight: 32),
                         onPressed: () => Navigator.of(ctx).pop(),
                       ),
                     ],
@@ -1090,21 +1183,26 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   TextField(
                     decoration: InputDecoration(
                       hintText: 'بحث...',
-                      prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+                      prefixIcon: const Icon(Icons.search,
+                          size: 18, color: Color(0xFF64748B)),
                       filled: true,
                       fillColor: const Color(0xFFF8F8F8),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: _fieldBorderColor, width: 1.0),
+                        borderSide: const BorderSide(
+                            color: _fieldBorderColor, width: 1.0),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: _fieldBorderColor, width: 1.0),
+                        borderSide: const BorderSide(
+                            color: _fieldBorderColor, width: 1.0),
                       ),
                       focusedBorder: const OutlineInputBorder(
                         borderRadius: BorderRadius.all(Radius.circular(14)),
-                        borderSide: BorderSide(color: Color(0xFF1E1E1E), width: 1.2),
+                        borderSide:
+                            BorderSide(color: Color(0xFF1E1E1E), width: 1.2),
                       ),
                     ),
                     onChanged: (val) {
@@ -1117,19 +1215,28 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   Expanded(
                     child: filtered.isEmpty
                         ? const Center(
-                            child: Text('لا توجد حسابات مسجلة لهذا النوع', style: TextStyle(color: Color(0xFF94A3B8))),
+                            child: Text('لا توجد حسابات مسجلة لهذا النوع',
+                                style: TextStyle(color: Color(0xFF94A3B8))),
                           )
                         : ListView.separated(
                             itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 1),
                             itemBuilder: (_, idx) {
                               final acc = filtered[idx];
                               return ListTile(
-                                leading: const Icon(Icons.person_outline, color: Color(0xFF64748B)),
-                                title: Text(acc.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                leading: const Icon(Icons.person_outline,
+                                    color: Color(0xFF64748B)),
+                                title: Text(acc.name,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14)),
                                 subtitle: Text(
-                                  acc.accountType == AccountType.supplier ? 'مورد (جهة عليا)' : 'عميل مستفيد',
-                                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                  acc.accountType == AccountType.supplier
+                                      ? 'مورد (جهة عليا)'
+                                      : 'عميل مستفيد',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Color(0xFF64748B)),
                                 ),
                                 onTap: () {
                                   setState(() {
@@ -1177,7 +1284,11 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         : [
             {'id': 1, 'name': AppStrings.unitLiter, 'conversion_factor': 1.0},
             {'id': 2, 'name': AppStrings.unitDabba, 'conversion_factor': 20.0},
-            {'id': 3, 'name': AppStrings.unitBarrel, 'conversion_factor': 200.0},
+            {
+              'id': 3,
+              'name': AppStrings.unitBarrel,
+              'conversion_factor': 200.0
+            },
           ];
     final u = units.firstWhere(
       (e) => e['id'] == _selectedUnitId,
@@ -1195,7 +1306,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       typeId: typeId,
       accountId: _selectedAccount?.id,
       stationId: isActual ? _selectedStationId : null,
-      referenceStationId: isActual ? (_selectedReferenceStationId ?? _selectedStationId) : null,
+      referenceStationId:
+          isActual ? (_selectedReferenceStationId ?? _selectedStationId) : null,
       fuelTypeId: _selectedFuelTypeId,
       unitId: _selectedUnitId!,
       enteredQuantity: qty,
@@ -1238,8 +1350,10 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
           // تصفية الحساب الذكي
           final accController = context.read<AccountsController>();
           final validAccounts = _getFilteredAccounts(accController.accounts);
-          if (_selectedAccount == null || !validAccounts.contains(_selectedAccount)) {
-            _selectedAccount = validAccounts.isNotEmpty ? validAccounts.first : null;
+          if (_selectedAccount == null ||
+              !validAccounts.contains(_selectedAccount)) {
+            _selectedAccount =
+                validAccounts.isNotEmpty ? validAccounts.first : null;
           }
         });
         _updateLiveBalances();

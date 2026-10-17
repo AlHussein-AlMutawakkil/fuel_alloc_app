@@ -22,7 +22,8 @@ class StationTransactionsView extends StatefulWidget {
   });
 
   @override
-  State<StationTransactionsView> createState() => _StationTransactionsViewState();
+  State<StationTransactionsView> createState() =>
+      _StationTransactionsViewState();
 }
 
 class _StationTransactionsViewState extends State<StationTransactionsView> {
@@ -36,7 +37,9 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.station.id != null) {
-        context.read<TransactionsController>().fetchStationTransactions(widget.station.id!);
+        context
+            .read<TransactionsController>()
+            .fetchStationTransactions(widget.station.id!);
       }
     });
   }
@@ -84,10 +87,11 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
     );
 
     if (confirm && tx.id != null && widget.station.id != null && mounted) {
-      final success = await context.read<TransactionsController>().deleteStationTransaction(
-            tx.id!,
-            widget.station.id!,
-          );
+      final success =
+          await context.read<TransactionsController>().deleteStationTransaction(
+                tx.id!,
+                widget.station.id!,
+              );
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -111,7 +115,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(AppStrings.operationDetails, style: AppTextStyles.heading2),
+            const Text(AppStrings.operationDetails,
+                style: AppTextStyles.heading2),
             IconButton(
               icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)),
               padding: EdgeInsets.zero,
@@ -123,14 +128,18 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDetailRow(AppStrings.labelOperationType, tx.typeName ?? AppStrings.operation),
-            _buildDetailRow(AppStrings.labelDate, AppFormatters.formatDate(tx.transactionDate)),
+            _buildDetailRow(AppStrings.labelOperationType,
+                tx.typeName ?? AppStrings.operation),
+            _buildDetailRow(AppStrings.labelDate,
+                AppFormatters.formatDate(tx.transactionDate)),
             if (tx.accountName != null)
               _buildDetailRow('الحساب المرتبط:', tx.accountName!),
             if (tx.stationName != null)
               _buildDetailRow(AppStrings.labelStation, tx.stationName!),
-            if (tx.referenceStationName != null && tx.referenceStationName != tx.stationName)
-              _buildDetailRow(AppStrings.labelReferenceStation, tx.referenceStationName!),
+            if (tx.referenceStationName != null &&
+                tx.referenceStationName != tx.stationName)
+              _buildDetailRow(
+                  AppStrings.labelReferenceStation, tx.referenceStationName!),
             _buildDetailRow(AppStrings.labelFuelType, tx.fuelTypeName ?? '-'),
             _buildDetailRow(
               AppStrings.labelEnteredQuantity,
@@ -167,7 +176,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
             width: 110,
             child: Text(
               label,
-              style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
+              style:
+                  AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           Expanded(
@@ -193,7 +203,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     cursorColor: Colors.white,
                     decoration: InputDecoration(
                       hintText: 'بحث في عمليات المحطة أو التاريخ أو البيان...',
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                      hintStyle:
+                          TextStyle(color: Colors.white.withOpacity(0.7)),
                       border: InputBorder.none,
                     ),
                     onChanged: (val) => controller.setSearchQuery(val),
@@ -270,7 +281,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     const Spacer(),
                     Text(
                       '${AppStrings.totalOperations}: ${_getFilteredTransactions(controller).length}',
-                      style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
+                      style: AppTextStyles.caption
+                          .copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -280,7 +292,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                 Expanded(
                   child: controller.isLoading
                       ? const Center(
-                          child: CircularProgressIndicator(color: AppColors.primary),
+                          child: CircularProgressIndicator(
+                              color: AppColors.primary),
                         )
                       : _getFilteredTransactions(controller).isEmpty
                           ? Center(
@@ -302,16 +315,20 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                                     text: 'تسجيل أول عملية في المحطة',
                                     icon: Icons.add,
                                     variant: ButtonVariant.secondary,
-                                    onPressed: () => _openAddTransactionDialog(),
+                                    onPressed: () =>
+                                        _openAddTransactionDialog(),
                                   ),
                                 ],
                               ),
                             )
                           : ListView.separated(
-                              itemCount: _getFilteredTransactions(controller).length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 10),
+                              itemCount:
+                                  _getFilteredTransactions(controller).length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 10),
                               itemBuilder: (context, index) {
-                                final tx = _getFilteredTransactions(controller)[index];
+                                final tx =
+                                    _getFilteredTransactions(controller)[index];
                                 return _buildStationTransactionCard(tx);
                               },
                             ),
@@ -324,7 +341,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
     );
   }
 
-  List<TransactionModel> _getFilteredTransactions(TransactionsController controller) {
+  List<TransactionModel> _getFilteredTransactions(
+      TransactionsController controller) {
     return controller.transactions;
   }
 
@@ -367,17 +385,22 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                   ? const Color(0xFF15803D)
                   : const Color(0xFFB91C1C);
 
-              final isPetrol = fuelName.contains('بترول') || fuelName.contains('بنزين');
-              final fuelBadgeBg = isPetrol ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF);
-              final fuelBadgeBorder = isPetrol ? const Color(0xFFFDE68A) : const Color(0xFFBFDBFE);
-              final fuelBadgeText = isPetrol ? const Color(0xFFB45309) : const Color(0xFF1D4ED8);
+              final isPetrol =
+                  fuelName.contains('بترول') || fuelName.contains('بنزين');
+              final fuelBadgeBg =
+                  isPetrol ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF);
+              final fuelBadgeBorder =
+                  isPetrol ? const Color(0xFFFDE68A) : const Color(0xFFBFDBFE);
+              final fuelBadgeText =
+                  isPetrol ? const Color(0xFFB45309) : const Color(0xFF1D4ED8);
 
               return Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF64748B), width: 1.2),
+                  border:
+                      Border.all(color: const Color(0xFF64748B), width: 1.2),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,11 +414,14 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFEFF6FF),
                                   borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: const Color(0xFFBFDBFE), width: 0.8),
+                                  border: Border.all(
+                                      color: const Color(0xFFBFDBFE),
+                                      width: 0.8),
                                 ),
                                 child: Text(
                                   'محطة وقود',
@@ -418,16 +444,19 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                         ),
                         // شارة الصنف المستقل
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: fuelBadgeBg,
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: fuelBadgeBorder, width: 0.8),
+                            border:
+                                Border.all(color: fuelBadgeBorder, width: 0.8),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.local_gas_station, size: 14, color: fuelBadgeText),
+                              Icon(Icons.local_gas_station,
+                                  size: 14, color: fuelBadgeText),
                               const SizedBox(width: 4),
                               Text(
                                 'صنف: $fuelName',
@@ -446,11 +475,13 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        if (widget.station.location != null && widget.station.location!.isNotEmpty)
+                        if (widget.station.location != null &&
+                            widget.station.location!.isNotEmpty)
                           Expanded(
                             child: Row(
                               children: [
-                                const Icon(Icons.location_on_outlined, size: 13, color: AppColors.textMuted),
+                                const Icon(Icons.location_on_outlined,
+                                    size: 13, color: AppColors.textMuted),
                                 const SizedBox(width: 4),
                                 Flexible(
                                   child: Text(
@@ -465,7 +496,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                         else
                           const SizedBox(),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFEF3C7),
                             borderRadius: BorderRadius.circular(4),
@@ -497,7 +529,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                             color: const Color(0xFF15803D),
                           ),
                         ),
-                        Container(width: 1, height: 38, color: AppColors.divider),
+                        Container(
+                            width: 1, height: 38, color: AppColors.divider),
 
                         // 2. عمولة التهوية (برتقالي -)
                         Expanded(
@@ -507,7 +540,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                             color: const Color(0xFFD97706),
                           ),
                         ),
-                        Container(width: 1, height: 38, color: AppColors.divider),
+                        Container(
+                            width: 1, height: 38, color: AppColors.divider),
 
                         // 3. المنصرف الفعلي (أحمر -)
                         Expanded(
@@ -517,7 +551,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                             color: const Color(0xFFB91C1C),
                           ),
                         ),
-                        Container(width: 1, height: 38, color: AppColors.divider),
+                        Container(
+                            width: 1, height: 38, color: AppColors.divider),
 
                         // 4. الرصيد المتبقي
                         Expanded(
@@ -534,7 +569,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     // مكافئ الرصيد بالدباب والبراميل
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: AppColors.cardBg,
                         borderRadius: BorderRadius.circular(6),
@@ -544,7 +580,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                         children: [
                           Text(
                             'المكافئ لرصيد $fuelName المتبقي:',
-                            style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.textSecondary),
                           ),
                           Text(
                             AppFormatters.formatEquivalents(balance.abs()),
@@ -676,7 +713,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
 
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -685,7 +723,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: badgeBg,
                               borderRadius: BorderRadius.circular(4),
@@ -701,7 +740,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                           ),
                           Row(
                             children: [
-                              const Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.textMuted),
+                              const Icon(Icons.calendar_today_outlined,
+                                  size: 13, color: AppColors.textMuted),
                               const SizedBox(width: 4),
                               Text(
                                 AppFormatters.formatDate(tx.transactionDate),
@@ -722,18 +762,22 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                               children: [
                                 if (tx.fuelTypeName != null) ...[
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF1F5F9),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.local_gas_station, size: 13, color: AppColors.textSecondary),
+                                        const Icon(Icons.local_gas_station,
+                                            size: 13,
+                                            color: AppColors.textSecondary),
                                         const SizedBox(width: 3),
                                         Text(
                                           tx.fuelTypeName!,
-                                          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+                                          style: AppTextStyles.caption.copyWith(
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ],
                                     ),
@@ -744,7 +788,9 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                                   Flexible(
                                     child: Text(
                                       '${isSupply ? "المورد:" : "العميل:"} ${tx.accountName!}',
-                                      style: AppTextStyles.bodySecondary.copyWith(fontWeight: FontWeight.w600),
+                                      style: AppTextStyles.bodySecondary
+                                          .copyWith(
+                                              fontWeight: FontWeight.w600),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -765,7 +811,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                               ),
                               Text(
                                 '(${AppFormatters.formatQuantity(tx.baseQuantityLiters)} لتر)',
-                                style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.textMuted),
                               ),
                             ],
                           ),
@@ -773,17 +820,20 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                       ),
 
                       // تنبيه المقاصة إن وجد
-                      if (tx.referenceStationName != null && tx.referenceStationName != tx.stationName) ...[
+                      if (tx.referenceStationName != null &&
+                          tx.referenceStationName != tx.stationName) ...[
                         const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: const Color(0xFFEFF6FF),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             'بمقاصة خصم من: ${tx.referenceStationName!}',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF1D4ED8)),
+                            style: const TextStyle(
+                                fontSize: 11, color: Color(0xFF1D4ED8)),
                           ),
                         ),
                       ],
@@ -793,7 +843,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.description_outlined, size: 14, color: AppColors.textMuted),
+                            const Icon(Icons.description_outlined,
+                                size: 14, color: AppColors.textMuted),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -815,7 +866,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
 
               // قائمة الخيارات
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 18),
+                icon: const Icon(Icons.more_vert,
+                    color: AppColors.textSecondary, size: 18),
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -830,7 +882,9 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                       editTransaction: tx,
                     ).then((_) {
                       if (widget.station.id != null && mounted) {
-                        context.read<TransactionsController>().fetchStationTransactions(widget.station.id!);
+                        context
+                            .read<TransactionsController>()
+                            .fetchStationTransactions(widget.station.id!);
                       }
                     });
                   } else if (action == 'delete') {
@@ -842,7 +896,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     value: 'details',
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, size: 18, color: AppColors.textSecondary),
+                        Icon(Icons.info_outline,
+                            size: 18, color: AppColors.textSecondary),
                         SizedBox(width: 8),
                         Text(AppStrings.details, style: AppTextStyles.body),
                       ],
@@ -852,7 +907,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+                        Icon(Icons.edit_outlined,
+                            size: 18, color: AppColors.textSecondary),
                         SizedBox(width: 8),
                         Text(AppStrings.edit, style: AppTextStyles.body),
                       ],
@@ -862,11 +918,13 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline, size: 18, color: Color(0xFFB91C1C)),
+                        Icon(Icons.delete_outline,
+                            size: 18, color: Color(0xFFB91C1C)),
                         SizedBox(width: 8),
                         Text(
                           AppStrings.delete,
-                          style: TextStyle(color: Color(0xFFB91C1C), fontSize: 14),
+                          style:
+                              TextStyle(color: Color(0xFFB91C1C), fontSize: 14),
                         ),
                       ],
                     ),

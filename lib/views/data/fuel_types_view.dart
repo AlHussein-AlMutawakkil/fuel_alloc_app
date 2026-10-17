@@ -39,7 +39,8 @@ class _FuelTypesViewState extends State<FuelTypesView> {
   }
 
   void _openAddEditDialog({Map<String, dynamic>? item}) {
-    final nameController = TextEditingController(text: item?['name']?.toString() ?? '');
+    final nameController =
+        TextEditingController(text: item?['name']?.toString() ?? '');
 
     CustomModalSheet.show(
       context: context,
@@ -83,7 +84,8 @@ class _FuelTypesViewState extends State<FuelTypesView> {
     );
     if (confirm) {
       final db = await DatabaseHelper.instance.database;
-      await db.update('fuel_types', {'is_active': 0}, where: 'id = ?', whereArgs: [id]);
+      await db.update('fuel_types', {'is_active': 0},
+          where: 'id = ?', whereArgs: [id]);
       _loadFuelTypes();
     }
   }
@@ -103,12 +105,14 @@ class _FuelTypesViewState extends State<FuelTypesView> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary))
           : ListView(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20.0, vertical: 6.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -135,7 +139,8 @@ class _FuelTypesViewState extends State<FuelTypesView> {
                   const OneUiCard(
                     children: [
                       Padding(
-                        padding: EdgeInsets.symmetric(vertical: 36.0, horizontal: 20.0),
+                        padding: EdgeInsets.symmetric(
+                            vertical: 36.0, horizontal: 20.0),
                         child: Center(
                           child: Column(
                             children: [
@@ -200,9 +205,11 @@ class _FuelTypesViewState extends State<FuelTypesView> {
                               value: 'edit',
                               child: Row(
                                 children: [
-                                  Icon(Icons.edit_outlined, size: 18, color: Color(0xFF475569)),
+                                  Icon(Icons.edit_outlined,
+                                      size: 18, color: Color(0xFF475569)),
                                   SizedBox(width: 8),
-                                  Text(AppStrings.edit, style: TextStyle(fontSize: 14)),
+                                  Text(AppStrings.edit,
+                                      style: TextStyle(fontSize: 14)),
                                 ],
                               ),
                             ),
@@ -210,9 +217,13 @@ class _FuelTypesViewState extends State<FuelTypesView> {
                               value: 'delete',
                               child: Row(
                                 children: [
-                                  Icon(Icons.delete_outline, size: 18, color: Color(0xFFB91C1C)),
+                                  Icon(Icons.delete_outline,
+                                      size: 18, color: Color(0xFFB91C1C)),
                                   SizedBox(width: 8),
-                                  Text(AppStrings.delete, style: TextStyle(color: Color(0xFFB91C1C), fontSize: 14)),
+                                  Text(AppStrings.delete,
+                                      style: TextStyle(
+                                          color: Color(0xFFB91C1C),
+                                          fontSize: 14)),
                                 ],
                               ),
                             ),

@@ -21,7 +21,8 @@ class AccountTransactionsView extends StatefulWidget {
   });
 
   @override
-  State<AccountTransactionsView> createState() => _AccountTransactionsViewState();
+  State<AccountTransactionsView> createState() =>
+      _AccountTransactionsViewState();
 }
 
 class _AccountTransactionsViewState extends State<AccountTransactionsView> {
@@ -35,7 +36,9 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (widget.account.id != null) {
-        context.read<TransactionsController>().fetchAccountTransactions(widget.account.id!);
+        context
+            .read<TransactionsController>()
+            .fetchAccountTransactions(widget.account.id!);
       }
     });
   }
@@ -63,7 +66,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
       context: context,
       account: widget.account,
       initialTabIndex: 0,
-      initialDirection: isSupplier ? 0 : 1, // المورد افتراضياً توريد، العميل افتراضياً صرف
+      initialDirection:
+          isSupplier ? 0 : 1, // المورد افتراضياً توريد، العميل افتراضياً صرف
       initialFuelTypeId: currentFuelId,
     );
     if (widget.account.id != null && mounted) {
@@ -86,10 +90,11 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     );
 
     if (confirm && tx.id != null && widget.account.id != null && mounted) {
-      final success = await context.read<TransactionsController>().deleteTransaction(
-            tx.id!,
-            widget.account.id!,
-          );
+      final success =
+          await context.read<TransactionsController>().deleteTransaction(
+                tx.id!,
+                widget.account.id!,
+              );
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -114,7 +119,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(AppStrings.operationDetails, style: AppTextStyles.heading2),
+            const Text(AppStrings.operationDetails,
+                style: AppTextStyles.heading2),
             IconButton(
               icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)),
               padding: EdgeInsets.zero,
@@ -126,12 +132,16 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildDetailRow(AppStrings.labelOperationType, tx.typeName ?? AppStrings.operation),
-            _buildDetailRow(AppStrings.labelDate, AppFormatters.formatDate(tx.transactionDate)),
+            _buildDetailRow(AppStrings.labelOperationType,
+                tx.typeName ?? AppStrings.operation),
+            _buildDetailRow(AppStrings.labelDate,
+                AppFormatters.formatDate(tx.transactionDate)),
             if (tx.stationName != null)
               _buildDetailRow(AppStrings.labelStation, tx.stationName!),
-            if (tx.referenceStationName != null && tx.referenceStationName != tx.stationName)
-              _buildDetailRow(AppStrings.labelReferenceStation, tx.referenceStationName!),
+            if (tx.referenceStationName != null &&
+                tx.referenceStationName != tx.stationName)
+              _buildDetailRow(
+                  AppStrings.labelReferenceStation, tx.referenceStationName!),
             _buildDetailRow(AppStrings.labelFuelType, tx.fuelTypeName ?? '-'),
             _buildDetailRow(
               AppStrings.labelEnteredQuantity,
@@ -168,7 +178,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
             width: 110,
             child: Text(
               label,
-              style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
+              style:
+                  AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           Expanded(
@@ -196,7 +207,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                     cursorColor: Colors.white,
                     decoration: InputDecoration(
                       hintText: AppStrings.searchTransactionHint,
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                      hintStyle:
+                          TextStyle(color: Colors.white.withOpacity(0.7)),
                       border: InputBorder.none,
                     ),
                     onChanged: (val) => controller.setSearchQuery(val),
@@ -267,7 +279,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                     const Spacer(),
                     Text(
                       '${AppStrings.totalOperations}: ${controller.transactions.length}',
-                      style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
+                      style: AppTextStyles.caption
+                          .copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -277,7 +290,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                 Expanded(
                   child: controller.isLoading
                       ? const Center(
-                          child: CircularProgressIndicator(color: AppColors.primary),
+                          child: CircularProgressIndicator(
+                              color: AppColors.primary),
                         )
                       : controller.transactions.isEmpty
                           ? Center(
@@ -299,14 +313,16 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                                     text: AppStrings.recordFirstOperation,
                                     icon: Icons.add,
                                     variant: ButtonVariant.secondary,
-                                    onPressed: () => _openAddTransactionDialog(),
+                                    onPressed: () =>
+                                        _openAddTransactionDialog(),
                                   ),
                                 ],
                               ),
                             )
                           : ListView.separated(
                               itemCount: controller.transactions.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 10),
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 10),
                               itemBuilder: (context, index) {
                                 final tx = controller.transactions[index];
                                 return _buildTransactionCard(tx);
@@ -359,17 +375,22 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                   ? const Color(0xFF15803D)
                   : const Color(0xFFB91C1C);
 
-              final isPetrol = fuelName.contains('بترول') || fuelName.contains('بنزين');
-              final fuelBadgeBg = isPetrol ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF);
-              final fuelBadgeBorder = isPetrol ? const Color(0xFFFDE68A) : const Color(0xFFBFDBFE);
-              final fuelBadgeText = isPetrol ? const Color(0xFFB45309) : const Color(0xFF1D4ED8);
+              final isPetrol =
+                  fuelName.contains('بترول') || fuelName.contains('بنزين');
+              final fuelBadgeBg =
+                  isPetrol ? const Color(0xFFFEF3C7) : const Color(0xFFEFF6FF);
+              final fuelBadgeBorder =
+                  isPetrol ? const Color(0xFFFDE68A) : const Color(0xFFBFDBFE);
+              final fuelBadgeText =
+                  isPetrol ? const Color(0xFFB45309) : const Color(0xFF1D4ED8);
 
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF64748B), width: 1.2),
+                  border:
+                      Border.all(color: const Color(0xFF64748B), width: 1.2),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,20 +402,29 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: isSupplier ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
+                                color: isSupplier
+                                    ? const Color(0xFFEFF6FF)
+                                    : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(4),
                                 border: Border.all(
-                                  color: isSupplier ? const Color(0xFFBFDBFE) : const Color(0xFFCBD5E1),
+                                  color: isSupplier
+                                      ? const Color(0xFFBFDBFE)
+                                      : const Color(0xFFCBD5E1),
                                   width: 0.8,
                                 ),
                               ),
                               child: Text(
-                                isSupplier ? AppStrings.typeSupplier : AppStrings.typeBeneficiary,
+                                isSupplier
+                                    ? AppStrings.typeSupplier
+                                    : AppStrings.typeBeneficiary,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isSupplier ? AppColors.primary : AppColors.textSecondary,
+                                  color: isSupplier
+                                      ? AppColors.primary
+                                      : AppColors.textSecondary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -408,16 +438,19 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                         ),
                         // شارة الصنف مع أيقونة المحطة
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: fuelBadgeBg,
                             borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: fuelBadgeBorder, width: 0.8),
+                            border:
+                                Border.all(color: fuelBadgeBorder, width: 0.8),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.local_gas_station, size: 14, color: fuelBadgeText),
+                              Icon(Icons.local_gas_station,
+                                  size: 14, color: fuelBadgeText),
                               const SizedBox(width: 4),
                               Text(
                                 'صنف: $fuelName',
@@ -443,27 +476,37 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                         // إجمالي الاعتماد لهذا الصنف
                         Expanded(
                           child: _buildMetricItem(
-                            title: isSupplier ? AppStrings.suppliedQuota : AppStrings.totalQuota,
+                            title: isSupplier
+                                ? AppStrings.suppliedQuota
+                                : AppStrings.totalQuota,
                             liters: quota,
                             color: const Color(0xFF15803D),
                           ),
                         ),
-                        Container(width: 1, height: 40, color: AppColors.divider),
+                        Container(
+                            width: 1, height: 40, color: AppColors.divider),
 
                         // إجمالي المنفذ الفعلي لهذا الصنف
                         Expanded(
                           child: _buildMetricItem(
-                            title: isSupplier ? AppStrings.suppliedActual : AppStrings.totalActual,
+                            title: isSupplier
+                                ? AppStrings.suppliedActual
+                                : AppStrings.totalActual,
                             liters: actual,
-                            color: isSupplier ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
+                            color: isSupplier
+                                ? const Color(0xFF15803D)
+                                : const Color(0xFFB91C1C),
                           ),
                         ),
-                        Container(width: 1, height: 40, color: AppColors.divider),
+                        Container(
+                            width: 1, height: 40, color: AppColors.divider),
 
                         // الرصيد المتبقي لهذا الصنف
                         Expanded(
                           child: _buildMetricItem(
-                            title: isSupplier ? AppStrings.differenceBalance : AppStrings.balanceQuota,
+                            title: isSupplier
+                                ? AppStrings.differenceBalance
+                                : AppStrings.balanceQuota,
                             liters: balance,
                             color: balanceColor,
                             isBold: true,
@@ -475,7 +518,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                     // مكافئ الرصيد بالدباب والبراميل لهذا الصنف
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: AppColors.cardBg,
                         borderRadius: BorderRadius.circular(6),
@@ -485,7 +529,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                         children: [
                           Text(
                             'المكافئ لرصيد $fuelName المتبقي:',
-                            style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.textSecondary),
                           ),
                           Text(
                             AppFormatters.formatEquivalents(balance.abs()),
@@ -618,7 +663,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
               // المحتوى الداخلي للبطاقة
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -627,7 +673,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: badgeBg,
                               borderRadius: BorderRadius.circular(4),
@@ -642,7 +689,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                           ),
                           Row(
                             children: [
-                              const Icon(Icons.calendar_today_outlined, size: 13, color: AppColors.textMuted),
+                              const Icon(Icons.calendar_today_outlined,
+                                  size: 13, color: AppColors.textMuted),
                               const SizedBox(width: 4),
                               Text(
                                 AppFormatters.formatDate(tx.transactionDate),
@@ -665,18 +713,22 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                                 // نوع الوقود
                                 if (tx.fuelTypeName != null) ...[
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFF1F5F9),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.local_gas_station, size: 13, color: AppColors.textSecondary),
+                                        const Icon(Icons.local_gas_station,
+                                            size: 13,
+                                            color: AppColors.textSecondary),
                                         const SizedBox(width: 3),
                                         Text(
                                           tx.fuelTypeName!,
-                                          style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.w600),
+                                          style: AppTextStyles.caption.copyWith(
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ],
                                     ),
@@ -688,7 +740,9 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                                 if (tx.stationName != null)
                                   Flexible(
                                     child: Text(
-                                      tx.referenceStationName != null && tx.referenceStationName != tx.stationName
+                                      tx.referenceStationName != null &&
+                                              tx.referenceStationName !=
+                                                  tx.stationName
                                           ? '${tx.stationName!} (مرجع: ${tx.referenceStationName!})'
                                           : tx.stationName!,
                                       style: AppTextStyles.bodySecondary,
@@ -713,7 +767,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                               ),
                               Text(
                                 '(${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter})',
-                                style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.textMuted),
                               ),
                             ],
                           ),
@@ -725,7 +780,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.description_outlined, size: 14, color: AppColors.textMuted),
+                            const Icon(Icons.description_outlined,
+                                size: 14, color: AppColors.textMuted),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -747,7 +803,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
 
               // زر القائمة الجانبية للعملية
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 18),
+                icon: const Icon(Icons.more_vert,
+                    color: AppColors.textSecondary, size: 18),
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -771,7 +828,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                     value: 'details',
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline, size: 18, color: AppColors.textSecondary),
+                        Icon(Icons.info_outline,
+                            size: 18, color: AppColors.textSecondary),
                         SizedBox(width: 8),
                         Text(AppStrings.details, style: AppTextStyles.body),
                       ],
@@ -781,7 +839,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+                        Icon(Icons.edit_outlined,
+                            size: 18, color: AppColors.textSecondary),
                         SizedBox(width: 8),
                         Text(AppStrings.edit, style: AppTextStyles.body),
                       ],
@@ -791,11 +850,13 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline, size: 18, color: AppColors.dispenseRed),
+                        Icon(Icons.delete_outline,
+                            size: 18, color: AppColors.dispenseRed),
                         SizedBox(width: 8),
                         Text(
                           AppStrings.delete,
-                          style: TextStyle(color: AppColors.dispenseRed, fontSize: 14),
+                          style: TextStyle(
+                              color: AppColors.dispenseRed, fontSize: 14),
                         ),
                       ],
                     ),

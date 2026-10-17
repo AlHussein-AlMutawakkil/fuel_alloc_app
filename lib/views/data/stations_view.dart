@@ -50,9 +50,12 @@ class _StationsViewState extends State<StationsView> {
   }
 
   void _openAddEditDialog({Map<String, dynamic>? station}) {
-    final nameController = TextEditingController(text: station?['name']?.toString() ?? '');
-    final locationController = TextEditingController(text: station?['location']?.toString() ?? '');
-    final phoneController = TextEditingController(text: station?['phone_number']?.toString() ?? '');
+    final nameController =
+        TextEditingController(text: station?['name']?.toString() ?? '');
+    final locationController =
+        TextEditingController(text: station?['location']?.toString() ?? '');
+    final phoneController =
+        TextEditingController(text: station?['phone_number']?.toString() ?? '');
     final commissionController = TextEditingController(
       text: station != null
           ? station['default_commission_rate'].toString()
@@ -85,7 +88,8 @@ class _StationsViewState extends State<StationsView> {
             CustomModalSheet.buildTextField(
               label: 'نسبة عمولة التهوية (%)',
               controller: commissionController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
             ),
           ],
         );
@@ -95,7 +99,8 @@ class _StationsViewState extends State<StationsView> {
         if (name.isEmpty) return;
 
         final navigator = Navigator.of(ctx);
-        final commRate = double.tryParse(commissionController.text.trim()) ?? 2.0;
+        final commRate =
+            double.tryParse(commissionController.text.trim()) ?? 2.0;
         final db = await DatabaseHelper.instance.database;
 
         if (station == null) {
@@ -137,7 +142,8 @@ class _StationsViewState extends State<StationsView> {
     );
     if (confirm) {
       final db = await DatabaseHelper.instance.database;
-      await db.update('stations', {'is_active': 0}, where: 'id = ?', whereArgs: [id]);
+      await db.update('stations', {'is_active': 0},
+          where: 'id = ?', whereArgs: [id]);
       _loadStations();
     }
   }
@@ -203,22 +209,29 @@ class _StationsViewState extends State<StationsView> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('قائمة المحطات المعتمدة', style: AppTextStyles.heading2),
+                const Text('قائمة المحطات المعتمدة',
+                    style: AppTextStyles.heading2),
                 Text(
                   'العدد: ${filteredStations.length}',
-                  style: AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
+                  style: AppTextStyles.caption
+                      .copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  ? const Center(
+                      child:
+                          CircularProgressIndicator(color: AppColors.primary))
                   : filteredStations.isEmpty
-                      ? const Center(child: Text('لا توجد محطات مسجلة بعد', style: AppTextStyles.bodySecondary))
+                      ? const Center(
+                          child: Text('لا توجد محطات مسجلة بعد',
+                              style: AppTextStyles.bodySecondary))
                       : ListView.separated(
                           itemCount: filteredStations.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
                           itemBuilder: (context, index) {
                             final s = filteredStations[index];
                             return Material(
@@ -226,64 +239,95 @@ class _StationsViewState extends State<StationsView> {
                               borderRadius: BorderRadius.circular(8),
                               child: InkWell(
                                 onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => StationTransactionsView(
-                                        station: StationModel.fromMap(s),
-                                      ),
-                                    ),
-                                  ).then((_) => _loadStations());
+                                  Navigator.of(context)
+                                      .push(
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              StationTransactionsView(
+                                            station: StationModel.fromMap(s),
+                                          ),
+                                        ),
+                                      )
+                                      .then((_) => _loadStations());
                                 },
                                 borderRadius: BorderRadius.circular(8),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 12),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: AppColors.border, width: 1),
+                                    border: Border.all(
+                                        color: AppColors.border, width: 1),
                                   ),
                                   child: Row(
                                     children: [
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text(s['name'].toString(), style: AppTextStyles.heading3),
+                                            Text(s['name'].toString(),
+                                                style: AppTextStyles.heading3),
                                             const SizedBox(height: 4),
                                             Row(
                                               children: [
-                                                if (s['location'] != null && s['location'].toString().isNotEmpty) ...[
-                                                  const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textMuted),
+                                                if (s['location'] != null &&
+                                                    s['location']
+                                                        .toString()
+                                                        .isNotEmpty) ...[
+                                                  const Icon(
+                                                      Icons
+                                                          .location_on_outlined,
+                                                      size: 14,
+                                                      color:
+                                                          AppColors.textMuted),
                                                   const SizedBox(width: 4),
-                                                  Text(s['location'].toString(), style: AppTextStyles.caption),
+                                                  Text(s['location'].toString(),
+                                                      style: AppTextStyles
+                                                          .caption),
                                                   const SizedBox(width: 12),
                                                 ],
                                                 Text(
                                                   'عمولة التهوية: ${s['default_commission_rate']}%',
-                                                  style: AppTextStyles.caption.copyWith(color: AppColors.supplyGreen),
+                                                  style: AppTextStyles.caption
+                                                      .copyWith(
+                                                          color: AppColors
+                                                              .supplyGreen),
                                                 ),
                                               ],
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.textMuted),
+                                      const Icon(Icons.arrow_forward_ios,
+                                          size: 14, color: AppColors.textMuted),
                                       const SizedBox(width: 4),
                                       PopupMenuButton<String>(
-                                        icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 20),
+                                        icon: const Icon(Icons.more_vert,
+                                            color: AppColors.textSecondary,
+                                            size: 20),
                                         color: Colors.white,
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(8),
-                                          side: const BorderSide(color: AppColors.border, width: 1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          side: const BorderSide(
+                                              color: AppColors.border,
+                                              width: 1),
                                         ),
                                         onSelected: (action) {
                                           if (action == 'transactions') {
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(
-                                                builder: (_) => StationTransactionsView(
-                                                  station: StationModel.fromMap(s),
-                                                ),
-                                              ),
-                                            ).then((_) => _loadStations());
+                                            Navigator.of(context)
+                                                .push(
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        StationTransactionsView(
+                                                      station:
+                                                          StationModel.fromMap(
+                                                              s),
+                                                    ),
+                                                  ),
+                                                )
+                                                .then((_) => _loadStations());
                                           } else if (action == 'edit') {
                                             _openAddEditDialog(station: s);
                                           } else if (action == 'delete') {
@@ -295,9 +339,13 @@ class _StationsViewState extends State<StationsView> {
                                             value: 'transactions',
                                             child: Row(
                                               children: [
-                                                Icon(Icons.receipt_long_outlined, size: 18, color: AppColors.primary),
+                                                Icon(
+                                                    Icons.receipt_long_outlined,
+                                                    size: 18,
+                                                    color: AppColors.primary),
                                                 SizedBox(width: 8),
-                                                Text('كشف حساب المحطة', style: AppTextStyles.body),
+                                                Text('كشف حساب المحطة',
+                                                    style: AppTextStyles.body),
                                               ],
                                             ),
                                           ),
@@ -305,9 +353,13 @@ class _StationsViewState extends State<StationsView> {
                                             value: 'edit',
                                             child: Row(
                                               children: [
-                                                Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+                                                Icon(Icons.edit_outlined,
+                                                    size: 18,
+                                                    color: AppColors
+                                                        .textSecondary),
                                                 SizedBox(width: 8),
-                                                Text(AppStrings.edit, style: AppTextStyles.body),
+                                                Text(AppStrings.edit,
+                                                    style: AppTextStyles.body),
                                               ],
                                             ),
                                           ),
@@ -315,9 +367,15 @@ class _StationsViewState extends State<StationsView> {
                                             value: 'delete',
                                             child: Row(
                                               children: [
-                                                Icon(Icons.delete_outline, size: 18, color: AppColors.dispenseRed),
+                                                Icon(Icons.delete_outline,
+                                                    size: 18,
+                                                    color:
+                                                        AppColors.dispenseRed),
                                                 SizedBox(width: 8),
-                                                Text(AppStrings.delete, style: TextStyle(color: AppColors.dispenseRed)),
+                                                Text(AppStrings.delete,
+                                                    style: TextStyle(
+                                                        color: AppColors
+                                                            .dispenseRed)),
                                               ],
                                             ),
                                           ),

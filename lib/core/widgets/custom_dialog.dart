@@ -75,13 +75,16 @@ class CustomDialog {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              color: isDanger ? AppColors.dispenseRed : const Color(0xFF0F172A),
+                              color: isDanger
+                                  ? AppColors.dispenseRed
+                                  : const Color(0xFF0F172A),
                             ),
                           ),
                         ),
                       ),
                     ),
-                    const VerticalDivider(width: 1, color: Color(0xFFF1F5F9), thickness: 1),
+                    const VerticalDivider(
+                        width: 1, color: Color(0xFFF1F5F9), thickness: 1),
                     // زر الإلغاء على اليسار (إلغاء)
                     Expanded(
                       child: InkWell(

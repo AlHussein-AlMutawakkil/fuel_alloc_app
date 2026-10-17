@@ -36,25 +36,29 @@ class _SettingsViewState extends State<SettingsView> {
           children: [
             Icon(Icons.local_gas_station, color: Color(0xFF102A43), size: 28),
             SizedBox(width: 10),
-            Text('نظام مخصصات الوقود', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text('نظام مخصصات الوقود',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           ],
         ),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('الإصدار: 1.0.0 (رسمي)', style: TextStyle(fontSize: 14, color: Color(0xFF475569))),
+            Text('الإصدار: 1.0.0 (رسمي)',
+                style: TextStyle(fontSize: 14, color: Color(0xFF475569))),
             SizedBox(height: 8),
             Text(
               'نظام متكامل لإدارة ومحاسبة مخصصات واعتمادات الوقود ومطابقة كشوفات الحسابات والمحطات بدقة وموثوقية.',
-              style: TextStyle(fontSize: 13, height: 1.5, color: Color(0xFF1E293B)),
+              style: TextStyle(
+                  fontSize: 13, height: 1.5, color: Color(0xFF1E293B)),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('إغلاق',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -110,7 +114,8 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 title: AppStrings.profileTitle,
                 subtitle: AppStrings.editProfile,
-                onTap: () => _showUnderDevelopmentSnackBar(AppStrings.editProfile),
+                onTap: () =>
+                    _showUnderDevelopmentSnackBar(AppStrings.editProfile),
               ),
             ],
           ),
@@ -179,7 +184,8 @@ class _SettingsViewState extends State<SettingsView> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ThemeSettingsView()),
+                    MaterialPageRoute(
+                        builder: (_) => const ThemeSettingsView()),
                   );
                 },
               ),
@@ -194,7 +200,8 @@ class _SettingsViewState extends State<SettingsView> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const LanguageSettingsView()),
+                    MaterialPageRoute(
+                        builder: (_) => const LanguageSettingsView()),
                   );
                 },
               ),
@@ -214,7 +221,8 @@ class _SettingsViewState extends State<SettingsView> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const PermissionsSettingsView()),
+                    MaterialPageRoute(
+                        builder: (_) => const PermissionsSettingsView()),
                   );
                 },
               ),
