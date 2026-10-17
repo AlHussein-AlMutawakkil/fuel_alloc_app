@@ -17,6 +17,7 @@ class AppColors {
 
   static const Color chipBackground = Color(0xFFF1F5F9);
   static const Color highlightBackground = Color(0xFff8f8f8);
+  static const Color searchBackground = Color(0xFFEEEEEE);
   static const Color charcoal = Color(0xFF1E1E1E);
 
   // عمليات التوريد: أخضر

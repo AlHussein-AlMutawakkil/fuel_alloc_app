@@ -90,6 +90,8 @@ class AppDimensions {
   static const double avatarSize = 48.0;
   static const double slidableActionWidth = 66.0;
   static const double slidableTotalWidth = 198.0;
+  static const double handleWidth = 38.0;
+  static const double handleHeight = 4.0;
 
   // --- أحجام الأيقونات (Icon Sizes) ---
   static const double iconMicro = 13.0;

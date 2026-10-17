@@ -189,6 +189,7 @@ class AppStrings {
   static const String back = 'رجوع';
   static const String ok = 'حسناً';
   static const String search = 'بحث';
+  static const String searchHere = 'ابحث هنا';
   static const String closeSearch = 'إغلاق البحث';
   static const String selectEllipsis = 'اختر...';
   static const String zeroDecimal = '0.00';

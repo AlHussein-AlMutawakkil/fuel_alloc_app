@@ -11,6 +11,7 @@ import '../../core/utils/formatters.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
 import 'custom_dropdown.dart';
+import 'custom_modal_sheet.dart';
 
 /// واجهة تسجيل وتعديل القيود والعمليات (مكون مشترك وذكي لكافة شاشات التطبيق)
 class OperationEntrySheet extends StatefulWidget {
@@ -1085,153 +1086,23 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     );
   }
 
-  void _openAccountPicker(List<AccountModel> accounts) {
-    showModalBottomSheet(
+  void _openAccountPicker(List<AccountModel> accounts) async {
+    final selected = await CustomModalSheet.showItemPicker<AccountModel>(
       context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppDimensions.radiusCard),
-        ),
-      ),
-      builder: (ctx) {
-        String filterText = '';
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            final filtered = accounts.where((a) {
-              return filterText.isEmpty ||
-                  a.name.toLowerCase().contains(filterText.toLowerCase());
-            }).toList();
-
-            return Container(
-              padding: const EdgeInsets.all(AppDimensions.spaceXL),
-              height: 380,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _selectedDirection == 0
-                            ? AppStrings.typeSupplier
-                            : AppStrings.typeBeneficiary,
-                        style: const TextStyle(
-                          fontSize: AppTypography.sizeH2 - 1,
-                          fontWeight: AppTypography.weightBold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          AppIcons.closeRounded,
-                          size: AppDimensions.iconMedium,
-                        ),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: AppDimensions.space4XL,
-                          minHeight: AppDimensions.space4XL,
-                        ),
-                        onPressed: () => Navigator.of(ctx).pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.spaceL - 2),
-                  TextField(
-                    decoration: const InputDecoration(
-                      hintText: AppStrings.search,
-                      prefixIcon: Icon(
-                        AppIcons.search,
-                        size: AppDimensions.iconRegular,
-                        color: AppColors.textTertiary,
-                      ),
-                      filled: true,
-                      fillColor: AppColors.background,
-                      contentPadding: AppDimensions.paddingInputDense,
-                      border: OutlineInputBorder(
-                        borderRadius: AppDimensions.borderRadius2XL,
-                        borderSide: BorderSide(
-                          color: _fieldBorderColor,
-                          width: AppDimensions.borderWidthThin,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: AppDimensions.borderRadius2XL,
-                        borderSide: BorderSide(
-                          color: _fieldBorderColor,
-                          width: AppDimensions.borderWidthThin,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(
-                          Radius.circular(AppDimensions.radius2XL),
-                        ),
-                        borderSide: BorderSide(
-                          color: AppColors.charcoal,
-                          width: AppDimensions.borderWidthRegular,
-                        ),
-                      ),
-                    ),
-                    onChanged: (val) {
-                      setSheetState(() {
-                        filterText = val.trim();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: AppDimensions.spaceM),
-                  Expanded(
-                    child: filtered.isEmpty
-                        ? const Center(
-                            child: Text(
-                              AppStrings.noAccountsFound,
-                              style: TextStyle(color: AppColors.textMuted),
-                            ),
-                          )
-                        : ListView.separated(
-                            itemCount: filtered.length,
-                            separatorBuilder: (_, __) => const Divider(
-                              height: AppDimensions.dividerHeight,
-                            ),
-                            itemBuilder: (_, idx) {
-                              final acc = filtered[idx];
-                              return ListTile(
-                                leading: const Icon(
-                                  AppIcons.accountOutline,
-                                  color: AppColors.textTertiary,
-                                ),
-                                title: Text(
-                                  acc.name,
-                                  style: const TextStyle(
-                                    fontWeight: AppTypography.weightSemiBold,
-                                    fontSize: AppTypography.sizeBody,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  acc.accountType == AccountType.supplier
-                                      ? AppStrings.typeSupplier
-                                      : AppStrings.typeBeneficiary,
-                                  style: const TextStyle(
-                                    fontSize: AppTypography.sizeCaption,
-                                    color: AppColors.textTertiary,
-                                  ),
-                                ),
-                                onTap: () {
-                                  setState(() {
-                                    _selectedAccount = acc;
-                                  });
-                                  _updateLiveBalances();
-                                  Navigator.of(ctx).pop();
-                                },
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+      title: AppStrings.account,
+      items: accounts,
+      itemLabel: (acc) => acc.name,
+      searchHint: AppStrings.searchHere,
+      emptyText: AppStrings.noAccountsFound,
+      selectedItem: _selectedAccount,
     );
+
+    if (selected != null && mounted) {
+      setState(() {
+        _selectedAccount = selected;
+      });
+      _updateLiveBalances();
+    }
   }
 
   Future<void> _saveOperation() async {

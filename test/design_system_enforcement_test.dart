@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fuel_alloc_app/core/constants/app_colors.dart';
 import 'package:fuel_alloc_app/core/constants/app_dimensions.dart';
@@ -26,6 +27,7 @@ void main() {
       expect(AppColors.actionEdit, isNotNull);
       expect(AppColors.actionDelete, isNotNull);
       expect(AppColors.actionArchive, isNotNull);
+      expect(AppColors.searchBackground, isNotNull);
 
       // AppDimensions
       expect(AppDimensions.spaceM, greaterThan(0));
@@ -34,6 +36,8 @@ void main() {
       expect(AppDimensions.inputHeight, greaterThan(0));
       expect(AppDimensions.radiusCard, greaterThan(0));
       expect(AppDimensions.iconMedium, greaterThan(0));
+      expect(AppDimensions.handleWidth, greaterThan(0));
+      expect(AppDimensions.handleHeight, greaterThan(0));
       expect(AppDimensions.paddingScreen, isNotNull);
 
       // AppIcons
@@ -56,6 +60,7 @@ void main() {
       expect(AppStrings.confirm.isNotEmpty, isTrue);
       expect(AppStrings.delete.isNotEmpty, isTrue);
       expect(AppStrings.edit.isNotEmpty, isTrue);
+      expect(AppStrings.searchHere.isNotEmpty, isTrue);
 
       // AppTypography
       expect(AppTypography.heading1.fontSize, greaterThan(0));
@@ -155,6 +160,51 @@ void main() {
         expect(file.lengthSync(), greaterThan(0),
             reason: 'File must not be empty: $path');
       }
+    });
+
+    testWidgets(
+        '5. CustomModalSheet.showItemPicker renders correctly with search and item list',
+        (tester) async {
+      String? selectedValue;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (ctx) => ElevatedButton(
+                onPressed: () async {
+                  selectedValue = await CustomModalSheet.showItemPicker<String>(
+                    context: ctx,
+                    title: AppStrings.account,
+                    items: ['حساب الأمانة', 'حساب النقل'],
+                    itemLabel: (item) => item,
+                    searchHint: AppStrings.searchHere,
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Open bottom sheet
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      // Verify Title and Search placeholder are rendered
+      expect(find.text(AppStrings.account), findsOneWidget);
+      expect(find.text(AppStrings.searchHere), findsOneWidget);
+      expect(find.text('حساب الأمانة'), findsOneWidget);
+      expect(find.text('حساب النقل'), findsOneWidget);
+
+      // Tap on an item
+      await tester.tap(find.text('حساب الأمانة'));
+      await tester.pumpAndSettle();
+
+      // Verify item was selected and sheet closed
+      expect(selectedValue, equals('حساب الأمانة'));
+      expect(find.text(AppStrings.account), findsNothing);
     });
   });
 }
