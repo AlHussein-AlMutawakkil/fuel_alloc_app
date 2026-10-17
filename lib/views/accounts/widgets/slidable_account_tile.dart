@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/app_icons.dart';
+import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 
 /// عنصر قائمة قابل للسحب إلى اليمين لكشف الإجراءات الثلاثة: حذف، تعديل، أرشفة
 class SlidableAccountTile extends StatefulWidget {
@@ -26,8 +31,8 @@ class _SlidableAccountTileState extends State<SlidableAccountTile>
   late AnimationController _animController;
   late Animation<double> _animation;
   double _dragExtent = 0.0;
-  static const double _actionWidth = 66.0;
-  static const double _totalWidth = _actionWidth * 3; // 198.0
+  static const double _actionWidth = AppDimensions.slidableActionWidth;
+  static const double _totalWidth = AppDimensions.slidableTotalWidth;
 
   @override
   void initState() {
@@ -102,7 +107,7 @@ class _SlidableAccountTileState extends State<SlidableAccountTile>
       child: Stack(
         clipBehavior: Clip.hardEdge,
         children: [
-          // خلفية الإجراءات الثلاثة - تظهر فقط وبدقة متناهية عند بدء السحب (لا ترسم إطلاقاً عندما تكون مغلقة لمنع أي تسريب للألوان)
+          // خلفية الإجراءات الثلاثة - تظهر فقط وبدقة متناهية عند بدء السحب
           if (_dragExtent > 0.0)
             Positioned(
               left: 0,
@@ -121,9 +126,9 @@ class _SlidableAccountTileState extends State<SlidableAccountTile>
                       children: [
                         // زر تعديل (أزرق)
                         _buildActionButton(
-                          icon: Icons.edit_outlined,
-                          label: 'تعديل',
-                          color: const Color(0xFF3B82F6),
+                          icon: AppIcons.edit,
+                          label: AppStrings.edit,
+                          color: AppColors.actionEdit,
                           onTap: () {
                             _close();
                             widget.onEdit?.call();
@@ -131,11 +136,10 @@ class _SlidableAccountTileState extends State<SlidableAccountTile>
                         ),
 
                         // زر حذف (أحمر)
-
                         _buildActionButton(
-                          icon: Icons.delete_outline,
-                          label: 'حذف',
-                          color: const Color(0xFFEF4444),
+                          icon: AppIcons.delete,
+                          label: AppStrings.delete,
+                          color: AppColors.actionDelete,
                           onTap: () {
                             _close();
                             widget.onDelete?.call();
@@ -143,9 +147,9 @@ class _SlidableAccountTileState extends State<SlidableAccountTile>
                         ),
                         // زر أرشفة (برتقالي / كهرماني)
                         _buildActionButton(
-                          icon: Icons.archive_outlined,
-                          label: 'أرشفة',
-                          color: const Color(0xFFF59E0B),
+                          icon: AppIcons.archive,
+                          label: AppStrings.archive,
+                          color: AppColors.actionArchive,
                           onTap: () {
                             _close();
                             widget.onArchive?.call();
@@ -162,9 +166,9 @@ class _SlidableAccountTileState extends State<SlidableAccountTile>
           Transform.translate(
             offset: Offset(_dragExtent, 0),
             child: Material(
-              color: Colors.white,
+              color: AppColors.surface,
               elevation: _dragExtent > 0 ? 3 : 0,
-              shadowColor: Colors.black.withOpacity(0.18),
+              shadowColor: AppColors.overlayLight,
               child: InkWell(
                 onTap: () {
                   if (isOpen) {
@@ -197,14 +201,18 @@ class _SlidableAccountTileState extends State<SlidableAccountTile>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white, size: 21),
-            const SizedBox(height: 3),
+            Icon(
+              icon,
+              color: AppColors.textWhite,
+              size: AppDimensions.iconMedium + 1,
+            ),
+            const SizedBox(height: AppDimensions.spaceXXS + 1),
             Text(
               label,
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+                color: AppColors.textWhite,
+                fontSize: AppTypography.sizeSmall,
+                fontWeight: AppTypography.weightBold,
               ),
             ),
           ],

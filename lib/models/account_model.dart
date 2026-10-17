@@ -25,7 +25,8 @@ class AccountModel {
     return {
       if (id != null) 'id': id,
       'name': name,
-      'account_type': accountType == AccountType.supplier ? 'SUPPLIER' : 'BENEFICIARY',
+      'account_type':
+          accountType == AccountType.supplier ? 'SUPPLIER' : 'BENEFICIARY',
       'phone_number': phoneNumber,
       'is_active': isActive ? 1 : 0,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),

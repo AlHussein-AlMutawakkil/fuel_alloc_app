@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/transactions_controller.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_typography.dart';
 import '../../core/utils/formatters.dart';
-import '../../core/widgets/custom_button.dart';
+import '../../core/widgets/app_loading_indicator.dart';
+import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/custom_dialog.dart';
+import '../../core/widgets/empty_state_widget.dart';
+import '../../core/widgets/filter_chip_widget.dart';
 import '../../core/widgets/operation_entry_sheet.dart';
 import '../../models/station_model.dart';
 import '../../models/transaction_model.dart';
 import 'widgets/fuel_summary_card.dart';
 
 /// واجهة كشف حساب وعمليات المحطة (وارد فعلي، منصرف فعلي، عمولة تهوية، ومقاصات)
-/// مخصصة للمطابقة والمحاسبة الدورية مع المحطة
 class StationTransactionsView extends StatefulWidget {
   final StationModel station;
 
@@ -55,7 +59,7 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
 
     await OperationEntrySheet.show(
       context: context,
-      initialTabIndex: 1, // فعلي افتراضياً للمحطات
+      initialTabIndex: 1,
       initialDirection: 0,
       initialStationId: widget.station.id,
       initialFuelTypeId: currentFuelId,
@@ -71,10 +75,10 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
   void _deleteTransaction(TransactionModel tx) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'تأكيد!',
-      message: 'هل تريد حذف هذا القيد من سجل المحطة؟',
-      confirmText: 'حسناً',
-      cancelText: 'إلغاء',
+      title: AppStrings.confirmExclamation,
+      message: AppStrings.confirmDeleteStationTransactionMsg,
+      confirmText: AppStrings.ok,
+      cancelText: AppStrings.cancel,
       isDanger: true,
     );
 
@@ -85,98 +89,65 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                 widget.station.id!,
               );
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(AppStrings.transactionDeletedSuccess),
-            backgroundColor: Color(0xFF15803D),
-          ),
-        );
+        AppSnackBar.showSuccess(context, AppStrings.transactionDeletedSuccess);
       }
     }
   }
 
   void _showTransactionDetails(TransactionModel tx) {
-    showDialog(
+    CustomDialog.showDetails(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFF64748B), width: 1.2),
+      title: AppStrings.operationDetails,
+      rows: [
+        DialogDetailRow(
+          label: AppStrings.labelOperationType,
+          value: tx.typeName ?? AppStrings.operation,
         ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(AppStrings.operationDetails,
-                style: AppTextStyles.heading2),
-            IconButton(
-              icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              onPressed: () => Navigator.of(ctx).pop(),
-            ),
-          ],
+        DialogDetailRow(
+          label: AppStrings.labelDate,
+          value: AppFormatters.formatDate(tx.transactionDate),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDetailRow(AppStrings.labelOperationType,
-                tx.typeName ?? AppStrings.operation),
-            _buildDetailRow(AppStrings.labelDate,
-                AppFormatters.formatDate(tx.transactionDate)),
-            if (tx.accountName != null)
-              _buildDetailRow('الحساب المرتبط:', tx.accountName!),
-            if (tx.stationName != null)
-              _buildDetailRow(AppStrings.labelStation, tx.stationName!),
-            if (tx.referenceStationName != null &&
-                tx.referenceStationName != tx.stationName)
-              _buildDetailRow(
-                  AppStrings.labelReferenceStation, tx.referenceStationName!),
-            _buildDetailRow(AppStrings.labelFuelType, tx.fuelTypeName ?? '-'),
-            _buildDetailRow(
-              AppStrings.labelEnteredQuantity,
+        if (tx.accountName != null)
+          DialogDetailRow(
+            label: AppStrings.linkedAccountLabel,
+            value: tx.accountName!,
+          ),
+        if (tx.stationName != null)
+          DialogDetailRow(
+            label: AppStrings.labelStation,
+            value: tx.stationName!,
+          ),
+        if (tx.referenceStationName != null &&
+            tx.referenceStationName != tx.stationName)
+          DialogDetailRow(
+            label: AppStrings.labelReferenceStation,
+            value: tx.referenceStationName!,
+          ),
+        DialogDetailRow(
+          label: AppStrings.labelFuelType,
+          value: tx.fuelTypeName ?? '-',
+        ),
+        DialogDetailRow(
+          label: AppStrings.labelEnteredQuantity,
+          value:
               '${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? ''}',
-            ),
-            _buildDetailRow(
-              AppStrings.labelEquivalentLiters,
-              '${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter}',
-            ),
-            if (tx.referenceNumber != null && tx.referenceNumber!.isNotEmpty)
-              _buildDetailRow('رقم المرجع:', tx.referenceNumber!),
-            if (tx.notes != null && tx.notes!.isNotEmpty)
-              _buildDetailRow(AppStrings.labelStatement, tx.notes!),
-          ],
         ),
-        actions: [
-          CustomButton(
-            text: AppStrings.close,
-            variant: ButtonVariant.secondary,
-            onPressed: () => Navigator.of(ctx).pop(),
+        DialogDetailRow(
+          label: AppStrings.labelEquivalentLiters,
+          value:
+              '${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter}',
+        ),
+        if (tx.referenceNumber != null && tx.referenceNumber!.isNotEmpty)
+          DialogDetailRow(
+            label: AppStrings.referenceNumberLabel,
+            value: tx.referenceNumber!,
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style:
-                  AppTextStyles.caption.copyWith(fontWeight: FontWeight.bold),
-            ),
+        if (tx.notes != null && tx.notes!.isNotEmpty)
+          DialogDetailRow(
+            label: AppStrings.labelStatement,
+            value: tx.notes!,
           ),
-          Expanded(
-            child: Text(value, style: AppTextStyles.body),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -185,30 +156,35 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
     return Consumer<TransactionsController>(
       builder: (context, controller, child) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF8F8F8),
+          backgroundColor: AppColors.scaffoldBackground,
           appBar: AppBar(
             title: _isSearching
                 ? TextField(
                     controller: _searchController,
                     autofocus: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
-                    cursorColor: Colors.white,
+                    style: const TextStyle(
+                      color: AppColors.textWhite,
+                      fontSize: AppTypography.sizeBody + 1,
+                    ),
+                    cursorColor: AppColors.textWhite,
                     decoration: InputDecoration(
-                      hintText: 'بحث في عمليات المحطة أو التاريخ أو البيان...',
-                      hintStyle:
-                          TextStyle(color: Colors.white.withOpacity(0.7)),
+                      hintText: AppStrings.searchStationTransactionsHint,
+                      hintStyle: TextStyle(
+                        color: AppColors.textWhite.withOpacity(0.7),
+                      ),
                       border: InputBorder.none,
                     ),
                     onChanged: (val) => controller.setSearchQuery(val),
                   )
                 : Text(
-                    'كشف حساب محطة: ${widget.station.name}',
-                    style: AppTextStyles.appBarTitle,
+                    '${AppStrings.stationStatementPrefix}${widget.station.name}',
+                    style: AppTypography.appBarTitle,
                   ),
             actions: [
               IconButton(
-                icon: Icon(_isSearching ? Icons.close : Icons.search),
-                tooltip: _isSearching ? 'إغلاق البحث' : 'بحث',
+                icon: Icon(_isSearching ? AppIcons.close : AppIcons.search),
+                tooltip:
+                    _isSearching ? AppStrings.closeSearch : AppStrings.search,
                 onPressed: () {
                   setState(() {
                     _isSearching = !_isSearching;
@@ -220,12 +196,12 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.add),
+                icon: const Icon(AppIcons.add),
                 tooltip: AppStrings.addOperation,
                 onPressed: () => _openAddTransactionDialog(),
               ),
               IconButton(
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(AppIcons.refresh),
                 tooltip: AppStrings.refresh,
                 onPressed: () {
                   if (widget.station.id != null) {
@@ -236,88 +212,63 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
             ],
           ),
           body: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: AppDimensions.paddingScreen,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. بطاقة ملخص أرصدة المحطة للمحاسبة (تتغير بالسحب بين الأصناف)
                 _buildStationSummaryCard(controller),
-                const SizedBox(height: 12),
-
-                // 3. تبويبات الفلترة
+                const SizedBox(height: AppDimensions.spaceL),
                 Row(
                   children: [
-                    _buildFilterChip(
+                    AppFilterChip(
                       label: AppStrings.allFilter,
                       isSelected: controller.selectedFilter == 'ALL',
                       onTap: () => controller.setFilter('ALL'),
                     ),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(
-                      label: 'وارد فعلي',
+                    const SizedBox(width: AppDimensions.spaceM),
+                    AppFilterChip(
+                      label: AppStrings.filterSupplyActual,
                       isSelected: controller.selectedFilter == 'SUPPLY',
                       onTap: () => controller.setFilter('SUPPLY'),
                     ),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(
-                      label: 'منصرف فعلي',
+                    const SizedBox(width: AppDimensions.spaceM),
+                    AppFilterChip(
+                      label: AppStrings.filterDispenseActual,
                       isSelected: controller.selectedFilter == 'DISPENSE',
                       onTap: () => controller.setFilter('DISPENSE'),
                     ),
-                    const SizedBox(width: 8),
-                    _buildFilterChip(
-                      label: 'تهوية',
+                    const SizedBox(width: AppDimensions.spaceM),
+                    AppFilterChip(
+                      label: AppStrings.filterAeration,
                       isSelected: controller.selectedFilter == 'AERATION',
                       onTap: () => controller.setFilter('AERATION'),
                     ),
                     const Spacer(),
                     Text(
                       '${AppStrings.totalOperations}: ${_getFilteredTransactions(controller).length}',
-                      style: AppTextStyles.caption
-                          .copyWith(fontWeight: FontWeight.bold),
+                      style: AppTypography.captionBold,
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-
-                // 4. قائمة عمليات المحطة
+                const SizedBox(height: AppDimensions.spaceL + 2),
                 Expanded(
                   child: controller.isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                              color: AppColors.primary),
-                        )
+                      ? const AppLoadingIndicator()
                       : _getFilteredTransactions(controller).isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.local_gas_station_outlined,
-                                    size: 56,
-                                    color: AppColors.textMuted.withOpacity(0.5),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  const Text(
-                                    'لا توجد عمليات مسجلة لهذه المحطة حتى الآن',
-                                    style: AppTextStyles.bodySecondary,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  CustomButton(
-                                    text: 'تسجيل أول عملية في المحطة',
-                                    icon: Icons.add,
-                                    variant: ButtonVariant.secondary,
-                                    onPressed: () =>
-                                        _openAddTransactionDialog(),
-                                  ),
-                                ],
-                              ),
+                          ? EmptyStateWidget(
+                              icon: AppIcons.gasStationOutlined,
+                              title: AppStrings.noStationTransactionsFound,
+                              actionText:
+                                  AppStrings.recordFirstStationOperation,
+                              actionIcon: AppIcons.add,
+                              onAction: () => _openAddTransactionDialog(),
                             )
                           : ListView.separated(
                               itemCount:
                                   _getFilteredTransactions(controller).length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 10),
+                              separatorBuilder: (_, __) => const SizedBox(
+                                height: AppDimensions.spaceM + 2,
+                              ),
                               itemBuilder: (context, index) {
                                 final tx =
                                     _getFilteredTransactions(controller)[index];
@@ -338,7 +289,6 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
     return controller.transactions;
   }
 
-  /// بطاقة إحصائيات رصيد المحطة الموحدة (مكون مرن ومشترك FuelSummarySlider)
   Widget _buildStationSummaryCard(TransactionsController controller) {
     return FuelSummarySlider(
       fuelTypes: controller.fuelTypes,
@@ -355,127 +305,102 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
           fuelName: fuelName,
           balance: balance,
           secondaryTag:
-              'التهوية: ${widget.station.defaultCommissionRate}%',
+              '${AppStrings.commissionRatePrefix}${widget.station.defaultCommissionRate}%',
           metrics: [
-            FuelCardMetric(value: supply, label: 'الوارد الفعلي'),
+            FuelCardMetric(
+              value: supply,
+              label: AppStrings.actualSupply,
+            ),
             FuelCardMetric(
               value: aeration,
-              label: 'عمولة التهوية',
-              valueColor: const Color(0xFFD97706),
+              label: AppStrings.aerationCommissionTitle,
+              valueColor: AppColors.warning,
             ),
-            FuelCardMetric(value: dispense, label: 'المنصرف الفعلي'),
+            FuelCardMetric(
+              value: dispense,
+              label: AppStrings.actualDispense,
+            ),
           ],
         );
       },
     );
   }
 
-  Widget _buildFilterChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : const Color(0xFF64748B),
-            width: 1.2,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.caption.copyWith(
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// بناء بطاقة العملية في سجل المحطة
   Widget _buildStationTransactionCard(TransactionModel tx) {
-    // التوريد الفعلي (2): أخضر (+)
-    // المنصرف الفعلي (5): أحمر (-)
-    // عمولة التهوية (3): برتقالي (-)
     final bool isSupply = tx.typeId == 2;
     final bool isDispense = tx.typeId == 5;
     final bool isAeration = tx.typeId == 3;
 
     final Color badgeColor = isDispense
-        ? const Color(0xFFB91C1C)
-        : (isAeration ? const Color(0xFFD97706) : const Color(0xFF15803D));
+        ? AppColors.dispenseRed
+        : (isAeration ? AppColors.warning : AppColors.supplyGreen);
 
     final Color badgeBg = isDispense
-        ? const Color(0xFFFEE2E2)
-        : (isAeration ? const Color(0xFFFEF3C7) : const Color(0xFFDCFCE7));
+        ? AppColors.dispenseLight
+        : (isAeration ? AppColors.warningLight : AppColors.supplyLight);
 
     final String sign = isSupply ? '+' : '-';
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF64748B), width: 1.2),
+        color: AppColors.surface,
+        borderRadius: AppDimensions.borderRadiusM,
+        border: Border.all(
+          color: AppColors.border,
+          width: AppDimensions.borderWidthThin,
+        ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppDimensions.borderRadiusM,
         child: IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // الشريط اللوني الجانبي
               Container(width: 5, color: badgeColor),
-
               Expanded(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppDimensions.spaceL,
+                    vertical: AppDimensions.spaceM + 2,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // الصف العلوي: النوع والتاريخ
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
+                            padding: AppDimensions.paddingTag,
                             decoration: BoxDecoration(
                               color: badgeBg,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: AppDimensions.borderRadiusXS,
                             ),
                             child: Text(
                               tx.typeName ?? AppStrings.operation,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: AppTypography.sizeCaption,
                                 color: badgeColor,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: AppTypography.weightBold,
                               ),
                             ),
                           ),
                           Row(
                             children: [
-                              const Icon(Icons.calendar_today_outlined,
-                                  size: 13, color: AppColors.textMuted),
-                              const SizedBox(width: 4),
+                              const Icon(
+                                AppIcons.calendar,
+                                size: AppDimensions.iconMicro,
+                                color: AppColors.textMuted,
+                              ),
+                              const SizedBox(width: AppDimensions.spaceXS),
                               Text(
                                 AppFormatters.formatDate(tx.transactionDate),
-                                style: AppTextStyles.caption,
+                                style: AppTypography.caption,
                               ),
                             ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-
-                      // الصف الأوسط: تفاصيل الحساب والصنف والكمية
+                      const SizedBox(height: AppDimensions.spaceM),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -484,94 +409,102 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                               children: [
                                 if (tx.fuelTypeName != null) ...[
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(4),
+                                    padding: AppDimensions.paddingMiniTag,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.chipBackground,
+                                      borderRadius:
+                                          AppDimensions.borderRadiusXS,
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.local_gas_station,
-                                            size: 13,
-                                            color: AppColors.textSecondary),
-                                        const SizedBox(width: 3),
+                                        const Icon(
+                                          AppIcons.gasStation,
+                                          size: AppDimensions.iconMicro,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(
+                                          width: AppDimensions.spaceXXS + 1,
+                                        ),
                                         Text(
                                           tx.fuelTypeName!,
-                                          style: AppTextStyles.caption.copyWith(
-                                              fontWeight: FontWeight.w600),
+                                          style: AppTypography.caption.copyWith(
+                                            fontWeight:
+                                                AppTypography.weightSemiBold,
+                                          ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: AppDimensions.spaceM),
                                 ],
                                 if (tx.accountName != null)
                                   Flexible(
                                     child: Text(
-                                      '${isSupply ? "المورد:" : "العميل:"} ${tx.accountName!}',
-                                      style: AppTextStyles.bodySecondary
-                                          .copyWith(
-                                              fontWeight: FontWeight.w600),
+                                      '${isSupply ? AppStrings.supplierPrefix : AppStrings.beneficiaryPrefix} ${tx.accountName!}',
+                                      style:
+                                          AppTypography.bodySecondary.copyWith(
+                                        fontWeight:
+                                            AppTypography.weightSemiBold,
+                                      ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                               ],
                             ),
                           ),
-                          // الكمية والمعادل
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
                                 '$sign ${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? ''}',
                                 style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: AppTypography.sizeBody + 1,
+                                  fontWeight: AppTypography.weightBold,
                                   color: badgeColor,
                                 ),
                               ),
                               Text(
-                                '(${AppFormatters.formatQuantity(tx.baseQuantityLiters)} لتر)',
-                                style: AppTextStyles.caption
-                                    .copyWith(color: AppColors.textMuted),
+                                '(${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter})',
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textMuted,
+                                ),
                               ),
                             ],
                           ),
                         ],
                       ),
-
-                      // تنبيه المقاصة إن وجد
                       if (tx.referenceStationName != null &&
                           tx.referenceStationName != tx.stationName) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppDimensions.spaceXS),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(4),
+                          padding: AppDimensions.paddingMiniTag,
+                          decoration: const BoxDecoration(
+                            color: AppColors.infoLight,
+                            borderRadius: AppDimensions.borderRadiusXS,
                           ),
                           child: Text(
-                            'بمقاصة خصم من: ${tx.referenceStationName!}',
+                            '${AppStrings.offsetDiscountFromPrefix}${tx.referenceStationName!}',
                             style: const TextStyle(
-                                fontSize: 11, color: Color(0xFF1D4ED8)),
+                              fontSize: AppTypography.sizeSmall,
+                              color: AppColors.infoText,
+                            ),
                           ),
                         ),
                       ],
-
-                      // البيان
                       if (tx.notes != null && tx.notes!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: AppDimensions.spaceS),
                         Row(
                           children: [
-                            const Icon(Icons.description_outlined,
-                                size: 14, color: AppColors.textMuted),
-                            const SizedBox(width: 4),
+                            const Icon(
+                              AppIcons.statement,
+                              size: AppDimensions.iconMini,
+                              color: AppColors.textMuted,
+                            ),
+                            const SizedBox(width: AppDimensions.spaceXS),
                             Expanded(
                               child: Text(
                                 tx.notes!,
-                                style: AppTextStyles.caption.copyWith(
+                                style: AppTypography.caption.copyWith(
                                   color: AppColors.textSecondary,
                                   fontStyle: FontStyle.italic,
                                 ),
@@ -585,15 +518,19 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                   ),
                 ),
               ),
-
-              // قائمة الخيارات
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert,
-                    color: AppColors.textSecondary, size: 18),
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: const BorderSide(color: Color(0xFF64748B), width: 1.2),
+                icon: const Icon(
+                  AppIcons.moreVert,
+                  color: AppColors.textSecondary,
+                  size: AppDimensions.iconRegular,
+                ),
+                color: AppColors.surface,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppDimensions.borderRadiusM,
+                  side: BorderSide(
+                    color: AppColors.border,
+                    width: AppDimensions.borderWidthThin,
+                  ),
                 ),
                 onSelected: (action) {
                   if (action == 'details') {
@@ -618,10 +555,13 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     value: 'details',
                     child: Row(
                       children: [
-                        Icon(Icons.info_outline,
-                            size: 18, color: AppColors.textSecondary),
-                        SizedBox(width: 8),
-                        Text(AppStrings.details, style: AppTextStyles.body),
+                        Icon(
+                          AppIcons.info,
+                          size: AppDimensions.iconRegular,
+                          color: AppColors.textSecondary,
+                        ),
+                        SizedBox(width: AppDimensions.spaceM),
+                        Text(AppStrings.details, style: AppTypography.body),
                       ],
                     ),
                   ),
@@ -629,10 +569,13 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     value: 'edit',
                     child: Row(
                       children: [
-                        Icon(Icons.edit_outlined,
-                            size: 18, color: AppColors.textSecondary),
-                        SizedBox(width: 8),
-                        Text(AppStrings.edit, style: AppTextStyles.body),
+                        Icon(
+                          AppIcons.edit,
+                          size: AppDimensions.iconRegular,
+                          color: AppColors.textSecondary,
+                        ),
+                        SizedBox(width: AppDimensions.spaceM),
+                        Text(AppStrings.edit, style: AppTypography.body),
                       ],
                     ),
                   ),
@@ -640,13 +583,18 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     value: 'delete',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline,
-                            size: 18, color: Color(0xFFB91C1C)),
-                        SizedBox(width: 8),
+                        Icon(
+                          AppIcons.delete,
+                          size: AppDimensions.iconRegular,
+                          color: AppColors.dispenseRed,
+                        ),
+                        SizedBox(width: AppDimensions.spaceM),
                         Text(
                           AppStrings.delete,
-                          style:
-                              TextStyle(color: Color(0xFFB91C1C), fontSize: 14),
+                          style: TextStyle(
+                            color: AppColors.dispenseRed,
+                            fontSize: AppTypography.sizeBody,
+                          ),
                         ),
                       ],
                     ),

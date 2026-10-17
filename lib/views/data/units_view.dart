@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/constants/app_typography.dart';
+import '../../core/widgets/app_loading_indicator.dart';
 import '../../core/widgets/custom_dialog.dart';
+import '../../core/widgets/custom_modal_sheet.dart';
+import '../../core/widgets/empty_state_widget.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../../data/local/database_helper.dart';
 
@@ -39,242 +45,62 @@ class _UnitsViewState extends State<UnitsView> {
       text: unit != null ? unit['conversion_factor'].toString() : '',
     );
 
-    showModalBottomSheet(
+    CustomModalSheet.show(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (dialogCtx, setModalState) {
-            return Center(
-              child: Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                constraints: const BoxConstraints(maxWidth: 480),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 20,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
-                    ),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 18,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 1. رأس النافذة المنبثقة: العنوان وزر الإغلاق
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  unit == null ? 'إضافة وحدة' : 'تعديل وحدة',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.close_rounded,
-                                  color: Color(0xFF64748B),
-                                  size: 20,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                                onPressed: () => Navigator.of(dialogCtx).pop(),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-
-                          // 2. حقل اسم الوحدة مع حدود ناعمة وبدون أي نصوص إضافية
-                          _buildMinimalInputField(
-                            label: 'اسم الوحدة',
-                            controller: nameController,
-                          ),
-                          const SizedBox(height: 14),
-
-                          // 3. حقل معامل التحويل مع حدود ناعمة وبدون أي نصوص إضافية
-                          _buildMinimalInputField(
-                            label: 'معامل التحويل إلى لتر',
-                            controller: factorController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // 4. زري الإلغاء والتأكيد المتطابقين مع الصورة
-                          Row(
-                            children: [
-                              // زر الإلغاء (يظهر يميناً في RTL)
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () => Navigator.of(dialogCtx).pop(),
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Container(
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFf8f8f8),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      'إلغاء',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF334155),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-
-                              // زر التأكيد (يظهر يساراً في RTL)
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () async {
-                                    final name = nameController.text.trim();
-                                    final factor = double.tryParse(
-                                            factorController.text.trim()) ??
-                                        1.0;
-                                    if (name.isEmpty) return;
-
-                                    final navigator = Navigator.of(dialogCtx);
-                                    final db =
-                                        await DatabaseHelper.instance.database;
-                                    if (unit == null) {
-                                      await db.insert('units', {
-                                        'name': name,
-                                        'conversion_factor': factor,
-                                        'is_base_unit': 0,
-                                      });
-                                    } else {
-                                      await db.update(
-                                        'units',
-                                        {
-                                          'name': name,
-                                          'conversion_factor': factor
-                                        },
-                                        where: 'id = ?',
-                                        whereArgs: [unit['id']],
-                                      );
-                                    }
-                                    navigator.pop();
-                                    _loadUnits();
-                                  },
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Container(
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF1E1E1E),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      'تأكيد',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+      title: unit == null ? AppStrings.addUnit : AppStrings.editUnit,
+      contentBuilder: (ctx, setModalState) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CustomModalSheet.buildTextField(
+              label: AppStrings.unitNameLabel,
+              controller: nameController,
+            ),
+            const SizedBox(height: AppDimensions.spaceL),
+            CustomModalSheet.buildTextField(
+              label: AppStrings.conversionFactorLabel,
+              controller: factorController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
-            );
-          },
+            ),
+          ],
         );
       },
-    );
-  }
+      onSave: (ctx) async {
+        final name = nameController.text.trim();
+        final factor = double.tryParse(factorController.text.trim()) ?? 1.0;
+        if (name.isEmpty) return;
 
-  Widget _buildMinimalInputField({
-    required String label,
-    required TextEditingController controller,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF64748B),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: const Color(0xFFf8f8f8),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: const Color(0xFFE2E8F0),
-              width: 1.0,
-            ),
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF0F172A),
-            ),
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-        ),
-      ],
+        final navigator = Navigator.of(ctx);
+        final db = await DatabaseHelper.instance.database;
+        if (unit == null) {
+          await db.insert('units', {
+            'name': name,
+            'conversion_factor': factor,
+            'is_base_unit': 0,
+          });
+        } else {
+          await db.update(
+            'units',
+            {'name': name, 'conversion_factor': factor},
+            where: 'id = ?',
+            whereArgs: [unit['id']],
+          );
+        }
+        navigator.pop();
+        _loadUnits();
+      },
     );
   }
 
   void _deleteUnit(int id) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'تأكيد!',
-      message: 'هل تريد حذف هذه الوحدة؟',
-      confirmText: 'حسناً',
-      cancelText: 'إلغاء',
+      title: AppStrings.confirmExclamation,
+      message: AppStrings.confirmDeleteUnitMsg,
+      confirmText: AppStrings.ok,
+      cancelText: AppStrings.cancel,
       isDanger: true,
     );
     if (confirm) {
@@ -287,43 +113,46 @@ class _UnitsViewState extends State<UnitsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f8f8),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: OneUiAppBar(
-        title: 'دليل الوحدات',
+        title: AppStrings.unitsDirectory,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: 'إضافة وحدة',
+            icon: const Icon(AppIcons.addRounded),
+            tooltip: AppStrings.addUnit,
             onPressed: () => _openAddEditDialog(),
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
+          ? const AppLoadingIndicator()
           : ListView(
-              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppDimensions.spaceL,
+              ),
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 6.0),
+                    horizontal: AppDimensions.space2XL,
+                    vertical: AppDimensions.spaceS,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'قائمة الوحدات المعتمدة',
+                        AppStrings.approvedUnitsList,
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF64748B),
+                          fontSize: AppTypography.sizeBodySecondary,
+                          fontWeight: AppTypography.weightSemiBold,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                       Text(
-                        'العدد: ${_units.length}',
+                        '${AppStrings.countPrefix}${_units.length}',
                         style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF94A3B8),
+                          fontSize: AppTypography.sizeCaption,
+                          fontWeight: AppTypography.weightMedium,
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ],
@@ -332,28 +161,9 @@ class _UnitsViewState extends State<UnitsView> {
                 if (_units.isEmpty)
                   const OneUiCard(
                     children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            vertical: 36.0, horizontal: 20.0),
-                        child: Center(
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.straighten_outlined,
-                                size: 40,
-                                color: Color(0xFF94A3B8),
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                'لا توجد وحدات مسجلة بعد',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      EmptyStateWidget(
+                        icon: AppIcons.unitOutlined,
+                        title: AppStrings.noUnitsRecordedYet,
                       ),
                     ],
                   )
@@ -367,54 +177,54 @@ class _UnitsViewState extends State<UnitsView> {
                           height: 38,
                           decoration: BoxDecoration(
                             color: isBase
-                                ? const Color(0xFFDCFCE7)
-                                : const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
+                                ? AppColors.supplyLight
+                                : AppColors.chipBackground,
+                            borderRadius: AppDimensions.borderRadiusL,
                           ),
                           child: Icon(
-                            Icons.straighten_rounded,
+                            AppIcons.unitRounded,
                             color: isBase
-                                ? const Color(0xFF15803D)
-                                : const Color(0xFF102A43),
-                            size: 20,
+                                ? AppColors.supplyGreen
+                                : AppColors.primary,
+                            size: AppDimensions.iconMedium,
                           ),
                         ),
                         title: u['name'].toString(),
-                        subtitle: 'المعادل: ${u['conversion_factor']} لتر',
+                        subtitle:
+                            '${AppStrings.equivalentPrefix} ${u['conversion_factor']} ${AppStrings.unitLiter}',
                         onTap: () => _openAddEditDialog(unit: u),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             if (isBase)
                               Container(
-                                margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 3,
+                                margin: const EdgeInsets.only(
+                                  left: AppDimensions.spaceS,
                                 ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFDCFCE7),
-                                  borderRadius: BorderRadius.circular(6),
+                                padding: AppDimensions.paddingTag,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.supplyLight,
+                                  borderRadius: AppDimensions.borderRadiusS,
                                 ),
                                 child: const Text(
-                                  'أساسية',
+                                  AppStrings.baseUnitBadge,
                                   style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF15803D),
+                                    fontSize: AppTypography.sizeSmall,
+                                    fontWeight: AppTypography.weightBold,
+                                    color: AppColors.supplyGreen,
                                   ),
                                 ),
                               ),
                             PopupMenuButton<String>(
                               icon: const Icon(
-                                Icons.more_vert,
-                                color: Color(0xFF94A3B8),
-                                size: 20,
+                                AppIcons.moreVert,
+                                color: AppColors.textMuted,
+                                size: AppDimensions.iconMedium,
                               ),
-                              color: Colors.white,
+                              color: AppColors.surface,
                               elevation: 3,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: AppDimensions.borderRadiusXL,
                               ),
                               onSelected: (action) {
                                 if (action == 'edit') {
@@ -428,11 +238,18 @@ class _UnitsViewState extends State<UnitsView> {
                                   value: 'edit',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.edit_outlined,
-                                          size: 18, color: Color(0xFF475569)),
-                                      SizedBox(width: 8),
-                                      Text(AppStrings.edit,
-                                          style: TextStyle(fontSize: 14)),
+                                      Icon(
+                                        AppIcons.edit,
+                                        size: AppDimensions.iconRegular,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                      SizedBox(width: AppDimensions.spaceM),
+                                      Text(
+                                        AppStrings.edit,
+                                        style: TextStyle(
+                                          fontSize: AppTypography.sizeBody,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -441,13 +258,19 @@ class _UnitsViewState extends State<UnitsView> {
                                     value: 'delete',
                                     child: Row(
                                       children: [
-                                        Icon(Icons.delete_outline,
-                                            size: 18, color: Color(0xFFB91C1C)),
-                                        SizedBox(width: 8),
-                                        Text(AppStrings.delete,
-                                            style: TextStyle(
-                                                color: Color(0xFFB91C1C),
-                                                fontSize: 14)),
+                                        Icon(
+                                          AppIcons.delete,
+                                          size: AppDimensions.iconRegular,
+                                          color: AppColors.dispenseRed,
+                                        ),
+                                        SizedBox(width: AppDimensions.spaceM),
+                                        Text(
+                                          AppStrings.delete,
+                                          style: TextStyle(
+                                            color: AppColors.dispenseRed,
+                                            fontSize: AppTypography.sizeBody,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),

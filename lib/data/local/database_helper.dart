@@ -26,7 +26,8 @@ class DatabaseHelper {
         final columns = await db.rawQuery('PRAGMA table_info(transactions)');
         final hasRef = columns.any((c) => c['name'] == 'reference_number');
         if (!hasRef) {
-          await db.execute('ALTER TABLE transactions ADD COLUMN reference_number TEXT;');
+          await db.execute(
+              'ALTER TABLE transactions ADD COLUMN reference_number TEXT;');
         }
       },
     );

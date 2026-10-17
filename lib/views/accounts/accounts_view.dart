@@ -3,16 +3,22 @@ import 'package:provider/provider.dart';
 import '../../controllers/accounts_controller.dart';
 import '../../controllers/stations_controller.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_typography.dart';
+import '../../core/widgets/app_loading_indicator.dart';
+import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/custom_dialog.dart';
+import '../../core/widgets/custom_dropdown.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
+import '../../core/widgets/empty_state_widget.dart';
+import '../../core/widgets/one_ui_card.dart';
 import '../../models/account_model.dart';
 import '../../models/station_model.dart';
 import 'account_transactions_view.dart';
 import 'station_transactions_view.dart';
 import 'widgets/slidable_account_tile.dart';
-import '../../core/widgets/one_ui_card.dart';
 
 enum AccountFilterTab { beneficiaries, suppliers, stations }
 
@@ -66,48 +72,29 @@ class _AccountsViewState extends State<AccountsView> {
               label: AppStrings.accountName,
               controller: nameController,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildLabel(AppStrings.accountType),
-            Container(
-              height: 48,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFf8f8f8),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                    color: CustomModalSheet.fieldBorderColor, width: 1.0),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<AccountType>(
-                  isExpanded: true,
-                  value: selectedType,
-                  icon: const Icon(Icons.keyboard_arrow_down,
-                      color: Color(0xFF64748B), size: 18),
-                  items: const [
-                    DropdownMenuItem(
-                      value: AccountType.beneficiary,
-                      child: Text(AppStrings.typeBeneficiary,
-                          style: TextStyle(
-                              fontSize: 13, color: Color(0xFF1E293B))),
-                    ),
-                    DropdownMenuItem(
-                      value: AccountType.supplier,
-                      child: Text(AppStrings.typeSupplier,
-                          style: TextStyle(
-                              fontSize: 13, color: Color(0xFF1E293B))),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setModalState(() {
-                        selectedType = val;
-                      });
-                    }
-                  },
+            CustomDropdown<AccountType>(
+              value: selectedType,
+              borderColor: CustomModalSheet.fieldBorderColor,
+              backgroundColor: AppColors.scaffoldBackground,
+              items: const [
+                CustomDropdownItem(
+                  value: AccountType.beneficiary,
+                  label: AppStrings.typeBeneficiary,
                 ),
-              ),
+                CustomDropdownItem(
+                  value: AccountType.supplier,
+                  label: AppStrings.typeSupplier,
+                ),
+              ],
+              onChanged: (val) {
+                setModalState(() {
+                  selectedType = val;
+                });
+              },
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
               label: AppStrings.phoneNumber,
               controller: phoneController,
@@ -143,10 +130,10 @@ class _AccountsViewState extends State<AccountsView> {
   void _deleteAccount(AccountModel account) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'تأكيد!',
-      message: 'هل تريد حذف هذا الحساب؟',
-      confirmText: 'حسناً',
-      cancelText: 'إلغاء',
+      title: AppStrings.confirmExclamation,
+      message: AppStrings.confirmDeleteAccountMsg,
+      confirmText: AppStrings.ok,
+      cancelText: AppStrings.cancel,
       isDanger: true,
     );
 
@@ -158,24 +145,18 @@ class _AccountsViewState extends State<AccountsView> {
   void _archiveAccount(AccountModel account) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'أرشفة الحساب',
+      title: AppStrings.archiveAccountTitle,
       message:
           'هل تريد أرشفة "${account.name}"؟ سيتم نقله للأرشيف مع حفظ كافة عملياته وسجلاته.',
-      confirmText: 'أرشفة',
-      cancelText: 'إلغاء',
+      confirmText: AppStrings.archive,
+      cancelText: AppStrings.cancel,
       isDanger: false,
     );
 
     if (confirm && account.id != null && mounted) {
       await context.read<AccountsController>().deleteAccount(account.id!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('تمت أرشفة ${account.name} بنجاح'),
-            backgroundColor: const Color(0xFFF59E0B),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showWarning(context, 'تمت أرشفة ${account.name} بنجاح');
       }
     }
   }
@@ -194,29 +175,29 @@ class _AccountsViewState extends State<AccountsView> {
 
     CustomModalSheet.show(
       context: context,
-      title: station == null ? 'إضافة محطة' : 'تعديل محطة',
+      title: station == null ? AppStrings.addStation : AppStrings.editStation,
       contentBuilder: (ctx, setModalState) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             CustomModalSheet.buildTextField(
-              label: 'اسم المحطة',
+              label: AppStrings.stationNameLabel,
               controller: nameController,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
-              label: 'الموقع / المدينة',
+              label: AppStrings.locationCityLabel,
               controller: locationController,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
-              label: 'رقم الهاتف',
+              label: AppStrings.phoneNumber,
               controller: phoneController,
               keyboardType: TextInputType.phone,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
-              label: 'نسبة عمولة التهوية (%)',
+              label: AppStrings.commissionRatePercentLabel,
               controller: commissionController,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -262,10 +243,10 @@ class _AccountsViewState extends State<AccountsView> {
   void _deleteStation(StationModel station) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'تأكيد!',
-      message: 'هل تريد حذف هذه المحطة؟',
-      confirmText: 'حسناً',
-      cancelText: 'إلغاء',
+      title: AppStrings.confirmExclamation,
+      message: AppStrings.confirmDeleteStationMsg,
+      confirmText: AppStrings.ok,
+      cancelText: AppStrings.cancel,
       isDanger: true,
     );
 
@@ -277,24 +258,18 @@ class _AccountsViewState extends State<AccountsView> {
   void _archiveStation(StationModel station) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'أرشفة المحطة',
+      title: AppStrings.archiveStationTitle,
       message:
           'هل تريد أرشفة محطة "${station.name}"؟ سيتم نقلها للأرشيف مع حفظ كافة كشوفاتها وسجلاتها.',
-      confirmText: 'أرشفة',
-      cancelText: 'إلغاء',
+      confirmText: AppStrings.archive,
+      cancelText: AppStrings.cancel,
       isDanger: false,
     );
 
     if (confirm && station.id != null && mounted) {
       await context.read<StationsController>().deleteStation(station.id!);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('تمت أرشفة ${station.name} بنجاح'),
-            backgroundColor: const Color(0xFFF59E0B),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showWarning(context, 'تمت أرشفة ${station.name} بنجاح');
       }
     }
   }
@@ -328,23 +303,27 @@ class _AccountsViewState extends State<AccountsView> {
         final isStationTab = _activeTab == AccountFilterTab.stations;
 
         return Scaffold(
-          backgroundColor: const Color(0xfff8f8f8),
+          backgroundColor: AppColors.scaffoldBackground,
           appBar: AppBar(
             automaticallyImplyLeading: false,
             title: _isSearching
                 ? TextField(
                     controller: _searchController,
                     autofocus: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 15),
-                    cursorColor: Colors.white,
+                    style: const TextStyle(
+                      color: AppColors.textWhite,
+                      fontSize: AppTypography.sizeBody + 1,
+                    ),
+                    cursorColor: AppColors.textWhite,
                     decoration: InputDecoration(
                       hintText: isStationTab
-                          ? 'بحث في المحطات أو الموقع...'
+                          ? AppStrings.searchStationsHint
                           : (_activeTab == AccountFilterTab.suppliers
-                              ? 'بحث في الموردين أو الهاتف...'
-                              : 'بحث في المستفيدين أو الهاتف...'),
-                      hintStyle:
-                          TextStyle(color: Colors.white.withOpacity(0.7)),
+                              ? AppStrings.searchSuppliersHint
+                              : AppStrings.searchBeneficiariesHint),
+                      hintStyle: TextStyle(
+                        color: AppColors.textWhite.withOpacity(0.7),
+                      ),
                       border: InputBorder.none,
                     ),
                     onChanged: (val) {
@@ -357,16 +336,17 @@ class _AccountsViewState extends State<AccountsView> {
                   )
                 : Text(
                     isStationTab
-                        ? 'محطات الوقود'
+                        ? AppStrings.fuelStationsTabTitle
                         : (_activeTab == AccountFilterTab.suppliers
-                            ? 'الموردين'
-                            : 'المستفيدين'),
-                    style: AppTextStyles.appBarTitle,
+                            ? AppStrings.suppliersTab
+                            : AppStrings.beneficiariesTab),
+                    style: AppTypography.appBarTitle,
                   ),
             actions: [
               IconButton(
-                icon: Icon(_isSearching ? Icons.close : Icons.search),
-                tooltip: _isSearching ? 'إغلاق البحث' : 'بحث',
+                icon: Icon(_isSearching ? AppIcons.close : AppIcons.search),
+                tooltip:
+                    _isSearching ? AppStrings.closeSearch : AppStrings.search,
                 onPressed: () {
                   setState(() {
                     _isSearching = !_isSearching;
@@ -379,12 +359,12 @@ class _AccountsViewState extends State<AccountsView> {
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.add),
+                icon: const Icon(AppIcons.add),
                 tooltip: isStationTab
-                    ? 'إضافة محطة'
+                    ? AppStrings.addStation
                     : (_activeTab == AccountFilterTab.suppliers
-                        ? 'إضافة مورد'
-                        : 'إضافة مستفيد'),
+                        ? AppStrings.addSupplier
+                        : AppStrings.addBeneficiary),
                 onPressed: () {
                   if (isStationTab) {
                     _showAddEditStationDialog();
@@ -402,10 +382,7 @@ class _AccountsViewState extends State<AccountsView> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. شريط التبويبات الكبسولي المطابق تماماً للصورة (المستفيدين - الموردين - المحطات)
               _buildSegmentControl(accController, stationsController),
-
-              // 2. كرت القائمة الأبيض الموحد ذو الزوايا الدائرية الكاملة One UI
               Expanded(
                 child: OneUiListContainer(
                   child: isStationTab
@@ -420,22 +397,21 @@ class _AccountsViewState extends State<AccountsView> {
     );
   }
 
-  /// شريط التبويبات الثلاثي الكبسولي (مطابق للصورة تماماً: أنثى / ذكر / صوتي -> المستفيدين / الموردين / المحطات)
   Widget _buildSegmentControl(
     AccountsController accController,
     StationsController stationsController,
   ) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      padding: const EdgeInsets.all(4.0),
-      decoration: BoxDecoration(
-        color: const Color(0xfff1f1f1), // خلفية رمادية فاتحة وناعمة One UI
-        borderRadius: BorderRadius.circular(12),
+      margin: AppDimensions.paddingSegment,
+      padding: AppDimensions.paddingAllXS,
+      decoration: const BoxDecoration(
+        color: AppColors.segmentBackground,
+        borderRadius: AppDimensions.borderRadiusXL,
       ),
       child: Row(
         children: [
           _buildSegmentItem(
-            label: 'المستفيدين',
+            label: AppStrings.beneficiariesTab,
             isSelected: _activeTab == AccountFilterTab.beneficiaries,
             onTap: () {
               setState(() => _activeTab = AccountFilterTab.beneficiaries);
@@ -443,7 +419,7 @@ class _AccountsViewState extends State<AccountsView> {
             },
           ),
           _buildSegmentItem(
-            label: 'الموردين',
+            label: AppStrings.suppliersTab,
             isSelected: _activeTab == AccountFilterTab.suppliers,
             onTap: () {
               setState(() => _activeTab = AccountFilterTab.suppliers);
@@ -451,7 +427,7 @@ class _AccountsViewState extends State<AccountsView> {
             },
           ),
           _buildSegmentItem(
-            label: 'المحطات',
+            label: AppStrings.stationsTab,
             isSelected: _activeTab == AccountFilterTab.stations,
             onTap: () {
               setState(() => _activeTab = AccountFilterTab.stations);
@@ -477,14 +453,14 @@ class _AccountsViewState extends State<AccountsView> {
           padding: const EdgeInsets.symmetric(vertical: 9),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? AppColors.surface : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
             boxShadow: isSelected
-                ? [
+                ? const [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
+                      color: AppColors.shadowSubtle,
                       blurRadius: 4,
-                      offset: const Offset(0, 1),
+                      offset: Offset(0, 1),
                     ),
                   ]
                 : null,
@@ -492,11 +468,12 @@ class _AccountsViewState extends State<AccountsView> {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 14,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected
-                  ? const Color(0xFF0F172A)
-                  : const Color(0xFF64748B),
+              fontSize: AppTypography.sizeBody,
+              fontWeight: isSelected
+                  ? AppTypography.weightBold
+                  : AppTypography.weightMedium,
+              color:
+                  isSelected ? AppColors.textPrimary : AppColors.textTertiary,
             ),
           ),
         ),
@@ -504,21 +481,16 @@ class _AccountsViewState extends State<AccountsView> {
     );
   }
 
-  // --- قائمة الحسابات بنمط القائمة المفتوحة مع فواصل ناعمة ---
-
   Widget _buildAccountsList(AccountsController controller) {
     if (controller.isLoading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppColors.primary));
+      return const AppLoadingIndicator();
     }
     if (controller.accounts.isEmpty) {
-      return Center(
-        child: Text(
-          _activeTab == AccountFilterTab.suppliers
-              ? 'لا يوجد موردين مسجلين حتى الآن'
-              : 'لا يوجد مستفيدين مسجلين حتى الآن',
-          style: AppTextStyles.bodySecondary,
-        ),
+      return EmptyStateWidget(
+        icon: AppIcons.accountOutline,
+        title: _activeTab == AccountFilterTab.suppliers
+            ? AppStrings.noSuppliersFound
+            : AppStrings.noBeneficiariesFound,
       );
     }
     return ListView.builder(
@@ -530,14 +502,16 @@ class _AccountsViewState extends State<AccountsView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildAccountRow(account),
-            const OneUiDivider(indent: 12, endIndent: 12),
+            const OneUiDivider(
+              indent: AppDimensions.dividerIndentCompact,
+              endIndent: AppDimensions.dividerIndentCompact,
+            ),
           ],
         );
       },
     );
   }
 
-  /// عنصر الحساب بنمط One UI: اسم عريض + سطر فرعي، بدون ثلاث نقاط، قابل للسحب لليمين
   Widget _buildAccountRow(AccountModel account) {
     final hasPhone =
         account.phoneNumber != null && account.phoneNumber!.trim().isNotEmpty;
@@ -549,7 +523,7 @@ class _AccountsViewState extends State<AccountsView> {
       onEdit: () => _showAddEditDialog(account: account),
       onArchive: () => _archiveAccount(account),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+        padding: AppDimensions.paddingTile,
         child: Row(
           children: [
             Expanded(
@@ -559,18 +533,18 @@ class _AccountsViewState extends State<AccountsView> {
                   Text(
                     account.name,
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+                      fontSize: AppTypography.sizeH2,
+                      fontWeight: AppTypography.weightSemiBold,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   if (hasPhone) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppDimensions.spaceXS),
                     Text(
                       account.phoneNumber!,
                       style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF64748B),
+                        fontSize: AppTypography.sizeBodySecondary,
+                        color: AppColors.textTertiary,
                       ),
                     ),
                   ],
@@ -583,19 +557,14 @@ class _AccountsViewState extends State<AccountsView> {
     );
   }
 
-  // --- قائمة المحطات بنمط القائمة المفتوحة مع فواصل ناعمة ---
-
   Widget _buildStationsList(StationsController controller) {
     if (controller.isLoading) {
-      return const Center(
-          child: CircularProgressIndicator(color: AppColors.primary));
+      return const AppLoadingIndicator();
     }
     if (controller.stations.isEmpty) {
-      return const Center(
-        child: Text(
-          'لا توجد محطات مسجلة حتى الآن',
-          style: AppTextStyles.bodySecondary,
-        ),
+      return const EmptyStateWidget(
+        icon: AppIcons.gasStationOutlined,
+        title: AppStrings.noStationsRecordedYet,
       );
     }
     return ListView.builder(
@@ -607,14 +576,16 @@ class _AccountsViewState extends State<AccountsView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildStationRow(station),
-            const OneUiDivider(indent: 12, endIndent: 12),
+            const OneUiDivider(
+              indent: AppDimensions.dividerIndentCompact,
+              endIndent: AppDimensions.dividerIndentCompact,
+            ),
           ],
         );
       },
     );
   }
 
-  /// عنصر المحطة بنمط One UI: اسم عريض + سطر فرعي، بدون ثلاث نقاط، قابل للسحب لليمين
   Widget _buildStationRow(StationModel station) {
     String subText = '';
     if (station.location != null && station.location!.trim().isNotEmpty) {
@@ -623,7 +594,8 @@ class _AccountsViewState extends State<AccountsView> {
         station.phoneNumber!.trim().isNotEmpty) {
       subText = station.phoneNumber!;
     } else {
-      subText = 'نسبة التهوية: ${station.defaultCommissionRate}%';
+      subText =
+          '${AppStrings.commissionRatePrefix}${station.defaultCommissionRate}%';
     }
 
     return SlidableAccountTile(
@@ -633,7 +605,7 @@ class _AccountsViewState extends State<AccountsView> {
       onEdit: () => _showAddEditStationDialog(station: station),
       onArchive: () => _archiveStation(station),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+        padding: AppDimensions.paddingTile,
         child: Row(
           children: [
             Expanded(
@@ -643,17 +615,17 @@ class _AccountsViewState extends State<AccountsView> {
                   Text(
                     station.name,
                     style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+                      fontSize: AppTypography.sizeH2,
+                      fontWeight: AppTypography.weightSemiBold,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppDimensions.spaceXS),
                   Text(
                     subText,
                     style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF64748B),
+                      fontSize: AppTypography.sizeBodySecondary,
+                      color: AppColors.textTertiary,
                     ),
                   ),
                 ],

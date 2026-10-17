@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/accounts_controller.dart';
 import '../../controllers/transactions_controller.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/constants/app_typography.dart';
 import '../../core/utils/formatters.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
+import 'custom_dropdown.dart';
 
 /// واجهة تسجيل وتعديل القيود والعمليات (مكون مشترك وذكي لكافة شاشات التطبيق)
-/// مطابقة بنسبة 100% للتصميم المعتمد والملاحظات الصوتية الدقيقة
 class OperationEntrySheet extends StatefulWidget {
   final AccountModel? initialAccount;
   final TransactionModel? editTransaction;
@@ -41,7 +45,7 @@ class OperationEntrySheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.55),
+      barrierColor: AppColors.overlay,
       builder: (ctx) => OperationEntrySheet(
         initialAccount: account,
         editTransaction: editTransaction,
@@ -58,8 +62,7 @@ class OperationEntrySheet extends StatefulWidget {
 }
 
 class _OperationEntrySheetState extends State<OperationEntrySheet> {
-  // لون حدود الحقول الموحد والناعم
-  static const Color _fieldBorderColor = Color(0xFFE2E8F0);
+  static const Color _fieldBorderColor = AppColors.borderLight;
 
   // التبويب العلوي: 0: اعتماد, 1: فعلي, 2: نسبة
   late int _selectedTab;
@@ -101,7 +104,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
     if (_isEdit) {
       final tx = widget.editTransaction!;
-      // تحديد التبويب والاتجاه بناءً على نوع القيد
       if (tx.typeId == 3) {
         _selectedTab = 2; // نسبة
         _selectedDirection = 1;
@@ -123,7 +125,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       _quantityController.text = tx.enteredQuantity.toString();
       _dateController.text = tx.transactionDate.replaceAll('-', '/');
       _statementController.text = tx.notes ?? '';
-      // ملاحظة المستخدم: رقم المرجع هو الرقم اليدوي فقط
       _referenceNumberController.text = tx.referenceNumber ?? '';
     } else {
       _selectedTab = widget.initialTabIndex;
@@ -138,7 +139,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
     _selectedAccount = widget.initialAccount;
 
-    // تحميل وتعيين القيم المرجعية الافتراضية
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final txController = context.read<TransactionsController>();
       final accController = context.read<AccountsController>();
@@ -147,7 +147,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         await accController.fetchAccounts();
       }
 
-      // مطابقة الحساب إذا تم التمرير في التعديل
       if (_selectedAccount == null &&
           widget.editTransaction?.accountId != null) {
         final matches = accController.accounts.where(
@@ -158,7 +157,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         }
       }
 
-      // إذا لم يكن هناك حساب محدد، اختيار أول حساب مناسب لنوع الحركة تلقائياً
       if (_selectedAccount == null) {
         final validAccounts = _getFilteredAccounts(accController.accounts);
         if (validAccounts.isNotEmpty) {
@@ -177,8 +175,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       }
 
       setState(() {});
-
-      // جلب الأرصدة الحالية للحساب والمحطة
       _updateLiveBalances();
     });
   }
@@ -192,26 +188,21 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     super.dispose();
   }
 
-  /// تصفية الحسابات بذكاء حسب نوع العملية (توريد للموردين / صرف للعملاء)
   List<AccountModel> _getFilteredAccounts(List<AccountModel> accounts) {
     if (_selectedTab == 2) {
-      // تبويب النسبة: يظهر الجميع
       return accounts;
     }
     if (_selectedDirection == 0) {
-      // توريد: الموردين فقط
       return accounts
           .where((a) => a.accountType == AccountType.supplier)
           .toList();
     } else {
-      // صرف: العملاء والمستفيدين فقط
       return accounts
           .where((a) => a.accountType == AccountType.beneficiary)
           .toList();
     }
   }
 
-  /// تحديث رصيد الحساب ورصيد المحطة بشكل لحظي بدون نصوص زائدة
   Future<void> _updateLiveBalances() async {
     final txController = context.read<TransactionsController>();
 
@@ -240,23 +231,18 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     }
   }
 
-  // حساب نوع العملية وفق التبويب والاتجاه
   int _calculateTypeId() {
     if (_selectedTab == 0) {
-      // اعتماد
-      return _selectedDirection == 0 ? 1 : 4; // 1: توريد اعتماد, 4: صرف اعتماد
+      return _selectedDirection == 0 ? 1 : 4;
     } else if (_selectedTab == 1) {
-      // فعلي
-      return _selectedDirection == 0 ? 2 : 5; // 2: توريد فعلي, 5: صرف فعلي
+      return _selectedDirection == 0 ? 2 : 5;
     } else {
-      // نسبة (عمولة تهوية)
       return 3;
     }
   }
 
-  // عنوان النافذة العلوي النظامي المعتمد
   String _getTitle() {
-    return _isEdit ? 'تعديل قيد' : 'تسجيل قيد';
+    return _isEdit ? AppStrings.editOperation : AppStrings.registerOperation;
   }
 
   @override
@@ -267,8 +253,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     final fuelTypes = txController.fuelTypes.isNotEmpty
         ? txController.fuelTypes
         : [
-            {'id': 1, 'name': 'بنزين'},
-            {'id': 2, 'name': 'ديزل'},
+            {'id': 1, 'name': AppStrings.fuelPetrol},
+            {'id': 2, 'name': AppStrings.fuelDiesel},
           ];
 
     final units = txController.units.isNotEmpty
@@ -286,7 +272,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     _selectedFuelTypeId ??= fuelTypes.first['id'] as int?;
     _selectedUnitId ??= units.first['id'] as int?;
 
-    // حساب المعادل باللتر
     final enteredQty = double.tryParse(_quantityController.text.trim()) ?? 0.0;
     double unitFactor = 1.0;
     if (_selectedUnitId != null) {
@@ -298,7 +283,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     }
     final calculatedLiters = enteredQty * unitFactor;
 
-    // اسم الوحدة الحالية
     final currentUnitName = units.firstWhere(
       (e) => e['id'] == _selectedUnitId,
       orElse: () => {'name': AppStrings.unitLiter},
@@ -306,27 +290,31 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
     return Center(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-        constraints: const BoxConstraints(maxWidth: 480),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
+        margin: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.spaceXL,
+          vertical: AppDimensions.space2XL,
+        ),
+        constraints:
+            const BoxConstraints(maxWidth: AppDimensions.modalMaxWidth),
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: AppDimensions.borderRadius3XL,
+          boxShadow: [
             BoxShadow(
-              color: Colors.black26,
+              color: AppColors.overlayLight,
               blurRadius: 20,
               offset: Offset(0, 8),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: AppDimensions.borderRadius3XL,
           child: Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              padding: AppDimensions.paddingModal,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -338,87 +326,87 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                         child: Text(
                           _getTitle(),
                           style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
+                            fontSize: AppTypography.sizeH2,
+                            fontWeight: AppTypography.weightBold,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
                       IconButton(
                         icon: const Icon(
-                          Icons.close_rounded,
-                          color: Color(0xFF64748B),
-                          size: 20,
+                          AppIcons.closeRounded,
+                          color: AppColors.textTertiary,
+                          size: AppDimensions.iconMedium,
                         ),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
+                          minWidth: AppDimensions.space4XL,
+                          minHeight: AppDimensions.space4XL,
                         ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: AppDimensions.spaceL + 6),
 
                   // 2. التبويبات الثلاثة العلوية (اعتماد / فعلي / نسبة)
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFf8f8f8),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: _fieldBorderColor, width: 1.0),
+                      color: AppColors.scaffoldBackground,
+                      borderRadius: AppDimensions.borderRadius2XL,
+                      border: Border.all(
+                        color: _fieldBorderColor,
+                        width: AppDimensions.borderWidthThin,
+                      ),
                     ),
                     child: Row(
                       children: [
-                        // تبويب 1 (يمين): اعتماد
                         Expanded(
                           child: _buildTopTabItem(
                             index: 0,
-                            label: 'اعتماد',
-                            icon: Icons.receipt_long_outlined,
+                            label: AppStrings.quota,
+                            icon: AppIcons.tabQuota,
                           ),
                         ),
-                        // تبويب 2 (وسط): فعلي
                         Expanded(
                           child: _buildTopTabItem(
                             index: 1,
-                            label: 'فعلي',
-                            icon: Icons.swap_horiz,
+                            label: AppStrings.actual,
+                            icon: AppIcons.tabActual,
                           ),
                         ),
-                        // تبويب 3 (يسار): نسبة
                         Expanded(
                           child: _buildTopTabItem(
                             index: 2,
-                            label: 'نسبة',
-                            icon: Icons.percent,
+                            label: AppStrings.ratio,
+                            icon: AppIcons.tabAeration,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppDimensions.spaceL),
 
-                  // 3. زرا الاتجاه (↓ توريد / ↑ صرف) - أبعاد واضحة ومحددة
+                  // 3. زرا الاتجاه (↓ توريد / ↑ صرف)
                   if (_selectedTab != 2) ...[
                     Container(
-                      height: 44,
-                      padding: const EdgeInsets.all(4),
+                      height: AppDimensions.segmentHeight,
+                      padding: AppDimensions.paddingAllXS,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFf8f8f8),
-                        borderRadius: BorderRadius.circular(14),
-                        border:
-                            Border.all(color: _fieldBorderColor, width: 1.0),
+                        color: AppColors.scaffoldBackground,
+                        borderRadius: AppDimensions.borderRadius2XL,
+                        border: Border.all(
+                          color: _fieldBorderColor,
+                          width: AppDimensions.borderWidthThin,
+                        ),
                       ),
                       child: Row(
                         children: [
-                          // زر توريد (يمين في RTL) - أخضر غامق مطابق لـ "له (دائن)"
                           Expanded(
                             child: InkWell(
                               onTap: () {
                                 setState(() {
                                   _selectedDirection = 0;
-                                  // تصفية الحساب الذكي تلقائياً
                                   final validAccounts = _getFilteredAccounts(
                                       accController.accounts);
                                   if (_selectedAccount == null ||
@@ -431,34 +419,35 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 });
                                 _updateLiveBalances();
                               },
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: AppDimensions.borderRadiusL,
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: _selectedDirection == 0
-                                      ? const Color(0xFF15803D)
+                                      ? AppColors.supplyGreen
                                       : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: AppDimensions.borderRadiusL,
                                 ),
                                 alignment: Alignment.center,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
-                                      Icons.arrow_downward,
-                                      size: 16,
+                                      AppIcons.supply,
+                                      size: AppDimensions.iconSmall,
                                       color: _selectedDirection == 0
-                                          ? Colors.white
-                                          : const Color(0xFF64748B),
+                                          ? AppColors.textWhite
+                                          : AppColors.textTertiary,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(
+                                        width: AppDimensions.spaceXS),
                                     Text(
-                                      'توريد',
+                                      AppStrings.supply,
                                       style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: AppTypography.sizeBody,
+                                        fontWeight: AppTypography.weightBold,
                                         color: _selectedDirection == 0
-                                            ? Colors.white
-                                            : const Color(0xFF64748B),
+                                            ? AppColors.textWhite
+                                            : AppColors.textTertiary,
                                       ),
                                     ),
                                   ],
@@ -466,14 +455,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          // زر صرف (يسار في RTL) - أحمر مطابق لـ "عليه (مدين)"
+                          const SizedBox(width: AppDimensions.spaceXS),
                           Expanded(
                             child: InkWell(
                               onTap: () {
                                 setState(() {
                                   _selectedDirection = 1;
-                                  // تصفية الحساب الذكي تلقائياً
                                   final validAccounts = _getFilteredAccounts(
                                       accController.accounts);
                                   if (_selectedAccount == null ||
@@ -486,36 +473,37 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 });
                                 _updateLiveBalances();
                               },
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: AppDimensions.borderRadiusL,
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: _selectedDirection == 1
                                       ? (_selectedTab == 0
-                                          ? const Color(0xFF15803D)
-                                          : const Color(0xFFB91C1C))
+                                          ? AppColors.supplyGreen
+                                          : AppColors.dispenseRed)
                                       : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: AppDimensions.borderRadiusL,
                                 ),
                                 alignment: Alignment.center,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
-                                      Icons.arrow_upward,
-                                      size: 16,
+                                      AppIcons.dispense,
+                                      size: AppDimensions.iconSmall,
                                       color: _selectedDirection == 1
-                                          ? Colors.white
-                                          : const Color(0xFF64748B),
+                                          ? AppColors.textWhite
+                                          : AppColors.textTertiary,
                                     ),
-                                    const SizedBox(width: 4),
+                                    const SizedBox(
+                                        width: AppDimensions.spaceXS),
                                     Text(
-                                      'صرف',
+                                      AppStrings.dispense,
                                       style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: AppTypography.sizeBody,
+                                        fontWeight: AppTypography.weightBold,
                                         color: _selectedDirection == 1
-                                            ? Colors.white
-                                            : const Color(0xFF64748B),
+                                            ? AppColors.textWhite
+                                            : AppColors.textTertiary,
                                       ),
                                     ),
                                   ],
@@ -526,93 +514,103 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppDimensions.spaceL),
                   ],
 
-                  // 4. حقل الحساب مع الرصيد المباشر وحدود واضحة
-                  _buildFieldLabel('الحساب'),
+                  // 4. حقل الحساب مع الرصيد المباشر
+                  _buildFieldLabel(AppStrings.account),
                   InkWell(
                     onTap: () => _openAccountPicker(
                         _getFilteredAccounts(accController.accounts)),
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppDimensions.borderRadius2XL,
                     child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      height: AppDimensions.inputHeight,
+                      padding: AppDimensions.paddingInputDense,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFf8f8f8),
-                        borderRadius: BorderRadius.circular(14),
-                        border:
-                            Border.all(color: _fieldBorderColor, width: 1.0),
+                        color: AppColors.scaffoldBackground,
+                        borderRadius: AppDimensions.borderRadius2XL,
+                        border: Border.all(
+                          color: _fieldBorderColor,
+                          width: AppDimensions.borderWidthThin,
+                        ),
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.person,
-                              color: Color(0xFF64748B), size: 20),
-                          const SizedBox(width: 8),
+                          const Icon(
+                            AppIcons.account,
+                            color: AppColors.textTertiary,
+                            size: AppDimensions.iconMedium,
+                          ),
+                          const SizedBox(width: AppDimensions.spaceM),
                           Expanded(
                             child: Text(
-                              _selectedAccount?.name ?? 'اختر الحساب',
+                              _selectedAccount?.name ??
+                                  AppStrings.selectAccount,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: AppTypography.sizeBody,
                                 color: _selectedAccount != null
-                                    ? const Color(0xFF1E293B)
-                                    : const Color(0xFF94A3B8),
+                                    ? AppColors.textDarkSlate
+                                    : AppColors.textMuted,
                                 fontWeight: _selectedAccount != null
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
+                                    ? AppTypography.weightSemiBold
+                                    : AppTypography.weightRegular,
                               ),
                             ),
                           ),
-                          // عرض رصيد الحساب المباشر بشكل أنيق ومختصر
                           if (_accountBalanceLiters != null) ...[
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                              padding: AppDimensions.paddingTag,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(4),
+                                color: AppColors.chipBackground,
+                                borderRadius: AppDimensions.borderRadiusXS,
                                 border: Border.all(
-                                    color: _fieldBorderColor, width: 1),
+                                  color: _fieldBorderColor,
+                                  width: AppDimensions.borderWidthThin,
+                                ),
                               ),
                               child: Text(
-                                '${AppFormatters.formatQuantity(_accountBalanceLiters!)} لتر',
+                                '${AppFormatters.formatQuantity(_accountBalanceLiters!)} ${AppStrings.unitLiter}',
                                 style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: AppTypography.sizeCaption,
+                                  fontWeight: AppTypography.weightBold,
                                   color: _accountBalanceLiters! >= 0
-                                      ? const Color(0xFF15803D)
-                                      : const Color(0xFFB91C1C),
+                                      ? AppColors.supplyGreen
+                                      : AppColors.dispenseRed,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: AppDimensions.spaceS),
                           ],
-                          const Icon(Icons.keyboard_arrow_down,
-                              color: Color(0xFF64748B), size: 18),
+                          const Icon(
+                            AppIcons.dropdownArrowPlain,
+                            color: AppColors.textTertiary,
+                            size: AppDimensions.iconRegular,
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppDimensions.spaceL),
 
-                  // 5. صف: الكمية (يميناً flex: 6) والصنف (يساراً flex: 4) بحدود واضحة
+                  // 5. صف: الكمية والصنف
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // الكمية على اليمين
                       Expanded(
                         flex: 6,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildFieldLabel('الكمية'),
+                            _buildFieldLabel(AppStrings.quantity),
                             Container(
-                              height: 48,
+                              height: AppDimensions.inputHeight,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFf8f8f8),
-                                borderRadius: BorderRadius.circular(14),
+                                color: AppColors.scaffoldBackground,
+                                borderRadius: AppDimensions.borderRadius2XL,
                                 border: Border.all(
-                                    color: _fieldBorderColor, width: 1.0),
+                                  color: _fieldBorderColor,
+                                  width: AppDimensions.borderWidthThin,
+                                ),
                               ),
                               child: Row(
                                 children: [
@@ -623,44 +621,46 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                           const TextInputType.numberWithOptions(
                                               decimal: true),
                                       style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF0F172A)),
+                                        fontSize: AppTypography.sizeBody + 1,
+                                        fontWeight: AppTypography.weightBold,
+                                        color: AppColors.textPrimary,
+                                      ),
                                       textAlign: TextAlign.start,
                                       decoration: const InputDecoration(
                                         isDense: true,
                                         border: InputBorder.none,
-                                        contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 14),
-                                        hintText: '0.00',
-                                        hintStyle:
-                                            TextStyle(color: Color(0xFF94A3B8)),
+                                        contentPadding:
+                                            AppDimensions.paddingInputDense,
+                                        hintText: AppStrings.zeroDecimal,
+                                        hintStyle: TextStyle(
+                                          color: AppColors.textMuted,
+                                        ),
                                       ),
                                       onChanged: (_) => setState(() {}),
                                     ),
                                   ),
-                                  // قائمة اختيار الوحدة داخل الحقل مع سهم
-                                  PopupMenuButton<int>(
-                                    initialValue: _selectedUnitId,
-                                    onSelected: (val) {
+                                  CustomDropdown<int>(
+                                    value: _selectedUnitId,
+                                    items: units.map((u) {
+                                      return CustomDropdownItem<int>(
+                                        value: u['id'] as int,
+                                        label: u['name'] as String,
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
                                       setState(() {
                                         _selectedUnitId = val;
                                       });
                                     },
-                                    itemBuilder: (ctx) => units.map((u) {
-                                      return PopupMenuItem<int>(
-                                        value: u['id'] as int,
-                                        child: Text(u['name'] as String),
-                                      );
-                                    }).toList(),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 8),
+                                    customTrigger: Container(
+                                      padding: AppDimensions.paddingAllS,
                                       decoration: const BoxDecoration(
                                         border: Border(
                                           right: BorderSide(
-                                              color: _fieldBorderColor,
-                                              width: 1.0),
+                                            color: _fieldBorderColor,
+                                            width:
+                                                AppDimensions.borderWidthThin,
+                                          ),
                                         ),
                                       ),
                                       child: Row(
@@ -669,15 +669,20 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                           Text(
                                             currentUnitName,
                                             style: const TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF1E293B),
+                                              fontSize: AppTypography
+                                                  .sizeBodySecondary,
+                                              fontWeight:
+                                                  AppTypography.weightBold,
+                                              color: AppColors.textDarkSlate,
                                             ),
                                           ),
-                                          const SizedBox(width: 2),
-                                          const Icon(Icons.arrow_drop_down,
-                                              size: 16,
-                                              color: Color(0xFF64748B)),
+                                          const SizedBox(
+                                              width: AppDimensions.spaceXXS),
+                                          const Icon(
+                                            AppIcons.dropdownArrow,
+                                            size: AppDimensions.iconSmall,
+                                            color: AppColors.textTertiary,
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -688,53 +693,28 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-
-                      // الصنف على اليسار
+                      const SizedBox(width: AppDimensions.spaceM),
                       Expanded(
                         flex: 4,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildFieldLabel('الصنف'),
-                            Container(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 14),
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFf8f8f8),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                    color: _fieldBorderColor, width: 1.0),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<int>(
-                                  isExpanded: true,
-                                  value: _selectedFuelTypeId,
-                                  icon: const Icon(Icons.keyboard_arrow_down,
-                                      color: Color(0xFF64748B), size: 18),
-                                  items: fuelTypes.map((ft) {
-                                    return DropdownMenuItem<int>(
-                                      value: ft['id'] as int,
-                                      child: Text(
-                                        ft['name'] as String,
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF1E293B),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _selectedFuelTypeId = val;
-                                      });
-                                    }
-                                  },
-                                ),
-                              ),
+                            _buildFieldLabel(AppStrings.fuelType),
+                            CustomDropdown<int>(
+                              value: _selectedFuelTypeId,
+                              borderColor: _fieldBorderColor,
+                              backgroundColor: AppColors.scaffoldBackground,
+                              items: fuelTypes.map((ft) {
+                                return CustomDropdownItem<int>(
+                                  value: ft['id'] as int,
+                                  label: ft['name'] as String,
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedFuelTypeId = val;
+                                });
+                              },
                             ),
                           ],
                         ),
@@ -742,162 +722,112 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                     ],
                   ),
 
-                  // عرض المعادل باللتر إذا اختيرت وحدة غير اللتر
+                  // عرض المعادل باللتر
                   if (_selectedUnitId != 1 && calculatedLiters > 0) ...[
-                    const SizedBox(height: 3),
+                    const SizedBox(height: AppDimensions.spaceXXS + 1),
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.spaceXS,
+                      ),
                       child: Text(
-                        'المعادل: ${AppFormatters.formatQuantity(calculatedLiters)} لتر',
+                        '${AppStrings.equivalentPrefix} ${AppFormatters.formatQuantity(calculatedLiters)} ${AppStrings.unitLiter}',
                         style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w600),
+                          fontSize: AppTypography.sizeSmall,
+                          color: AppColors.textTertiary,
+                          fontWeight: AppTypography.weightSemiBold,
+                        ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppDimensions.spaceL),
 
-                  // 6. حقل المحطة مع زر التحويل (يظهر مرجع المحطة بجانبها في نفس الصف بدون نصوص زائدة)
+                  // 6. حقل المحطة
                   if (_selectedTab == 1) ...[
                     if (!_showReferenceStation)
-                      _buildFieldLabel('المحطة')
+                      _buildFieldLabel(AppStrings.station)
                     else
                       Row(
                         children: [
-                          Expanded(flex: 5, child: _buildFieldLabel('المحطة')),
-                          const SizedBox(width: 8),
                           Expanded(
-                              flex: 5, child: _buildFieldLabel('مرجع المحطة')),
-                          const SizedBox(width: 52), // موازنة زر التحويل
+                              flex: 5,
+                              child: _buildFieldLabel(AppStrings.station)),
+                          const SizedBox(width: AppDimensions.spaceM),
+                          Expanded(
+                              flex: 5,
+                              child: _buildFieldLabel(
+                                  AppStrings.referenceStationShort)),
+                          const SizedBox(width: 52),
                         ],
                       ),
                     Row(
                       children: [
-                        // حقل اختيار المحطة
                         Expanded(
                           flex: 5,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFf8f8f8),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                  color: _fieldBorderColor, width: 1.0),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<int?>(
-                                      isExpanded: true,
-                                      value: _selectedStationId,
-                                      hint: const Text('المحطة',
-                                          style: TextStyle(
-                                              color: Color(0xFF94A3B8),
-                                              fontSize: 13)),
-                                      icon: const Icon(
-                                          Icons.keyboard_arrow_down,
-                                          color: Color(0xFF64748B),
-                                          size: 18),
-                                      items: txController.stations.map((st) {
-                                        return DropdownMenuItem<int?>(
-                                          value: st['id'] as int,
-                                          child: Text(
-                                            st['name'] as String,
-                                            style:
-                                                const TextStyle(fontSize: 13),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        );
-                                      }).toList(),
-                                      onChanged: (val) {
-                                        setState(() {
-                                          _selectedStationId = val;
-                                        });
-                                        _updateLiveBalances();
-                                      },
-                                    ),
-                                  ),
-                                ),
-                                // عرض الرصيد المتبقي في المحطة إذا لم يكن حقل المرجع مفتوحاً
-                                if (!_showReferenceStation &&
-                                    _stationBalanceLiters != null) ...[
-                                  const SizedBox(width: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 3),
+                          child: CustomDropdown<int?>(
+                            hint: AppStrings.station,
+                            value: _selectedStationId,
+                            borderColor: _fieldBorderColor,
+                            backgroundColor: AppColors.scaffoldBackground,
+                            items: txController.stations.map((st) {
+                              return CustomDropdownItem<int?>(
+                                value: st['id'] as int,
+                                label: st['name'] as String,
+                              );
+                            }).toList(),
+                            trailing: (!_showReferenceStation &&
+                                    _stationBalanceLiters != null)
+                                ? Container(
+                                    padding: AppDimensions.paddingMiniTag,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(8),
+                                      color: AppColors.surface,
+                                      borderRadius: AppDimensions.borderRadiusM,
                                       border: Border.all(
-                                          color: _fieldBorderColor, width: 0.8),
+                                        color: _fieldBorderColor,
+                                        width: AppDimensions.borderWidthLight,
+                                      ),
                                     ),
                                     child: Text(
-                                      '${AppFormatters.formatQuantity(_stationBalanceLiters!)} لتر',
+                                      '${AppFormatters.formatQuantity(_stationBalanceLiters!)} ${AppStrings.unitLiter}',
                                       style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF1E293B),
+                                        fontSize: AppTypography.sizeSmall,
+                                        fontWeight: AppTypography.weightBold,
+                                        color: AppColors.textDarkSlate,
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ],
-                            ),
+                                  )
+                                : null,
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedStationId = val;
+                              });
+                              _updateLiveBalances();
+                            },
                           ),
                         ),
-
-                        // حقل مرجع المحطة (يظهر بجانب المحطة في نفس الصف)
                         if (_showReferenceStation) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: AppDimensions.spaceM),
                           Expanded(
                             flex: 5,
-                            child: Container(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 14),
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFf8f8f8),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                    color: _fieldBorderColor, width: 1.0),
-                              ),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton<int?>(
-                                  isExpanded: true,
-                                  value: _selectedReferenceStationId,
-                                  hint: const Text('محطة المرجع',
-                                      style: TextStyle(
-                                          color: Color(0xFF94A3B8),
-                                          fontSize: 13)),
-                                  icon: const Icon(Icons.keyboard_arrow_down,
-                                      color: Color(0xFF64748B), size: 18),
-                                  items: txController.stations.map((st) {
-                                    return DropdownMenuItem<int?>(
-                                      value: st['id'] as int,
-                                      child: Text(
-                                        st['name'] as String,
-                                        style: const TextStyle(fontSize: 13),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    setState(() {
-                                      _selectedReferenceStationId = val;
-                                    });
-                                  },
-                                ),
-                              ),
+                            child: CustomDropdown<int?>(
+                              hint: AppStrings.referenceStationShort,
+                              value: _selectedReferenceStationId,
+                              borderColor: _fieldBorderColor,
+                              backgroundColor: AppColors.scaffoldBackground,
+                              items: txController.stations.map((st) {
+                                return CustomDropdownItem<int?>(
+                                  value: st['id'] as int,
+                                  label: st['name'] as String,
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                setState(() {
+                                  _selectedReferenceStationId = val;
+                                });
+                              },
                             ),
                           ),
                         ],
-
-                        const SizedBox(width: 8),
-
-                        // زر التحويل (يظهر أو يخفي حقل مرجع المحطة بجانبها)
+                        const SizedBox(width: AppDimensions.spaceM),
                         InkWell(
                           onTap: () {
                             setState(() {
@@ -907,50 +837,49 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               }
                             });
                           },
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: AppDimensions.borderRadius2XL,
                           child: Container(
-                            width: 48,
-                            height: 48,
+                            width: AppDimensions.inputHeight,
+                            height: AppDimensions.inputHeight,
                             decoration: BoxDecoration(
                               color: _showReferenceStation
-                                  ? const Color(0xFF1E1E1E)
-                                  : const Color(0xFFf8f8f8),
-                              borderRadius: BorderRadius.circular(14),
+                                  ? AppColors.charcoal
+                                  : AppColors.scaffoldBackground,
+                              borderRadius: AppDimensions.borderRadius2XL,
                               border: Border.all(
                                 color: _showReferenceStation
-                                    ? const Color(0xFF1E1E1E)
+                                    ? AppColors.charcoal
                                     : _fieldBorderColor,
-                                width: 1.0,
+                                width: AppDimensions.borderWidthThin,
                               ),
                             ),
                             alignment: Alignment.center,
                             child: Icon(
                               _showReferenceStation
-                                  ? Icons.close
-                                  : Icons.swap_horiz,
-                              size: 20,
+                                  ? AppIcons.close
+                                  : AppIcons.tabActual,
+                              size: AppDimensions.iconMedium,
                               color: _showReferenceStation
-                                  ? Colors.white
-                                  : const Color(0xFF64748B),
+                                  ? AppColors.textWhite
+                                  : AppColors.textTertiary,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppDimensions.spaceL),
                   ],
 
-                  // 7. صف: التاريخ (يميناً flex: 6) ورقم المرجع (يساراً flex: 4) بحدود واضحة
+                  // 7. صف: التاريخ ورقم المرجع
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // التاريخ على اليمين
                       Expanded(
                         flex: 6,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildFieldLabel('التاريخ'),
+                            _buildFieldLabel(AppStrings.transactionDate),
                             InkWell(
                               onTap: () async {
                                 DateTime initial = DateTime.now();
@@ -967,16 +896,19 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                   });
                                 }
                               },
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: AppDimensions.borderRadius2XL,
                               child: Container(
-                                height: 48,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
+                                height: AppDimensions.inputHeight,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppDimensions.spaceL,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFf8f8f8),
-                                  borderRadius: BorderRadius.circular(14),
+                                  color: AppColors.scaffoldBackground,
+                                  borderRadius: AppDimensions.borderRadius2XL,
                                   border: Border.all(
-                                      color: _fieldBorderColor, width: 1.0),
+                                    color: _fieldBorderColor,
+                                    width: AppDimensions.borderWidthThin,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisAlignment:
@@ -985,22 +917,27 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                     Row(
                                       children: [
                                         const Icon(
-                                            Icons.calendar_today_outlined,
-                                            size: 16,
-                                            color: Color(0xFF64748B)),
-                                        const SizedBox(width: 8),
+                                          AppIcons.calendar,
+                                          size: AppDimensions.iconSmall,
+                                          color: AppColors.textTertiary,
+                                        ),
+                                        const SizedBox(
+                                            width: AppDimensions.spaceM),
                                         Text(
                                           _dateController.text,
                                           style: const TextStyle(
-                                              fontSize: 13,
-                                              color: Color(0xFF1E293B)),
+                                            fontSize:
+                                                AppTypography.sizeBodySecondary,
+                                            color: AppColors.textDarkSlate,
+                                          ),
                                         ),
                                       ],
                                     ),
                                     const Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        color: Color(0xFF64748B),
-                                        size: 18),
+                                      AppIcons.dropdownArrow,
+                                      color: AppColors.textTertiary,
+                                      size: AppDimensions.iconRegular,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -1008,39 +945,47 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
-
-                      // رقم المرجع على اليسار
+                      const SizedBox(width: AppDimensions.spaceL - 2),
                       Expanded(
                         flex: 4,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildFieldLabel('رقم المرجع'),
+                            _buildFieldLabel(AppStrings.referenceNumberLabel),
                             Container(
-                              height: 48,
+                              height: AppDimensions.inputHeight,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFf8f8f8),
-                                borderRadius: BorderRadius.circular(14),
+                                color: AppColors.scaffoldBackground,
+                                borderRadius: AppDimensions.borderRadius2XL,
                                 border: Border.all(
-                                    color: _fieldBorderColor, width: 1.0),
+                                  color: _fieldBorderColor,
+                                  width: AppDimensions.borderWidthThin,
+                                ),
                               ),
                               child: Row(
                                 children: [
                                   const Padding(
-                                    padding:
-                                        EdgeInsets.symmetric(horizontal: 10.0),
-                                    child: Icon(Icons.tag,
-                                        color: Color(0xFF64748B), size: 18),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: AppDimensions.spaceL - 2,
+                                    ),
+                                    child: Icon(
+                                      Icons.tag,
+                                      color: AppColors.textTertiary,
+                                      size: AppDimensions.iconRegular,
+                                    ),
                                   ),
                                   Expanded(
                                     child: TextField(
                                       controller: _referenceNumberController,
-                                      style: const TextStyle(fontSize: 13),
+                                      style: const TextStyle(
+                                        fontSize:
+                                            AppTypography.sizeBodySecondary,
+                                      ),
                                       decoration: const InputDecoration(
                                         border: InputBorder.none,
-                                        contentPadding:
-                                            EdgeInsets.symmetric(horizontal: 2),
+                                        contentPadding: EdgeInsets.symmetric(
+                                          horizontal: AppDimensions.spaceXXS,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -1052,75 +997,78 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppDimensions.spaceL),
 
-                  // 8. حقل البيان بحدود واضحة وبدون نصوص زائدة
-                  _buildFieldLabel('البيان'),
+                  // 8. حقل البيان
+                  _buildFieldLabel(AppStrings.statement),
                   Container(
                     height: 65,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFf8f8f8),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: _fieldBorderColor, width: 1.0),
+                      color: AppColors.scaffoldBackground,
+                      borderRadius: AppDimensions.borderRadius2XL,
+                      border: Border.all(
+                        color: _fieldBorderColor,
+                        width: AppDimensions.borderWidthThin,
+                      ),
                     ),
                     child: TextField(
                       controller: _statementController,
                       maxLines: 2,
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(
+                        fontSize: AppTypography.sizeBodySecondary,
+                      ),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(10),
+                        contentPadding:
+                            EdgeInsets.all(AppDimensions.spaceL - 2),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: AppDimensions.space2XL),
 
-                  // 9. شريط الأزرار السفلي (إلغاء رمادي يميناً flex: 1 وتأكيد أسود يساراً flex: 1 في RTL)
+                  // 9. شريط الأزرار السفلي
                   Row(
                     children: [
-                      // زر إلغاء على اليمين
                       Expanded(
                         child: InkWell(
                           onTap: () => Navigator.of(context).pop(),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: AppDimensions.borderRadius2XL,
                           child: Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFf8f8f8),
-                              borderRadius: BorderRadius.circular(14),
+                            height: AppDimensions.inputHeight,
+                            decoration: const BoxDecoration(
+                              color: AppColors.scaffoldBackground,
+                              borderRadius: AppDimensions.borderRadius2XL,
                             ),
                             alignment: Alignment.center,
                             child: const Text(
-                              'إلغاء',
+                              AppStrings.cancel,
                               style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF334155),
+                                fontSize: AppTypography.sizeBody + 1,
+                                fontWeight: AppTypography.weightSemiBold,
+                                color: AppColors.textSlate,
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-
-                      // زر حفظ الأسود على اليسار
+                      const SizedBox(width: AppDimensions.spaceL),
                       Expanded(
                         child: InkWell(
                           onTap: _saveOperation,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: AppDimensions.borderRadius2XL,
                           child: Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E1E1E),
-                              borderRadius: BorderRadius.circular(14),
+                            height: AppDimensions.inputHeight,
+                            decoration: const BoxDecoration(
+                              color: AppColors.charcoal,
+                              borderRadius: AppDimensions.borderRadius2XL,
                             ),
                             alignment: Alignment.center,
                             child: const Text(
-                              'حفظ',
+                              AppStrings.save,
                               style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                fontSize: AppTypography.sizeBody + 1,
+                                fontWeight: AppTypography.weightSemiBold,
+                                color: AppColors.textWhite,
                               ),
                             ),
                           ),
@@ -1137,13 +1085,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     );
   }
 
-  // نافذة اختيار الحساب بأسلوب منسدل سريع وقائمة مصفاة
   void _openAccountPicker(List<AccountModel> accounts) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDimensions.radiusCard),
+        ),
       ),
       builder: (ctx) {
         String filterText = '';
@@ -1155,7 +1104,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
             }).toList();
 
             return Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppDimensions.spaceXL),
               height: 380,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1165,44 +1114,61 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                     children: [
                       Text(
                         _selectedDirection == 0
-                            ? 'اختر المورد'
-                            : 'اختر العميل المستفيد',
+                            ? AppStrings.typeSupplier
+                            : AppStrings.typeBeneficiary,
                         style: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.bold),
+                          fontSize: AppTypography.sizeH2 - 1,
+                          fontWeight: AppTypography.weightBold,
+                        ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 20),
+                        icon: const Icon(
+                          AppIcons.closeRounded,
+                          size: AppDimensions.iconMedium,
+                        ),
                         padding: EdgeInsets.zero,
-                        constraints:
-                            const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints: const BoxConstraints(
+                          minWidth: AppDimensions.space4XL,
+                          minHeight: AppDimensions.space4XL,
+                        ),
                         onPressed: () => Navigator.of(ctx).pop(),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: AppDimensions.spaceL - 2),
                   TextField(
-                    decoration: InputDecoration(
-                      hintText: 'بحث...',
-                      prefixIcon: const Icon(Icons.search,
-                          size: 18, color: Color(0xFF64748B)),
+                    decoration: const InputDecoration(
+                      hintText: AppStrings.search,
+                      prefixIcon: Icon(
+                        AppIcons.search,
+                        size: AppDimensions.iconRegular,
+                        color: AppColors.textTertiary,
+                      ),
                       filled: true,
-                      fillColor: const Color(0xFFF8F8F8),
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 12),
+                      fillColor: AppColors.scaffoldBackground,
+                      contentPadding: AppDimensions.paddingInputDense,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                            color: _fieldBorderColor, width: 1.0),
+                        borderRadius: AppDimensions.borderRadius2XL,
+                        borderSide: BorderSide(
+                          color: _fieldBorderColor,
+                          width: AppDimensions.borderWidthThin,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                            color: _fieldBorderColor, width: 1.0),
+                        borderRadius: AppDimensions.borderRadius2XL,
+                        borderSide: BorderSide(
+                          color: _fieldBorderColor,
+                          width: AppDimensions.borderWidthThin,
+                        ),
                       ),
-                      focusedBorder: const OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(14)),
-                        borderSide:
-                            BorderSide(color: Color(0xFF1E1E1E), width: 1.2),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(
+                          Radius.circular(AppDimensions.radius2XL),
+                        ),
+                        borderSide: BorderSide(
+                          color: AppColors.charcoal,
+                          width: AppDimensions.borderWidthRegular,
+                        ),
                       ),
                     ),
                     onChanged: (val) {
@@ -1211,32 +1177,42 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       });
                     },
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppDimensions.spaceM),
                   Expanded(
                     child: filtered.isEmpty
                         ? const Center(
-                            child: Text('لا توجد حسابات مسجلة لهذا النوع',
-                                style: TextStyle(color: Color(0xFF94A3B8))),
+                            child: Text(
+                              AppStrings.noAccountsFound,
+                              style: TextStyle(color: AppColors.textMuted),
+                            ),
                           )
                         : ListView.separated(
                             itemCount: filtered.length,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 1),
+                            separatorBuilder: (_, __) => const Divider(
+                              height: AppDimensions.dividerHeight,
+                            ),
                             itemBuilder: (_, idx) {
                               final acc = filtered[idx];
                               return ListTile(
-                                leading: const Icon(Icons.person_outline,
-                                    color: Color(0xFF64748B)),
-                                title: Text(acc.name,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14)),
+                                leading: const Icon(
+                                  AppIcons.accountOutline,
+                                  color: AppColors.textTertiary,
+                                ),
+                                title: Text(
+                                  acc.name,
+                                  style: const TextStyle(
+                                    fontWeight: AppTypography.weightSemiBold,
+                                    fontSize: AppTypography.sizeBody,
+                                  ),
+                                ),
                                 subtitle: Text(
                                   acc.accountType == AccountType.supplier
-                                      ? 'مورد (جهة عليا)'
-                                      : 'عميل مستفيد',
+                                      ? AppStrings.typeSupplier
+                                      : AppStrings.typeBeneficiary,
                                   style: const TextStyle(
-                                      fontSize: 12, color: Color(0xFF64748B)),
+                                    fontSize: AppTypography.sizeCaption,
+                                    color: AppColors.textTertiary,
+                                  ),
                                 ),
                                 onTap: () {
                                   setState(() {
@@ -1258,14 +1234,13 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     );
   }
 
-  // حفظ أو تعديل القيد
   Future<void> _saveOperation() async {
     final qty = double.tryParse(_quantityController.text.trim());
     if (qty == null || qty <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(AppStrings.invalidQuantity),
-          backgroundColor: Color(0xFFB91C1C),
+          backgroundColor: AppColors.dispenseRed,
         ),
       );
       return;
@@ -1278,7 +1253,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     final typeId = _calculateTypeId();
     final isActual = _selectedTab == 1;
 
-    // حساب المعادل باللتر
     final units = txController.units.isNotEmpty
         ? txController.units
         : [
@@ -1330,7 +1304,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(AppStrings.operationSuccess),
-          backgroundColor: Color(0xFF15803D),
+          backgroundColor: AppColors.supplyGreen,
         ),
       );
     }
@@ -1347,7 +1321,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       onTap: () {
         setState(() {
           _selectedTab = index;
-          // تصفية الحساب الذكي
           final accController = context.read<AccountsController>();
           final validAccounts = _getFilteredAccounts(accController.accounts);
           if (_selectedAccount == null ||
@@ -1358,12 +1331,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         });
         _updateLiveBalances();
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppDimensions.borderRadiusXL,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppDimensions.spaceM,
+        ),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1E1E1E) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? AppColors.charcoal : Colors.transparent,
+          borderRadius: AppDimensions.borderRadiusXL,
         ),
         alignment: Alignment.center,
         child: Row(
@@ -1372,15 +1347,18 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
             Icon(
               icon,
               size: 15,
-              color: isSelected ? Colors.white : const Color(0xFF64748B),
+              color: isSelected ? AppColors.textWhite : AppColors.textTertiary,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: AppDimensions.spaceS),
             Text(
               label,
               style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? Colors.white : const Color(0xFF64748B),
+                fontSize: AppTypography.sizeBodySecondary,
+                fontWeight: isSelected
+                    ? AppTypography.weightSemiBold
+                    : AppTypography.weightMedium,
+                color:
+                    isSelected ? AppColors.textWhite : AppColors.textTertiary,
               ),
             ),
           ],
@@ -1391,13 +1369,13 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
   Widget _buildFieldLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
+      padding: const EdgeInsets.only(bottom: AppDimensions.spaceS),
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF64748B),
+          fontSize: AppTypography.sizeCaption,
+          fontWeight: AppTypography.weightMedium,
+          color: AppColors.textTertiary,
         ),
       ),
     );

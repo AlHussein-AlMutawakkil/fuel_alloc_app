@@ -1,0 +1,69 @@
+import 'package:flutter/material.dart';
+
+/// أيقونات التطبيق الموحدة والمحددة دلالياً
+class AppIcons {
+  AppIcons._();
+
+  // --- شريط التنقل السفلي ---
+  static const IconData navHome = Icons.home_outlined;
+  static const IconData navHomeActive = Icons.home;
+  static const IconData navAccounts = Icons.people_outline;
+  static const IconData navAccountsActive = Icons.people;
+  static const IconData navReports = Icons.insert_chart_outlined;
+  static const IconData navReportsActive = Icons.insert_chart;
+  static const IconData navSettings = Icons.settings_outlined;
+  static const IconData navSettingsActive = Icons.settings;
+
+  // --- الإجراءات العامة (General Actions) ---
+  static const IconData add = Icons.add;
+  static const IconData addRounded = Icons.add_rounded;
+  static const IconData edit = Icons.edit_outlined;
+  static const IconData delete = Icons.delete_outline;
+  static const IconData archive = Icons.archive_outlined;
+  static const IconData search = Icons.search;
+  static const IconData close = Icons.close;
+  static const IconData closeRounded = Icons.close_rounded;
+  static const IconData refresh = Icons.refresh;
+  static const IconData moreVert = Icons.more_vert;
+  static const IconData back = Icons.arrow_forward_ios_rounded;
+  static const IconData chevronRight = Icons.arrow_forward_ios;
+  static const IconData chevronLeft = Icons.chevron_left;
+  static const IconData dropdownArrow = Icons.keyboard_arrow_down_rounded;
+  static const IconData dropdownArrowPlain = Icons.keyboard_arrow_down;
+  static const IconData check = Icons.check_rounded;
+  static const IconData checkCircle = Icons.check_circle;
+  static const IconData checkCircleRounded = Icons.check_circle_rounded;
+  static const IconData cancelRounded = Icons.cancel_rounded;
+  static const IconData info = Icons.info_outline;
+
+  // --- أيقونات المجال والعمليات (Domain & Operations) ---
+  static const IconData gasStation = Icons.local_gas_station;
+  static const IconData gasStationOutlined = Icons.local_gas_station_outlined;
+  static const IconData gasStationRounded = Icons.local_gas_station_rounded;
+  static const IconData supply = Icons.arrow_downward;
+  static const IconData dispense = Icons.arrow_upward;
+  static const IconData tabQuota = Icons.receipt_long_outlined;
+  static const IconData tabActual = Icons.swap_horiz;
+  static const IconData tabAeration = Icons.percent;
+  static const IconData star = Icons.auto_awesome;
+  static const IconData account = Icons.person;
+  static const IconData accountOutline = Icons.person_outline;
+  static const IconData calendar = Icons.calendar_today_outlined;
+  static const IconData statement = Icons.description_outlined;
+  static const IconData unit = Icons.straighten;
+  static const IconData unitOutlined = Icons.straighten_outlined;
+  static const IconData unitRounded = Icons.straighten_rounded;
+  static const IconData category = Icons.category_outlined;
+  static const IconData location = Icons.location_on_outlined;
+
+  // --- الإعدادات والحساب ---
+  static const IconData theme = Icons.wb_sunny_outlined;
+  static const IconData language = Icons.language;
+  static const IconData permissions = Icons.security_outlined;
+  static const IconData logout = Icons.logout;
+  static const IconData profile = Icons.face_retouching_natural;
+  static const IconData mic = Icons.mic_none_outlined;
+  static const IconData camera = Icons.camera_alt_outlined;
+  static const IconData photos = Icons.photo_library_outlined;
+  static const IconData dashboard = Icons.dashboard_outlined;
+}

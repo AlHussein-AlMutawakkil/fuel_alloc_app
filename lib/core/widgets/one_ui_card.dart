@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_dimensions.dart';
+import '../constants/app_icons.dart';
+import '../constants/app_strings.dart';
+import '../constants/app_typography.dart';
 
 /// الفاصل الخطي الموحد بنمط One UI لكافة قوائم وكروت التطبيق
 class OneUiDivider extends StatelessWidget {
@@ -11,10 +15,10 @@ class OneUiDivider extends StatelessWidget {
 
   const OneUiDivider({
     super.key,
-    this.indent = 16.0,
-    this.endIndent = 16.0,
-    this.height = 1.5,
-    this.thickness = 1.5,
+    this.indent = AppDimensions.dividerIndent,
+    this.endIndent = AppDimensions.dividerIndent,
+    this.height = AppDimensions.dividerHeight,
+    this.thickness = AppDimensions.dividerThickness,
     this.color,
   });
 
@@ -41,9 +45,12 @@ class OneUiCard extends StatelessWidget {
   const OneUiCard({
     super.key,
     required this.children,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+    this.margin = const EdgeInsets.symmetric(
+      horizontal: AppDimensions.spaceXL,
+      vertical: AppDimensions.spaceS,
+    ),
     this.padding,
-    this.borderRadius = 20.0,
+    this.borderRadius = AppDimensions.radiusCard,
     this.showDividers = true,
   });
 
@@ -52,7 +59,7 @@ class OneUiCard extends StatelessWidget {
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       clipBehavior: Clip.antiAlias,
@@ -85,8 +92,13 @@ class OneUiListContainer extends StatelessWidget {
   const OneUiListContainer({
     super.key,
     required this.child,
-    this.margin = const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 16.0),
-    this.borderRadius = 20.0,
+    this.margin = const EdgeInsets.fromLTRB(
+      AppDimensions.spaceXL,
+      AppDimensions.spaceNone,
+      AppDimensions.spaceXL,
+      AppDimensions.spaceXL,
+    ),
+    this.borderRadius = AppDimensions.radiusCard,
   });
 
   @override
@@ -94,7 +106,7 @@ class OneUiListContainer extends StatelessWidget {
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       clipBehavior: Clip.antiAlias,
@@ -133,12 +145,12 @@ class OneUiTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 15.0),
+          padding: AppDimensions.paddingTile,
           child: Row(
             children: [
               if (leading != null) ...[
                 leading!,
-                const SizedBox(width: 14),
+                const SizedBox(width: AppDimensions.spaceL + 2),
               ],
               Expanded(
                 child: Column(
@@ -148,18 +160,18 @@ class OneUiTile extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: titleColor ?? const Color(0xFF0F172A),
+                        fontSize: AppTypography.sizeBody + 1,
+                        fontWeight: AppTypography.weightSemiBold,
+                        color: titleColor ?? AppColors.textPrimary,
                       ),
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
+                      const SizedBox(height: AppDimensions.spaceXXS + 1),
                       Text(
                         subtitle!,
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
+                          fontSize: AppTypography.sizeCaption,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
@@ -167,24 +179,24 @@ class OneUiTile extends StatelessWidget {
                 ),
               ),
               if (valueText != null && valueText!.isNotEmpty) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: AppDimensions.spaceM),
                 Text(
                   valueText!,
                   style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF64748B),
+                    fontSize: AppTypography.sizeBodySecondary,
+                    color: AppColors.textTertiary,
                   ),
                 ),
               ],
               if (trailing != null) ...[
-                const SizedBox(width: 8),
+                const SizedBox(width: AppDimensions.spaceM),
                 trailing!,
               ] else if (showChevron) ...[
-                const SizedBox(width: 6),
+                const SizedBox(width: AppDimensions.spaceS),
                 const Icon(
-                  Icons.chevron_left,
-                  color: Color(0xFF94A3B8),
-                  size: 20,
+                  AppIcons.chevronLeft,
+                  color: AppColors.textMuted,
+                  size: AppDimensions.iconMedium,
                 ),
               ],
             ],
@@ -217,7 +229,10 @@ class OneUiSelectionTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space2XL,
+            vertical: AppDimensions.spaceXL,
+          ),
           child: Row(
             children: [
               Expanded(
@@ -228,18 +243,18 @@ class OneUiSelectionTile extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF0F172A),
+                        fontSize: AppTypography.sizeH2,
+                        fontWeight: AppTypography.weightMedium,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
+                      const SizedBox(height: AppDimensions.spaceXXS + 1),
                       Text(
                         subtitle!,
                         style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF64748B),
+                          fontSize: AppTypography.sizeBodySecondary,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                     ],
@@ -248,8 +263,8 @@ class OneUiSelectionTile extends StatelessWidget {
               ),
               if (isSelected)
                 const Icon(
-                  Icons.check_circle,
-                  color: Color(0xFF1E293B),
+                  AppIcons.checkCircle,
+                  color: AppColors.textDarkSlate,
                   size: 15,
                 ),
             ],
@@ -279,34 +294,33 @@ class OneUiAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final canPop = showBackButton && Navigator.canPop(context);
     return AppBar(
-      backgroundColor: const Color(0xfff8f8f8),
+      backgroundColor: AppColors.scaffoldBackground,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
-      titleSpacing: canPop ? 6 : 20,
+      titleSpacing: canPop ? AppDimensions.spaceS : AppDimensions.space2XL,
       leadingWidth: canPop ? 42 : null,
-      iconTheme: const IconThemeData(color: Color(0xFF0F172A)),
+      iconTheme: const IconThemeData(color: AppColors.textPrimary),
       leading: canPop
           ? IconButton(
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-              icon: const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 20,
-                color: Color(0xFF0F172A),
+              constraints: const BoxConstraints(
+                minWidth: AppDimensions.iconDisplay,
+                minHeight: AppDimensions.iconDisplay,
               ),
-              tooltip: 'رجوع',
+              icon: const Icon(
+                AppIcons.back,
+                size: AppDimensions.iconMedium,
+                color: AppColors.textPrimary,
+              ),
+              tooltip: AppStrings.back,
               onPressed:
                   onBackPressed ?? () => Navigator.of(context).maybePop(),
             )
           : null,
       title: Text(
         title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF0F172A),
-        ),
+        style: AppTypography.oneUiAppBarTitle,
       ),
       actions: actions,
     );

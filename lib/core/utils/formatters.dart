@@ -1,4 +1,5 @@
 import 'package:intl/intl.dart';
+import '../constants/app_strings.dart';
 
 /// دوال مساعدة لتنسيق الأرقام والكميات والتواريخ
 class AppFormatters {
@@ -27,6 +28,6 @@ class AppFormatters {
   static String formatEquivalents(double liters) {
     final dabbas = liters / 20.0;
     final barrels = liters / 200.0;
-    return '${formatQuantity(dabbas)} دبة  |  ${formatQuantity(barrels)} برميل';
+    return '${formatQuantity(dabbas)} ${AppStrings.unitDabba}  |  ${formatQuantity(barrels)} ${AppStrings.unitBarrel}';
   }
 }

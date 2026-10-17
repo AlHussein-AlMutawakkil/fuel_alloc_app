@@ -14,7 +14,10 @@ class StationsController extends ChangeNotifier {
     return _allStations.where((station) {
       final matchesSearch = _searchQuery.isEmpty ||
           station.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (station.location?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
+          (station.location
+                  ?.toLowerCase()
+                  .contains(_searchQuery.toLowerCase()) ??
+              false) ||
           (station.phoneNumber?.contains(_searchQuery) ?? false);
       return matchesSearch;
     }).toList();

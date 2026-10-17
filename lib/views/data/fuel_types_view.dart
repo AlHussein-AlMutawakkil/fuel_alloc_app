@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/constants/app_typography.dart';
+import '../../core/widgets/app_loading_indicator.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
+import '../../core/widgets/empty_state_widget.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../../data/local/database_helper.dart';
 
@@ -44,10 +49,10 @@ class _FuelTypesViewState extends State<FuelTypesView> {
 
     CustomModalSheet.show(
       context: context,
-      title: item == null ? 'إضافة صنف' : 'تعديل صنف',
+      title: item == null ? AppStrings.addFuelType : AppStrings.editFuelType,
       contentBuilder: (ctx, setModalState) {
         return CustomModalSheet.buildTextField(
-          label: 'اسم الصنف',
+          label: AppStrings.fuelTypeNameLabel,
           controller: nameController,
         );
       },
@@ -76,10 +81,10 @@ class _FuelTypesViewState extends State<FuelTypesView> {
   void _deleteFuelType(int id) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'تأكيد!',
-      message: 'هل تريد حذف هذا الصنف؟',
-      confirmText: 'حسناً',
-      cancelText: 'إلغاء',
+      title: AppStrings.confirmExclamation,
+      message: AppStrings.confirmDeleteFuelTypeMsg,
+      confirmText: AppStrings.ok,
+      cancelText: AppStrings.cancel,
       isDanger: true,
     );
     if (confirm) {
@@ -93,43 +98,46 @@ class _FuelTypesViewState extends State<FuelTypesView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f8f8),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: OneUiAppBar(
-        title: 'دليل أصناف الوقود',
+        title: AppStrings.fuelTypesDirectory,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded),
-            tooltip: 'إضافة صنف',
+            icon: const Icon(AppIcons.addRounded),
+            tooltip: AppStrings.addFuelType,
             onPressed: () => _openAddEditDialog(),
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary))
+          ? const AppLoadingIndicator()
           : ListView(
-              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppDimensions.spaceL,
+              ),
               children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0, vertical: 6.0),
+                    horizontal: AppDimensions.space2XL,
+                    vertical: AppDimensions.spaceS,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        'الأصناف المسجلة',
+                        AppStrings.registeredFuelTypes,
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF64748B),
+                          fontSize: AppTypography.sizeBodySecondary,
+                          fontWeight: AppTypography.weightSemiBold,
+                          color: AppColors.textTertiary,
                         ),
                       ),
                       Text(
-                        'العدد: ${_fuelTypes.length}',
+                        '${AppStrings.countPrefix}${_fuelTypes.length}',
                         style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF94A3B8),
+                          fontSize: AppTypography.sizeCaption,
+                          fontWeight: AppTypography.weightMedium,
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ],
@@ -138,28 +146,9 @@ class _FuelTypesViewState extends State<FuelTypesView> {
                 if (_fuelTypes.isEmpty)
                   const OneUiCard(
                     children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                            vertical: 36.0, horizontal: 20.0),
-                        child: Center(
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.local_gas_station_outlined,
-                                size: 40,
-                                color: Color(0xFF94A3B8),
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                'لا توجد أصناف مسجلة بعد',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      EmptyStateWidget(
+                        icon: AppIcons.gasStationOutlined,
+                        title: AppStrings.noFuelTypesRecordedYet,
                       ),
                     ],
                   )
@@ -170,28 +159,28 @@ class _FuelTypesViewState extends State<FuelTypesView> {
                         leading: Container(
                           width: 38,
                           height: 38,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
+                          decoration: const BoxDecoration(
+                            color: AppColors.chipBackground,
+                            borderRadius: AppDimensions.borderRadiusL,
                           ),
                           child: const Icon(
-                            Icons.local_gas_station_rounded,
-                            color: Color(0xFF102A43),
-                            size: 20,
+                            AppIcons.gasStationRounded,
+                            color: AppColors.primary,
+                            size: AppDimensions.iconMedium,
                           ),
                         ),
                         title: f['name'].toString(),
                         onTap: () => _openAddEditDialog(item: f),
                         trailing: PopupMenuButton<String>(
                           icon: const Icon(
-                            Icons.more_vert,
-                            color: Color(0xFF94A3B8),
-                            size: 20,
+                            AppIcons.moreVert,
+                            color: AppColors.textMuted,
+                            size: AppDimensions.iconMedium,
                           ),
-                          color: Colors.white,
+                          color: AppColors.surface,
                           elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: AppDimensions.borderRadiusXL,
                           ),
                           onSelected: (action) {
                             if (action == 'edit') {
@@ -205,11 +194,18 @@ class _FuelTypesViewState extends State<FuelTypesView> {
                               value: 'edit',
                               child: Row(
                                 children: [
-                                  Icon(Icons.edit_outlined,
-                                      size: 18, color: Color(0xFF475569)),
-                                  SizedBox(width: 8),
-                                  Text(AppStrings.edit,
-                                      style: TextStyle(fontSize: 14)),
+                                  Icon(
+                                    AppIcons.edit,
+                                    size: AppDimensions.iconRegular,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  SizedBox(width: AppDimensions.spaceM),
+                                  Text(
+                                    AppStrings.edit,
+                                    style: TextStyle(
+                                      fontSize: AppTypography.sizeBody,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -217,13 +213,19 @@ class _FuelTypesViewState extends State<FuelTypesView> {
                               value: 'delete',
                               child: Row(
                                 children: [
-                                  Icon(Icons.delete_outline,
-                                      size: 18, color: Color(0xFFB91C1C)),
-                                  SizedBox(width: 8),
-                                  Text(AppStrings.delete,
-                                      style: TextStyle(
-                                          color: Color(0xFFB91C1C),
-                                          fontSize: 14)),
+                                  Icon(
+                                    AppIcons.delete,
+                                    size: AppDimensions.iconRegular,
+                                    color: AppColors.dispenseRed,
+                                  ),
+                                  SizedBox(width: AppDimensions.spaceM),
+                                  Text(
+                                    AppStrings.delete,
+                                    style: TextStyle(
+                                      color: AppColors.dispenseRed,
+                                      fontSize: AppTypography.sizeBody,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),

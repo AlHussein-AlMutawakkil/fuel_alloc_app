@@ -9,7 +9,8 @@ class TransactionsController extends ChangeNotifier {
   List<TransactionModel> _allTransactions = [];
   bool _isLoading = false;
   String _searchQuery = '';
-  String _selectedFilter = 'ALL'; // ALL, QUOTA, ACTUAL, SUPPLY, DISPENSE, AERATION
+  String _selectedFilter =
+      'ALL'; // ALL, QUOTA, ACTUAL, SUPPLY, DISPENSE, AERATION
   int? _selectedFuelTypeId;
 
   List<Map<String, dynamic>> _stations = [];
@@ -116,7 +117,8 @@ class TransactionsController extends ChangeNotifier {
 
   /// الرصيد المتبقي لصنف معين باللتر
   double getBalanceLitersForFuel(int fuelTypeId) {
-    return getQuotaLitersForFuel(fuelTypeId) - getActualLitersForFuel(fuelTypeId);
+    return getQuotaLitersForFuel(fuelTypeId) -
+        getActualLitersForFuel(fuelTypeId);
   }
 
   /// الوارد الفعلي لمحطة لصنف معين
@@ -155,7 +157,8 @@ class TransactionsController extends ChangeNotifier {
   /// الرصيد المتبقي بمحطة لصنف معين
   double getStationBalanceForFuel(int fuelTypeId) {
     return getStationSupplyForFuel(fuelTypeId) -
-        (getStationDispenseForFuel(fuelTypeId) + getStationAerationForFuel(fuelTypeId));
+        (getStationDispenseForFuel(fuelTypeId) +
+            getStationAerationForFuel(fuelTypeId));
   }
 
   /// رصيد محطة معينة حالياً
@@ -204,14 +207,16 @@ class TransactionsController extends ChangeNotifier {
   }
 
   /// جلب عمليات حساب معين
-  Future<void> fetchAccountTransactions(int accountId, {int? defaultFuelTypeId}) async {
+  Future<void> fetchAccountTransactions(int accountId,
+      {int? defaultFuelTypeId}) async {
     _currentAccountId = accountId;
     _currentStationId = null;
     _isLoading = true;
     notifyListeners();
 
     try {
-      _allTransactions = await _repository.getTransactionsByAccountId(accountId);
+      _allTransactions =
+          await _repository.getTransactionsByAccountId(accountId);
       await loadFormData();
       if (defaultFuelTypeId != null) {
         _selectedFuelTypeId = defaultFuelTypeId;
@@ -230,14 +235,16 @@ class TransactionsController extends ChangeNotifier {
   }
 
   /// جلب كافة عمليات محطة معينة (للمطابقة والمحاسبة)
-  Future<void> fetchStationTransactions(int stationId, {int? defaultFuelTypeId}) async {
+  Future<void> fetchStationTransactions(int stationId,
+      {int? defaultFuelTypeId}) async {
     _currentStationId = stationId;
     _currentAccountId = null;
     _isLoading = true;
     notifyListeners();
 
     try {
-      _allTransactions = await _repository.getTransactionsByStationId(stationId);
+      _allTransactions =
+          await _repository.getTransactionsByStationId(stationId);
       await loadFormData();
       if (defaultFuelTypeId != null) {
         _selectedFuelTypeId = defaultFuelTypeId;
@@ -319,7 +326,8 @@ class TransactionsController extends ChangeNotifier {
   Future<bool> deleteTransaction(int id, int accountId) async {
     try {
       await _repository.deleteTransaction(id);
-      _allTransactions = await _repository.getTransactionsByAccountId(accountId);
+      _allTransactions =
+          await _repository.getTransactionsByAccountId(accountId);
       notifyListeners();
       return true;
     } catch (e) {
@@ -332,7 +340,8 @@ class TransactionsController extends ChangeNotifier {
   Future<bool> deleteStationTransaction(int id, int stationId) async {
     try {
       await _repository.deleteTransaction(id);
-      _allTransactions = await _repository.getTransactionsByStationId(stationId);
+      _allTransactions =
+          await _repository.getTransactionsByStationId(stationId);
       notifyListeners();
       return true;
     } catch (e) {

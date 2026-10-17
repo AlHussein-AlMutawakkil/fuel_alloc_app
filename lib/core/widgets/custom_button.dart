@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../constants/app_text_styles.dart';
+import '../constants/app_dimensions.dart';
+import '../constants/app_typography.dart';
 
-enum ButtonVariant { primary, secondary, danger, success }
+enum ButtonVariant { primary, secondary, danger, success, dark }
 
 /// الزر الموحد لجميع شاشات التطبيق
 class CustomButton extends StatelessWidget {
@@ -13,6 +14,8 @@ class CustomButton extends StatelessWidget {
   final bool isLoading;
   final double? width;
   final double height;
+  final BorderRadius? borderRadius;
+  final EdgeInsetsGeometry? padding;
 
   const CustomButton({
     super.key,
@@ -22,7 +25,9 @@ class CustomButton extends StatelessWidget {
     this.icon,
     this.isLoading = false,
     this.width,
-    this.height = 46,
+    this.height = AppDimensions.buttonHeight,
+    this.borderRadius,
+    this.padding,
   });
 
   @override
@@ -34,22 +39,31 @@ class CustomButton extends StatelessWidget {
     switch (variant) {
       case ButtonVariant.primary:
         bgColor = AppColors.primary;
-        fgColor = Colors.white;
+        fgColor = AppColors.textWhite;
         break;
       case ButtonVariant.secondary:
-        bgColor = Colors.white;
+        bgColor = AppColors.surface;
         fgColor = AppColors.primary;
-        borderSide = const BorderSide(color: AppColors.border, width: 1.2);
+        borderSide = const BorderSide(
+          color: AppColors.border,
+          width: AppDimensions.borderWidthRegular,
+        );
         break;
       case ButtonVariant.danger:
         bgColor = AppColors.dispenseRed;
-        fgColor = Colors.white;
+        fgColor = AppColors.textWhite;
         break;
       case ButtonVariant.success:
         bgColor = AppColors.supplyGreen;
-        fgColor = Colors.white;
+        fgColor = AppColors.textWhite;
+        break;
+      case ButtonVariant.dark:
+        bgColor = AppColors.charcoal;
+        fgColor = AppColors.textWhite;
         break;
     }
+
+    final effectiveRadius = borderRadius ?? AppDimensions.borderRadiusM;
 
     return SizedBox(
       width: width,
@@ -60,18 +74,18 @@ class CustomButton extends StatelessWidget {
           foregroundColor: fgColor,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: effectiveRadius,
             side: borderSide,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: padding ?? AppDimensions.paddingButton,
         ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
             ? SizedBox(
-                width: 20,
-                height: 20,
+                width: AppDimensions.iconMedium,
+                height: AppDimensions.iconMedium,
                 child: CircularProgressIndicator(
-                  strokeWidth: 2,
+                  strokeWidth: AppDimensions.borderWidthThick,
                   valueColor: AlwaysStoppedAnimation<Color>(fgColor),
                 ),
               )
@@ -80,12 +94,12 @@ class CustomButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 18, color: fgColor),
-                    const SizedBox(width: 8),
+                    Icon(icon, size: AppDimensions.iconRegular, color: fgColor),
+                    const SizedBox(width: AppDimensions.spaceM),
                   ],
                   Text(
                     text,
-                    style: AppTextStyles.button.copyWith(color: fgColor),
+                    style: AppTypography.button.copyWith(color: fgColor),
                   ),
                 ],
               ),

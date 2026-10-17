@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/constants/app_text_styles.dart';
+import '../../core/constants/app_typography.dart';
+import '../../core/widgets/app_loading_indicator.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
+import '../../core/widgets/empty_state_widget.dart';
 import '../../data/local/database_helper.dart';
 import '../../models/station_model.dart';
 import '../accounts/station_transactions_view.dart';
@@ -64,29 +68,29 @@ class _StationsViewState extends State<StationsView> {
 
     CustomModalSheet.show(
       context: context,
-      title: station == null ? 'إضافة محطة' : 'تعديل محطة',
+      title: station == null ? AppStrings.addStation : AppStrings.editStation,
       contentBuilder: (ctx, setModalState) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             CustomModalSheet.buildTextField(
-              label: 'اسم المحطة',
+              label: AppStrings.stationNameLabel,
               controller: nameController,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
-              label: 'الموقع / المدينة',
+              label: AppStrings.locationCityLabel,
               controller: locationController,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
-              label: 'رقم الهاتف',
+              label: AppStrings.phoneNumber,
               controller: phoneController,
               keyboardType: TextInputType.phone,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
-              label: 'نسبة عمولة التهوية (%)',
+              label: AppStrings.commissionRatePercentLabel,
               controller: commissionController,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
@@ -134,10 +138,10 @@ class _StationsViewState extends State<StationsView> {
   void _deleteStation(int id) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'تأكيد!',
-      message: 'هل تريد حذف هذه المحطة؟',
-      confirmText: 'حسناً',
-      cancelText: 'إلغاء',
+      title: AppStrings.confirmExclamation,
+      message: AppStrings.confirmDeleteStationMsg,
+      confirmText: AppStrings.ok,
+      cancelText: AppStrings.cancel,
       isDanger: true,
     );
     if (confirm) {
@@ -161,17 +165,22 @@ class _StationsViewState extends State<StationsView> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: _isSearching
             ? TextField(
                 controller: _searchController,
                 autofocus: true,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
-                cursorColor: Colors.white,
+                style: const TextStyle(
+                  color: AppColors.textWhite,
+                  fontSize: AppTypography.sizeBody + 1,
+                ),
+                cursorColor: AppColors.textWhite,
                 decoration: InputDecoration(
-                  hintText: 'بحث في المحطات أو الموقع أو الهاتف...',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                  hintText: AppStrings.searchStationsHint,
+                  hintStyle: TextStyle(
+                    color: AppColors.textWhite.withOpacity(0.7),
+                  ),
                   border: InputBorder.none,
                 ),
                 onChanged: (val) {
@@ -180,11 +189,11 @@ class _StationsViewState extends State<StationsView> {
                   });
                 },
               )
-            : const Text('دليل محطات الوقود'),
+            : const Text(AppStrings.stationsDirectory),
         actions: [
           IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search),
-            tooltip: _isSearching ? 'إغلاق البحث' : 'بحث',
+            icon: Icon(_isSearching ? AppIcons.close : AppIcons.search),
+            tooltip: _isSearching ? AppStrings.closeSearch : AppStrings.search,
             onPressed: () {
               setState(() {
                 _isSearching = !_isSearching;
@@ -196,47 +205,48 @@ class _StationsViewState extends State<StationsView> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'إضافة محطة',
+            icon: const Icon(AppIcons.add),
+            tooltip: AppStrings.addStation,
             onPressed: () => _openAddEditDialog(),
           ),
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: AppDimensions.paddingScreen,
         child: Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('قائمة المحطات المعتمدة',
-                    style: AppTextStyles.heading2),
+                const Text(
+                  AppStrings.approvedStationsList,
+                  style: AppTypography.heading2,
+                ),
                 Text(
-                  'العدد: ${filteredStations.length}',
-                  style: AppTextStyles.caption
-                      .copyWith(fontWeight: FontWeight.bold),
+                  '${AppStrings.countPrefix}${filteredStations.length}',
+                  style: AppTypography.captionBold,
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppDimensions.spaceL),
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child:
-                          CircularProgressIndicator(color: AppColors.primary))
+                  ? const AppLoadingIndicator()
                   : filteredStations.isEmpty
-                      ? const Center(
-                          child: Text('لا توجد محطات مسجلة بعد',
-                              style: AppTextStyles.bodySecondary))
+                      ? const EmptyStateWidget(
+                          icon: AppIcons.gasStationOutlined,
+                          title: AppStrings.noStationsRecordedYet,
+                        )
                       : ListView.separated(
                           itemCount: filteredStations.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 8),
+                          separatorBuilder: (_, __) => const SizedBox(
+                            height: AppDimensions.spaceM,
+                          ),
                           itemBuilder: (context, index) {
                             final s = filteredStations[index];
                             return Material(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                              color: AppColors.surface,
+                              borderRadius: AppDimensions.borderRadiusM,
                               child: InkWell(
                                 onTap: () {
                                   Navigator.of(context)
@@ -250,14 +260,15 @@ class _StationsViewState extends State<StationsView> {
                                       )
                                       .then((_) => _loadStations());
                                 },
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: AppDimensions.borderRadiusM,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 12),
+                                  padding: AppDimensions.paddingInput,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: AppDimensions.borderRadiusM,
                                     border: Border.all(
-                                        color: AppColors.border, width: 1),
+                                      color: AppColors.border,
+                                      width: AppDimensions.borderWidthThin,
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
@@ -266,9 +277,13 @@ class _StationsViewState extends State<StationsView> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(s['name'].toString(),
-                                                style: AppTextStyles.heading3),
-                                            const SizedBox(height: 4),
+                                            Text(
+                                              s['name'].toString(),
+                                              style: AppTypography.heading3,
+                                            ),
+                                            const SizedBox(
+                                              height: AppDimensions.spaceXS,
+                                            ),
                                             Row(
                                               children: [
                                                 if (s['location'] != null &&
@@ -276,43 +291,60 @@ class _StationsViewState extends State<StationsView> {
                                                         .toString()
                                                         .isNotEmpty) ...[
                                                   const Icon(
-                                                      Icons
-                                                          .location_on_outlined,
-                                                      size: 14,
-                                                      color:
-                                                          AppColors.textMuted),
-                                                  const SizedBox(width: 4),
-                                                  Text(s['location'].toString(),
-                                                      style: AppTextStyles
-                                                          .caption),
-                                                  const SizedBox(width: 12),
+                                                    AppIcons.location,
+                                                    size:
+                                                        AppDimensions.iconMini,
+                                                    color: AppColors.textMuted,
+                                                  ),
+                                                  const SizedBox(
+                                                    width:
+                                                        AppDimensions.spaceXS,
+                                                  ),
+                                                  Text(
+                                                    s['location'].toString(),
+                                                    style:
+                                                        AppTypography.caption,
+                                                  ),
+                                                  const SizedBox(
+                                                    width: AppDimensions.spaceL,
+                                                  ),
                                                 ],
                                                 Text(
-                                                  'عمولة التهوية: ${s['default_commission_rate']}%',
-                                                  style: AppTextStyles.caption
+                                                  '${AppStrings.commissionRateLabel}${s['default_commission_rate']}%',
+                                                  style: AppTypography.caption
                                                       .copyWith(
-                                                          color: AppColors
-                                                              .supplyGreen),
+                                                    color:
+                                                        AppColors.supplyGreen,
+                                                  ),
                                                 ),
                                               ],
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const Icon(Icons.arrow_forward_ios,
-                                          size: 14, color: AppColors.textMuted),
-                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        AppIcons.chevronRight,
+                                        size: AppDimensions.iconMini,
+                                        color: AppColors.textMuted,
+                                      ),
+                                      const SizedBox(
+                                        width: AppDimensions.spaceXS,
+                                      ),
                                       PopupMenuButton<String>(
-                                        icon: const Icon(Icons.more_vert,
-                                            color: AppColors.textSecondary,
-                                            size: 20),
-                                        color: Colors.white,
-                                        shape: RoundedRectangleBorder(
+                                        icon: const Icon(
+                                          AppIcons.moreVert,
+                                          color: AppColors.textSecondary,
+                                          size: AppDimensions.iconMedium,
+                                        ),
+                                        color: AppColors.surface,
+                                        shape: const RoundedRectangleBorder(
                                           borderRadius:
-                                              BorderRadius.circular(8),
-                                          side: const BorderSide(
-                                              color: AppColors.border,
-                                              width: 1),
+                                              AppDimensions.borderRadiusM,
+                                          side: BorderSide(
+                                            color: AppColors.border,
+                                            width:
+                                                AppDimensions.borderWidthThin,
+                                          ),
                                         ),
                                         onSelected: (action) {
                                           if (action == 'transactions') {
@@ -340,12 +372,19 @@ class _StationsViewState extends State<StationsView> {
                                             child: Row(
                                               children: [
                                                 Icon(
-                                                    Icons.receipt_long_outlined,
-                                                    size: 18,
-                                                    color: AppColors.primary),
-                                                SizedBox(width: 8),
-                                                Text('كشف حساب المحطة',
-                                                    style: AppTextStyles.body),
+                                                  AppIcons.tabQuota,
+                                                  size:
+                                                      AppDimensions.iconRegular,
+                                                  color: AppColors.primary,
+                                                ),
+                                                SizedBox(
+                                                  width: AppDimensions.spaceM,
+                                                ),
+                                                Text(
+                                                  AppStrings
+                                                      .stationStatementTitle,
+                                                  style: AppTypography.body,
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -353,13 +392,20 @@ class _StationsViewState extends State<StationsView> {
                                             value: 'edit',
                                             child: Row(
                                               children: [
-                                                Icon(Icons.edit_outlined,
-                                                    size: 18,
-                                                    color: AppColors
-                                                        .textSecondary),
-                                                SizedBox(width: 8),
-                                                Text(AppStrings.edit,
-                                                    style: AppTextStyles.body),
+                                                Icon(
+                                                  AppIcons.edit,
+                                                  size:
+                                                      AppDimensions.iconRegular,
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                                SizedBox(
+                                                  width: AppDimensions.spaceM,
+                                                ),
+                                                Text(
+                                                  AppStrings.edit,
+                                                  style: AppTypography.body,
+                                                ),
                                               ],
                                             ),
                                           ),
@@ -367,15 +413,22 @@ class _StationsViewState extends State<StationsView> {
                                             value: 'delete',
                                             child: Row(
                                               children: [
-                                                Icon(Icons.delete_outline,
-                                                    size: 18,
+                                                Icon(
+                                                  AppIcons.delete,
+                                                  size:
+                                                      AppDimensions.iconRegular,
+                                                  color: AppColors.dispenseRed,
+                                                ),
+                                                SizedBox(
+                                                  width: AppDimensions.spaceM,
+                                                ),
+                                                Text(
+                                                  AppStrings.delete,
+                                                  style: TextStyle(
                                                     color:
-                                                        AppColors.dispenseRed),
-                                                SizedBox(width: 8),
-                                                Text(AppStrings.delete,
-                                                    style: TextStyle(
-                                                        color: AppColors
-                                                            .dispenseRed)),
+                                                        AppColors.dispenseRed,
+                                                  ),
+                                                ),
                                               ],
                                             ),
                                           ),

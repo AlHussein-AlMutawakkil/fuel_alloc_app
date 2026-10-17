@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../constants/app_text_styles.dart';
+import '../constants/app_dimensions.dart';
+import '../constants/app_typography.dart';
 
 /// الثيم الرسمي الموحد للتطبيق
 class AppTheme {
@@ -9,7 +10,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: AppColors.background,
+      scaffoldBackgroundColor: AppColors.scaffoldBackground,
       primaryColor: AppColors.primary,
       colorScheme: const ColorScheme.light(
         primary: AppColors.primary,
@@ -19,34 +20,39 @@ class AppTheme {
       ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: AppColors.textWhite,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.appBarTitle,
-        iconTheme: IconThemeData(color: Colors.white),
+        titleTextStyle: AppTypography.appBarTitle,
+        iconTheme: IconThemeData(color: AppColors.textWhite),
       ),
-      cardTheme: CardTheme(
+      cardTheme: const CardTheme(
         color: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: const BorderSide(color: AppColors.border, width: 1),
+          borderRadius: AppDimensions.borderRadiusM,
+          side: BorderSide(
+            color: AppColors.border,
+            width: AppDimensions.borderWidthThin,
+          ),
         ),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textMuted,
-        selectedLabelStyle:
-            TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-        unselectedLabelStyle: TextStyle(fontSize: 12),
+        selectedLabelStyle: TextStyle(
+          fontWeight: AppTypography.weightBold,
+          fontSize: AppTypography.sizeCaption,
+        ),
+        unselectedLabelStyle: TextStyle(fontSize: AppTypography.sizeCaption),
         elevation: 8,
         type: BottomNavigationBarType.fixed,
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
-        thickness: 1,
-        space: 1,
+        thickness: AppDimensions.dividerThickness,
+        space: AppDimensions.dividerHeight,
       ),
     );
   }

@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/constants/app_typography.dart';
+import '../../core/widgets/app_snackbar.dart';
+import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../data/fuel_types_view.dart';
@@ -18,47 +24,61 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   void _showUnderDevelopmentSnackBar(String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title (تحت التطوير)'),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    AppSnackBar.showInfo(context, '$title (${AppStrings.underDevelopment})');
   }
 
   void _showAboutDialog() {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: AppColors.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppDimensions.borderRadiusCard,
+        ),
         title: const Row(
           children: [
-            Icon(Icons.local_gas_station, color: Color(0xFF102A43), size: 28),
-            SizedBox(width: 10),
-            Text('نظام مخصصات الوقود',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Icon(
+              AppIcons.gasStation,
+              color: AppColors.primary,
+              size: AppDimensions.iconExtraLarge,
+            ),
+            SizedBox(width: AppDimensions.spaceM + 2),
+            Text(
+              AppStrings.appTitle,
+              style: TextStyle(
+                fontSize: AppTypography.sizeH1 - 2,
+                fontWeight: AppTypography.weightBold,
+              ),
+            ),
           ],
         ),
         content: const Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('الإصدار: 1.0.0 (رسمي)',
-                style: TextStyle(fontSize: 14, color: Color(0xFF475569))),
-            SizedBox(height: 8),
             Text(
-              'نظام متكامل لإدارة ومحاسبة مخصصات واعتمادات الوقود ومطابقة كشوفات الحسابات والمحطات بدقة وموثوقية.',
+              AppStrings.appVersionOfficial,
               style: TextStyle(
-                  fontSize: 13, height: 1.5, color: Color(0xFF1E293B)),
+                fontSize: AppTypography.sizeBody,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: AppDimensions.spaceM),
+            Text(
+              AppStrings.aboutAppDescription,
+              style: TextStyle(
+                fontSize: AppTypography.sizeBodySecondary,
+                height: 1.5,
+                color: AppColors.textDarkSlate,
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(
+          CustomButton(
+            text: AppStrings.close,
+            variant: ButtonVariant.secondary,
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('إغلاق',
-                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -68,48 +88,45 @@ class _SettingsViewState extends State<SettingsView> {
   void _confirmLogout() async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: 'تسجيل الخروج',
-      message: 'هل تريد حقاً تسجيل الخروج من التطبيق؟',
-      confirmText: 'تسجيل الخروج',
-      cancelText: 'إلغاء',
+      title: AppStrings.confirmLogoutTitle,
+      message: AppStrings.confirmLogoutMsg,
+      confirmText: AppStrings.logout,
+      cancelText: AppStrings.cancel,
       isDanger: true,
     );
     if (confirm && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تم تسجيل الخروج بنجاح'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppSnackBar.showSuccess(context, AppStrings.logoutSuccessMsg);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f8f8),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: const OneUiAppBar(
         title: AppStrings.settingsTitle,
         showBackButton: false,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppDimensions.spaceL,
+        ),
         children: [
           // 1. كرت الملف الشخصي للمستخدم
           OneUiCard(
             children: [
               OneUiTile(
                 leading: Container(
-                  width: 48,
-                  height: 48,
+                  width: AppDimensions.avatarSize,
+                  height: AppDimensions.avatarSize,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF1E293B),
+                    color: AppColors.textDarkSlate,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.face_retouching_natural,
-                    color: Colors.white,
-                    size: 26,
+                    AppIcons.profile,
+                    color: AppColors.textWhite,
+                    size: AppDimensions.iconExtraLarge - 2,
                   ),
                 ),
                 title: AppStrings.profileTitle,
@@ -125,9 +142,9 @@ class _SettingsViewState extends State<SettingsView> {
             children: [
               OneUiTile(
                 leading: const Icon(
-                  Icons.person_outline,
-                  color: Color(0xFF0F172A),
-                  size: 22,
+                  AppIcons.accountOutline,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.account,
                 valueText: 'alhossenail776472265...',
@@ -136,14 +153,14 @@ class _SettingsViewState extends State<SettingsView> {
             ],
           ),
 
-          // 3. كرت البيانات (الأصناف والوحدات) بديلاً عن الاشتراك والاستخدام
+          // 3. كرت البيانات (الأصناف والوحدات)
           OneUiCard(
             children: [
               OneUiTile(
                 leading: const Icon(
-                  Icons.category_outlined,
-                  color: Color(0xFF0F172A),
-                  size: 22,
+                  AppIcons.category,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.dataFuelTypes,
                 onTap: () {
@@ -155,9 +172,9 @@ class _SettingsViewState extends State<SettingsView> {
               ),
               OneUiTile(
                 leading: const Icon(
-                  Icons.straighten,
-                  color: Color(0xFF0F172A),
-                  size: 22,
+                  AppIcons.unit,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.dataUnits,
                 onTap: () {
@@ -175,9 +192,9 @@ class _SettingsViewState extends State<SettingsView> {
             children: [
               OneUiTile(
                 leading: const Icon(
-                  Icons.wb_sunny_outlined,
-                  color: Color(0xFF0F172A),
-                  size: 22,
+                  AppIcons.theme,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.theme,
                 valueText: AppStrings.themeLight,
@@ -191,12 +208,12 @@ class _SettingsViewState extends State<SettingsView> {
               ),
               OneUiTile(
                 leading: const Icon(
-                  Icons.language,
-                  color: Color(0xFF0F172A),
-                  size: 22,
+                  AppIcons.language,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.appLanguage,
-                valueText: 'Arabic (Arabic)',
+                valueText: AppStrings.languageArabic,
                 onTap: () {
                   Navigator.push(
                     context,
@@ -213,9 +230,9 @@ class _SettingsViewState extends State<SettingsView> {
             children: [
               OneUiTile(
                 leading: const Icon(
-                  Icons.security_outlined,
-                  color: Color(0xFF0F172A),
-                  size: 22,
+                  AppIcons.permissions,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.permissionsManagement,
                 onTap: () {
@@ -228,9 +245,9 @@ class _SettingsViewState extends State<SettingsView> {
               ),
               OneUiTile(
                 leading: const Icon(
-                  Icons.info_outline,
-                  color: Color(0xFF0F172A),
-                  size: 22,
+                  AppIcons.info,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.aboutApp,
                 onTap: _showAboutDialog,
@@ -243,17 +260,17 @@ class _SettingsViewState extends State<SettingsView> {
             children: [
               OneUiTile(
                 leading: const Icon(
-                  Icons.logout,
-                  color: Color(0xFFB91C1C),
-                  size: 22,
+                  AppIcons.logout,
+                  color: AppColors.dispenseRed,
+                  size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.logout,
-                titleColor: const Color(0xFFB91C1C),
+                titleColor: AppColors.dispenseRed,
                 onTap: _confirmLogout,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppDimensions.spaceXL),
         ],
       ),
     );

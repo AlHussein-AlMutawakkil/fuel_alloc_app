@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
-import '../constants/app_text_styles.dart';
+import '../constants/app_dimensions.dart';
+import '../constants/app_typography.dart';
+
+enum TextFieldVariant { outlined, oneUi }
 
 /// حقل الإدخال الموحد لجميع شاشات التطبيق
 class CustomTextField extends StatelessWidget {
@@ -13,8 +16,14 @@ class CustomTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final bool readOnly;
   final VoidCallback? onTap;
-  final void Function(String)? onChanged;
+  final ValueChanged<String>? onChanged;
   final int maxLines;
+  final TextFieldVariant variant;
+  final Color? fillColor;
+  final Color? borderColor;
+  final BorderRadius? borderRadius;
+  final double? height;
+  final TextAlign textAlign;
 
   const CustomTextField({
     super.key,
@@ -29,10 +38,20 @@ class CustomTextField extends StatelessWidget {
     this.onTap,
     this.onChanged,
     this.maxLines = 1,
+    this.variant = TextFieldVariant.outlined,
+    this.fillColor,
+    this.borderColor,
+    this.borderRadius,
+    this.height,
+    this.textAlign = TextAlign.start,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (variant == TextFieldVariant.oneUi) {
+      return _buildOneUiVariant();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -40,12 +59,12 @@ class CustomTextField extends StatelessWidget {
         if (label != null) ...[
           Text(
             label!,
-            style: AppTextStyles.bodySecondary.copyWith(
-              fontWeight: FontWeight.w600,
+            style: AppTypography.bodySecondary.copyWith(
+              fontWeight: AppTypography.weightSemiBold,
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppDimensions.spaceS),
         ],
         TextFormField(
           controller: controller,
@@ -55,34 +74,114 @@ class CustomTextField extends StatelessWidget {
           onTap: onTap,
           onChanged: onChanged,
           maxLines: maxLines,
-          style: AppTextStyles.body,
+          textAlign: textAlign,
+          style: AppTypography.body,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: AppTextStyles.caption.copyWith(fontSize: 13),
+            hintStyle: AppTypography.caption.copyWith(
+              fontSize: AppTypography.sizeBodySecondary,
+            ),
             prefixIcon: prefixIcon,
             suffixIcon: suffixIcon,
             filled: true,
-            fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            fillColor: fillColor ?? AppColors.surface,
+            contentPadding: AppDimensions.paddingInput,
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.border, width: 1.2),
+              borderRadius: borderRadius ?? AppDimensions.borderRadiusM,
+              borderSide: BorderSide(
+                color: borderColor ?? AppColors.border,
+                width: AppDimensions.borderWidthRegular,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.primary, width: 1.8),
+              borderRadius: borderRadius ?? AppDimensions.borderRadiusM,
+              borderSide: const BorderSide(
+                color: AppColors.primary,
+                width: AppDimensions.borderWidthThick,
+              ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.dispenseRed, width: 1.2),
+              borderRadius: borderRadius ?? AppDimensions.borderRadiusM,
+              borderSide: const BorderSide(
+                color: AppColors.dispenseRed,
+                width: AppDimensions.borderWidthRegular,
+              ),
             ),
             focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide:
-                  const BorderSide(color: AppColors.dispenseRed, width: 1.8),
+              borderRadius: borderRadius ?? AppDimensions.borderRadiusM,
+              borderSide: const BorderSide(
+                color: AppColors.dispenseRed,
+                width: AppDimensions.borderWidthThick,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOneUiVariant() {
+    final effectiveBorderRadius = borderRadius ?? AppDimensions.borderRadius2XL;
+    final effectiveBorderColor = borderColor ?? AppColors.borderLight;
+    final effectiveFillColor = fillColor ?? AppColors.scaffoldBackground;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (label != null) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppDimensions.spaceS),
+            child: Text(
+              label!,
+              style: const TextStyle(
+                fontSize: AppTypography.sizeCaption,
+                fontWeight: AppTypography.weightMedium,
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ),
+        ],
+        Container(
+          height: maxLines == 1 ? (height ?? AppDimensions.inputHeight) : null,
+          decoration: BoxDecoration(
+            color: effectiveFillColor,
+            borderRadius: effectiveBorderRadius,
+            border: Border.all(
+              color: effectiveBorderColor,
+              width: AppDimensions.borderWidthThin,
+            ),
+          ),
+          alignment: maxLines == 1 ? Alignment.center : Alignment.topLeft,
+          padding: AppDimensions.paddingInputDense,
+          child: TextFormField(
+            controller: controller,
+            keyboardType: keyboardType,
+            validator: validator,
+            readOnly: readOnly,
+            onTap: onTap,
+            onChanged: onChanged,
+            maxLines: maxLines,
+            textAlign: textAlign,
+            style: const TextStyle(
+              fontSize: AppTypography.sizeBody,
+              fontWeight: AppTypography.weightMedium,
+              color: AppColors.textPrimary,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              contentPadding: maxLines == 1
+                  ? AppDimensions.paddingNone
+                  : const EdgeInsets.symmetric(vertical: AppDimensions.spaceM),
+              hintText: hint,
+              hintStyle: const TextStyle(
+                fontSize: AppTypography.sizeBodySecondary,
+                fontWeight: AppTypography.weightRegular,
+                color: AppColors.textMuted,
+              ),
+              prefixIcon: prefixIcon,
+              suffixIcon: suffixIcon,
             ),
           ),
         ),

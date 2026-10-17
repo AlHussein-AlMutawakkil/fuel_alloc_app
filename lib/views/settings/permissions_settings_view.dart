@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
+import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/constants/app_typography.dart';
 import '../../core/widgets/one_ui_card.dart';
 
 /// واجهة إدارة الأذونات بنمط One UI
@@ -29,30 +33,33 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
           onChanged(!isEnabled);
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space2XL,
+            vertical: AppDimensions.spaceXL,
+          ),
           child: Row(
             children: [
               Icon(
                 icon,
-                color: const Color(0xFF0F172A),
-                size: 22,
+                color: AppColors.textPrimary,
+                size: AppDimensions.iconMedium + 2,
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppDimensions.spaceL + 2),
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF0F172A),
+                    fontSize: AppTypography.sizeH2,
+                    fontWeight: AppTypography.weightMedium,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
               Icon(
-                isEnabled ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                color: isEnabled
-                    ? const Color(0xFF16A34A)
-                    : const Color(0xFF94A3B8),
+                isEnabled
+                    ? AppIcons.checkCircleRounded
+                    : AppIcons.cancelRounded,
+                color: isEnabled ? AppColors.success : AppColors.textMuted,
                 size: 17,
               ),
             ],
@@ -65,29 +72,31 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f8f8),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: const OneUiAppBar(
-        title: 'الأذونات',
+        title: AppStrings.permissionsTitle,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppDimensions.spaceXL,
+        ),
         children: [
           OneUiCard(
             children: [
               _buildPermissionRow(
-                icon: Icons.mic_none_outlined,
+                icon: AppIcons.mic,
                 title: AppStrings.micPermission,
                 isEnabled: _micEnabled,
                 onChanged: (val) => setState(() => _micEnabled = val),
               ),
               _buildPermissionRow(
-                icon: Icons.camera_alt_outlined,
+                icon: AppIcons.camera,
                 title: AppStrings.cameraPermission,
                 isEnabled: _cameraEnabled,
                 onChanged: (val) => setState(() => _cameraEnabled = val),
               ),
               _buildPermissionRow(
-                icon: Icons.photo_library_outlined,
+                icon: AppIcons.photos,
                 title: AppStrings.photosPermission,
                 isEnabled: _photosEnabled,
                 onChanged: (val) => setState(() => _photosEnabled = val),

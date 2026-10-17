@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/constants/app_colors.dart';
+import '../core/constants/app_dimensions.dart';
+import '../core/constants/app_icons.dart';
 import '../core/constants/app_strings.dart';
 import '../core/widgets/operation_entry_sheet.dart';
 import 'accounts/accounts_view.dart';
@@ -28,14 +30,17 @@ class _MainLayoutViewState extends State<MainLayoutView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.scaffoldBackground,
       body: _screens[_currentIndex],
       floatingActionButton: _currentIndex != 3
           ? FloatingActionButton(
-              backgroundColor: const Color(0xFF15803D),
-              foregroundColor: Colors.white,
-              tooltip: 'تسجيل قيد',
-              child: const Icon(Icons.add, size: 28),
+              backgroundColor: AppColors.supplyGreen,
+              foregroundColor: AppColors.textWhite,
+              tooltip: AppStrings.registerOperation,
+              child: const Icon(
+                AppIcons.add,
+                size: AppDimensions.iconExtraLarge,
+              ),
               onPressed: () {
                 OperationEntrySheet.show(context: context);
               },
@@ -43,7 +48,12 @@ class _MainLayoutViewState extends State<MainLayoutView> {
           : null,
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+          border: Border(
+            top: BorderSide(
+              color: AppColors.border,
+              width: AppDimensions.borderWidthThin,
+            ),
+          ),
         ),
         child: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
@@ -55,23 +65,23 @@ class _MainLayoutViewState extends State<MainLayoutView> {
           },
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
+              icon: Icon(AppIcons.navHome),
+              activeIcon: Icon(AppIcons.navHomeActive),
               label: AppStrings.navHome,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.people_outline),
-              activeIcon: Icon(Icons.people),
+              icon: Icon(AppIcons.navAccounts),
+              activeIcon: Icon(AppIcons.navAccountsActive),
               label: AppStrings.navAccounts,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.insert_chart_outlined),
-              activeIcon: Icon(Icons.insert_chart),
+              icon: Icon(AppIcons.navReports),
+              activeIcon: Icon(AppIcons.navReportsActive),
               label: AppStrings.navReports,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
+              icon: Icon(AppIcons.navSettings),
+              activeIcon: Icon(AppIcons.navSettingsActive),
               label: AppStrings.navSettings,
             ),
           ],

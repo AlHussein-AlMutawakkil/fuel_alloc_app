@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/widgets/one_ui_card.dart';
 
@@ -9,12 +11,14 @@ class LanguageSettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff8f8f8),
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: const OneUiAppBar(
-        title: 'اللغة',
+        title: AppStrings.languageTitle,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppDimensions.spaceXL,
+        ),
         children: [
           OneUiCard(
             children: [

@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import '../constants/app_colors.dart';
+import '../constants/app_dimensions.dart';
+import '../constants/app_icons.dart';
+import '../constants/app_strings.dart';
+import '../constants/app_typography.dart';
+import 'custom_text_field.dart';
 
 /// المكون المشترك الموحد لكافة النوافذ المنبثقة في التطبيق
 /// (إضافة حساب، إضافة محطة، إضافة صنف)
@@ -7,7 +13,7 @@ class CustomModalSheet {
   CustomModalSheet._();
 
   // لون حدود الحقول الموحد الناعم
-  static const Color fieldBorderColor = Color(0xFFE2E8F0);
+  static const Color fieldBorderColor = AppColors.borderLight;
 
   /// فتح نافذة منبثقة موحدة في كافة شاشات التطبيق
   static Future<T?> show<T>({
@@ -16,44 +22,45 @@ class CustomModalSheet {
     required Widget Function(BuildContext ctx, StateSetter setState)
         contentBuilder,
     required Future<void> Function(BuildContext ctx) onSave,
-    String saveText = 'تأكيد',
-    String cancelText = 'إلغاء',
+    String saveText = AppStrings.confirm,
+    String cancelText = AppStrings.cancel,
   }) {
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: AppColors.overlay,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (dialogCtx, setModalState) {
             return Center(
               child: Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                constraints: const BoxConstraints(maxWidth: 480),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [
+                margin: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.spaceXL,
+                  vertical: AppDimensions.space2XL,
+                ),
+                constraints: const BoxConstraints(
+                  maxWidth: AppDimensions.modalMaxWidth,
+                ),
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: AppDimensions.borderRadius3XL,
+                  boxShadow: [
                     BoxShadow(
-                      color: Colors.black26,
+                      color: AppColors.overlayLight,
                       blurRadius: 20,
                       offset: Offset(0, 8),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppDimensions.borderRadius3XL,
                   child: Padding(
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
                     ),
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 18,
-                      ),
+                      padding: AppDimensions.paddingModal,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -65,32 +72,32 @@ class CustomModalSheet {
                                 child: Text(
                                   title,
                                   style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0F172A),
+                                    fontSize: AppTypography.sizeH2,
+                                    fontWeight: AppTypography.weightBold,
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                               ),
                               IconButton(
                                 icon: const Icon(
-                                  Icons.close_rounded,
-                                  color: Color(0xFF64748B),
-                                  size: 20,
+                                  AppIcons.closeRounded,
+                                  color: AppColors.textTertiary,
+                                  size: AppDimensions.iconMedium,
                                 ),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
+                                  minWidth: AppDimensions.space4XL,
+                                  minHeight: AppDimensions.space4XL,
                                 ),
                                 onPressed: () => Navigator.of(dialogCtx).pop(),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: AppDimensions.spaceL + 6),
 
                           // 2. محتوى الحقول
                           contentBuilder(dialogCtx, setModalState),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: AppDimensions.space3XL),
 
                           // 3. شريط الأزرار السفلي (إلغاء رمادي يميناً، وتأكيد أسود يساراً في RTL)
                           Row(
@@ -99,45 +106,49 @@ class CustomModalSheet {
                               Expanded(
                                 child: InkWell(
                                   onTap: () => Navigator.of(dialogCtx).pop(),
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: AppDimensions.borderRadius2XL,
                                   child: Container(
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFf8f8f8),
-                                      borderRadius: BorderRadius.circular(14),
+                                    height: AppDimensions.inputHeight,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.scaffoldBackground,
+                                      borderRadius:
+                                          AppDimensions.borderRadius2XL,
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
                                       cancelText,
                                       style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF334155),
+                                        fontSize: AppTypography.sizeBody + 1,
+                                        fontWeight:
+                                            AppTypography.weightSemiBold,
+                                        color: AppColors.textSlate,
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: AppDimensions.spaceL),
 
                               // زر التأكيد الأسود على اليسار
                               Expanded(
                                 child: InkWell(
                                   onTap: () => onSave(dialogCtx),
-                                  borderRadius: BorderRadius.circular(14),
+                                  borderRadius: AppDimensions.borderRadius2XL,
                                   child: Container(
-                                    height: 48,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF1E1E1E),
-                                      borderRadius: BorderRadius.circular(14),
+                                    height: AppDimensions.inputHeight,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.charcoal,
+                                      borderRadius:
+                                          AppDimensions.borderRadius2XL,
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
                                       saveText,
                                       style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                        fontSize: AppTypography.sizeBody + 1,
+                                        fontWeight:
+                                            AppTypography.weightSemiBold,
+                                        color: AppColors.textWhite,
                                       ),
                                     ),
                                   ),
@@ -161,13 +172,13 @@ class CustomModalSheet {
   /// بناء عنوان الحقل الموحد
   static Widget buildLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
+      padding: const EdgeInsets.only(bottom: AppDimensions.spaceS),
       child: Text(
         label,
         style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF64748B),
+          fontSize: AppTypography.sizeCaption,
+          fontWeight: AppTypography.weightMedium,
+          color: AppColors.textTertiary,
         ),
       ),
     );
@@ -185,43 +196,17 @@ class CustomModalSheet {
     VoidCallback? onTap,
     ValueChanged<String>? onChanged,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        buildLabel(label),
-        Container(
-          height: maxLines == 1 ? 48 : null,
-          decoration: BoxDecoration(
-            color: const Color(0xFFf8f8f8),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: fieldBorderColor, width: 1.0),
-          ),
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: TextField(
-            controller: controller,
-            keyboardType: keyboardType,
-            maxLines: maxLines,
-            readOnly: readOnly,
-            onTap: onTap,
-            onChanged: onChanged,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF0F172A),
-            ),
-            decoration: InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: maxLines == 1
-                  ? EdgeInsets.zero
-                  : const EdgeInsets.symmetric(vertical: 12),
-              prefixIcon: prefixIcon,
-              suffixIcon: suffixIcon,
-            ),
-          ),
-        ),
-      ],
+    return CustomTextField(
+      label: label,
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      readOnly: readOnly,
+      onTap: onTap,
+      onChanged: onChanged,
+      variant: TextFieldVariant.oneUi,
     );
   }
 }

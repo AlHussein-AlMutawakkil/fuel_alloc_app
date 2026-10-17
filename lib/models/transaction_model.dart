@@ -122,6 +122,5 @@ class TransactionModel {
       typeId == 2 ||
       typeId == 5;
 
-  bool get isAeration =>
-      typeCode == 'AERATION_COMMISSION' || typeId == 3;
+  bool get isAeration => typeCode == 'AERATION_COMMISSION' || typeId == 3;
 }

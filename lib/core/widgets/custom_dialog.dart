@@ -1,61 +1,83 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import '../constants/app_dimensions.dart';
+import '../constants/app_icons.dart';
+import '../constants/app_strings.dart';
+import '../constants/app_typography.dart';
+import 'custom_button.dart';
+
+/// عنصر صف في نافذة التفاصيل
+class DialogDetailRow {
+  final String label;
+  final String value;
+
+  const DialogDetailRow({
+    required this.label,
+    required this.value,
+  });
+}
 
 /// نظام النوافذ المنبثقة الموحد المطابق للتصميم المعتمد
 class CustomDialog {
   CustomDialog._();
 
-  /// نافذة تأكيد عملية (مطابقة بنسبة 100% لصورة التأكيد المعتمدة)
+  /// نافذة تأكيد عملية موحدة
   static Future<bool> showConfirmation({
     required BuildContext context,
-    String title = 'تأكيد!',
+    String title = AppStrings.confirmExclamation,
     required String message,
-    String confirmText = 'حسناً',
-    String cancelText = 'إلغاء',
+    String confirmText = AppStrings.ok,
+    String cancelText = AppStrings.cancel,
     bool isDanger = false,
   }) async {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => Dialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface,
         elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppDimensions.borderRadius3XL,
         ),
         child: SizedBox(
-          width: 320,
+          width: AppDimensions.dialogMaxWidth,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 24),
+              const SizedBox(height: AppDimensions.space3XL),
               // العنوان في المنتصف
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                  fontSize: AppTypography.sizeH1,
+                  fontWeight: AppTypography.weightBold,
                   color: AppColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppDimensions.spaceL),
               // نص الرسالة في المنتصف
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space2XL,
+                ),
                 child: Text(
                   message,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: AppTypography.sizeBody,
                     color: AppColors.textSecondary,
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppDimensions.space3XL),
               // الفاصل الأفقي السفلي
-              const Divider(height: 1, color: Color(0xFFF1F5F9), thickness: 1),
+              const Divider(
+                height: AppDimensions.dividerHeight,
+                color: AppColors.borderSubtle,
+                thickness: AppDimensions.dividerThickness,
+              ),
               // أزرار التأكيد والإلغاء مقسومة بخط رأسي (في RTL الأول يظهر يميناً والثاني يساراً)
               IntrinsicHeight(
                 child: Row(
@@ -65,42 +87,49 @@ class CustomDialog {
                       child: InkWell(
                         onTap: () => Navigator.of(ctx).pop(true),
                         borderRadius: const BorderRadius.only(
-                          bottomRight: Radius.circular(16),
+                          bottomRight: Radius.circular(AppDimensions.radius3XL),
                         ),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppDimensions.spaceL + 2,
+                          ),
                           alignment: Alignment.center,
                           child: Text(
                             confirmText,
                             style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                              fontSize: AppTypography.sizeBody + 1,
+                              fontWeight: AppTypography.weightBold,
                               color: isDanger
                                   ? AppColors.dispenseRed
-                                  : const Color(0xFF0F172A),
+                                  : AppColors.textPrimary,
                             ),
                           ),
                         ),
                       ),
                     ),
                     const VerticalDivider(
-                        width: 1, color: Color(0xFFF1F5F9), thickness: 1),
+                      width: AppDimensions.dividerHeight,
+                      color: AppColors.borderSubtle,
+                      thickness: AppDimensions.dividerThickness,
+                    ),
                     // زر الإلغاء على اليسار (إلغاء)
                     Expanded(
                       child: InkWell(
                         onTap: () => Navigator.of(ctx).pop(false),
                         borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(16),
+                          bottomLeft: Radius.circular(AppDimensions.radius3XL),
                         ),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppDimensions.spaceL + 2,
+                          ),
                           alignment: Alignment.center,
                           child: Text(
                             cancelText,
                             style: const TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF64748B),
-                              fontWeight: FontWeight.w500,
+                              fontSize: AppTypography.sizeBody + 1,
+                              color: AppColors.textTertiary,
+                              fontWeight: AppTypography.weightMedium,
                             ),
                           ),
                         ),
@@ -115,5 +144,75 @@ class CustomDialog {
       ),
     );
     return result ?? false;
+  }
+
+  /// نافذة عرض التفاصيل الموحدة (تفاصيل القيد، العمليات، الحسابات)
+  static Future<void> showDetails({
+    required BuildContext context,
+    String title = AppStrings.operationDetails,
+    required List<DialogDetailRow> rows,
+    String closeText = AppStrings.close,
+  }) async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppDimensions.borderRadiusXL,
+          side: BorderSide(
+            color: AppColors.border,
+            width: AppDimensions.borderWidthThin,
+          ),
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: AppTypography.heading2),
+            IconButton(
+              icon: const Icon(
+                AppIcons.close,
+                size: AppDimensions.iconMedium,
+                color: AppColors.textTertiary,
+              ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              onPressed: () => Navigator.of(ctx).pop(),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: rows.map((row) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: AppDimensions.spaceS,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 110,
+                    child: Text(
+                      row.label,
+                      style: AppTypography.captionBold,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(row.value, style: AppTypography.body),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          CustomButton(
+            text: closeText,
+            variant: ButtonVariant.secondary,
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+        ],
+      ),
+    );
   }
 }

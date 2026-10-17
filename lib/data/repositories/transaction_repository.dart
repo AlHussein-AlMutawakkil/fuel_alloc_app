@@ -6,7 +6,8 @@ class TransactionRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
   /// جلب كافة عمليات حساب معين مع البيانات المرتبطة
-  Future<List<TransactionModel>> getTransactionsByAccountId(int accountId) async {
+  Future<List<TransactionModel>> getTransactionsByAccountId(
+      int accountId) async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT 
@@ -34,7 +35,8 @@ class TransactionRepository {
   }
 
   /// جلب كافة عمليات محطة معينة (وارد فعلي، منصرف فعلي، عمولة تهوية، مقاصات)
-  Future<List<TransactionModel>> getTransactionsByStationId(int stationId) async {
+  Future<List<TransactionModel>> getTransactionsByStationId(
+      int stationId) async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT 
@@ -116,12 +118,13 @@ class TransactionRepository {
   /// إدراج عملية جديدة مع التوليد الآلي لعمولة التهوية عند التوريد الفعلي
   Future<int> insertTransaction(TransactionModel transaction) async {
     final db = await _dbHelper.database;
-    
+
     // توليد رقم عملية فريد
     String txNumber = transaction.transactionNumber?.trim() ?? '';
     if (txNumber.isEmpty) {
       final now = DateTime.now();
-      txNumber = 'TX-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(8)}';
+      txNumber =
+          'TX-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(8)}';
     }
 
     final data = transaction.toMap();
@@ -139,7 +142,9 @@ class TransactionRepository {
       );
       double rate = 2.0;
       if (stationList.isNotEmpty) {
-        rate = (stationList.first['default_commission_rate'] as num?)?.toDouble() ?? 2.0;
+        rate = (stationList.first['default_commission_rate'] as num?)
+                ?.toDouble() ??
+            2.0;
       }
       final commissionLiters = transaction.baseQuantityLiters * (rate / 100.0);
       if (commissionLiters > 0) {
@@ -178,7 +183,8 @@ class TransactionRepository {
   /// حذف عملية مع أي قيود تابعة لها
   Future<int> deleteTransaction(int id) async {
     final db = await _dbHelper.database;
-    await db.delete('transactions', where: 'parent_transaction_id = ?', whereArgs: [id]);
+    await db.delete('transactions',
+        where: 'parent_transaction_id = ?', whereArgs: [id]);
     return await db.delete(
       'transactions',
       where: 'id = ?',

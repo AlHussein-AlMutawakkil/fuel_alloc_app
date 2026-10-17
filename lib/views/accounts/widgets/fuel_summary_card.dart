@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_dimensions.dart';
+import '../../../core/constants/app_icons.dart';
+import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/utils/formatters.dart';
 
 /// عنصر إحصائي في الصندوق الرمادي السفلي للكارد
@@ -32,7 +36,7 @@ class FuelCardData {
   });
 }
 
-/// بطاقة ملخص الوقود الموحدة الأنيقة (تصميم مرن ومتناسق بدون تمدد مفرط أو أخطاء تجاوز)
+/// بطاقة ملخص الوقود الموحدة الأنيقة
 class FuelSummaryCard extends StatelessWidget {
   final FuelCardData data;
 
@@ -45,18 +49,22 @@ class FuelSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.fuelCardMaxWidth,
+        ),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.spaceXXS,
+          ),
+          padding: AppDimensions.paddingCard,
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppDimensions.borderRadius3XL,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.025),
+                color: AppColors.shadowSubtle,
                 blurRadius: 6,
-                offset: const Offset(0, 2),
+                offset: Offset(0, 2),
               ),
             ],
           ),
@@ -64,7 +72,7 @@ class FuelSummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              // 1. الصف العلوي: العنوان (يمين في RTL) + شارة الصنف البيضاوية السوداء (يسار في RTL)
+              // 1. الصف العلوي: العنوان + شارة الصنف البيضاوية
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -73,28 +81,30 @@ class FuelSummaryCard extends StatelessWidget {
                     child: Text(
                       data.title,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
+                        fontSize: AppTypography.sizeH2,
+                        fontWeight: AppTypography.weightBold,
+                        color: AppColors.textDarkSlate,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppDimensions.spaceM),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1E1E1E),
-                      borderRadius: BorderRadius.circular(14),
+                      horizontal: AppDimensions.spaceL - 2,
+                      vertical: AppDimensions.spaceXXS + 0.5,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: AppColors.charcoal,
+                      borderRadius: AppDimensions.borderRadius2XL,
                     ),
                     child: Text(
                       data.fuelName,
                       style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        fontSize: AppTypography.sizeSmall + 0.5,
+                        fontWeight: AppTypography.weightBold,
+                        color: AppColors.textWhite,
                       ),
                     ),
                   ),
@@ -103,15 +113,17 @@ class FuelSummaryCard extends StatelessWidget {
 
               // خط فاصل خفيف وناعم تحت الصف العلوي
               const Padding(
-                padding: EdgeInsets.symmetric(vertical: 4),
+                padding: EdgeInsets.symmetric(
+                  vertical: AppDimensions.spaceXS,
+                ),
                 child: Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  color: Color(0xFFF1F5F9),
+                  height: AppDimensions.dividerHeight,
+                  thickness: AppDimensions.borderWidthHairline,
+                  color: AppColors.borderSubtle,
                 ),
               ),
 
-              // 2. الجزء الأوسط: الرقم فقط مع أيقونة النجمة ✦ (يمين) + شارة إضافية اختيارية (يسار)
+              // 2. الجزء الأوسط: الرقم مع أيقونة ✦ + شارة إضافية اختيارية
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -120,17 +132,17 @@ class FuelSummaryCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
-                        Icons.auto_awesome,
-                        size: 15,
-                        color: Color(0xFF1E293B),
+                        AppIcons.star,
+                        size: AppDimensions.space2XL - 5,
+                        color: AppColors.textDarkSlate,
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: AppDimensions.spaceXS + 1),
                       Text(
                         AppFormatters.formatQuantity(data.balance),
                         style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
+                          fontSize: AppTypography.sizeH2 + 1,
+                          fontWeight: AppTypography.weightBold,
+                          color: AppColors.textDarkSlate,
                         ),
                       ),
                     ],
@@ -139,33 +151,39 @@ class FuelSummaryCard extends StatelessWidget {
                       data.secondaryTag!.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(5),
+                        horizontal: AppDimensions.spaceS + 1,
+                        vertical: AppDimensions.spaceXXS - 0.5,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: AppColors.warningLight,
+                        borderRadius: AppDimensions.borderRadiusXS,
                       ),
                       child: Text(
                         data.secondaryTag!,
                         style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFD97706),
+                          fontSize: AppTypography.sizeMicro + 0.5,
+                          fontWeight: AppTypography.weightBold,
+                          color: AppColors.warning,
                         ),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 5),
+              const SizedBox(height: AppDimensions.spaceXS + 1),
 
-              // 3. الجزء السفلي: المربع الرمادي الفاتح لعناصر العمليات (محدد العرض لتفادي التمدد المفرط)
+              // 3. الجزء السفلي: المربع الرمادي الفاتح لعناصر العمليات
               Center(
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 380),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF4F5F7),
-                    borderRadius: BorderRadius.circular(10),
+                  constraints: const BoxConstraints(
+                    maxWidth: AppDimensions.fuelCardMetricsMaxWidth,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppDimensions.spaceS - 1,
+                    horizontal: AppDimensions.spaceM,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: AppColors.highlightBackground,
+                    borderRadius: AppDimensions.borderRadiusL,
                   ),
                   child: Row(
                     children: data.metrics.map((metric) {
@@ -176,19 +194,23 @@ class FuelSummaryCard extends StatelessWidget {
                             Text(
                               AppFormatters.formatQuantity(metric.value),
                               style: TextStyle(
-                                fontSize: data.metrics.length > 2 ? 13.5 : 15,
-                                fontWeight: FontWeight.bold,
+                                fontSize: data.metrics.length > 2
+                                    ? AppTypography.sizeBodySecondary + 0.5
+                                    : AppTypography.sizeBody + 1,
+                                fontWeight: AppTypography.weightBold,
                                 color: metric.valueColor ??
-                                    const Color(0xFF1E293B),
+                                    AppColors.textDarkSlate,
                               ),
                             ),
                             const SizedBox(height: 1),
                             Text(
                               metric.label,
                               style: TextStyle(
-                                fontSize: data.metrics.length > 2 ? 10 : 10.5,
-                                color: const Color(0xFF94A3B8),
-                                fontWeight: FontWeight.w500,
+                                fontSize: data.metrics.length > 2
+                                    ? AppTypography.sizeMicro
+                                    : AppTypography.sizeMicro + 0.5,
+                                color: AppColors.textMuted,
+                                fontWeight: AppTypography.weightMedium,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -208,8 +230,7 @@ class FuelSummaryCard extends StatelessWidget {
   }
 }
 
-/// شريحة ملخص الوقود التفاعلية المتكاملة (تجمع السلايدر، مؤشر النقاط، والتصميم المرن الموحد)
-/// كل القياسات والأطوال تدار هنا تلقائياً دون الحاجة لتكرارها في كل صفحة
+/// شريحة ملخص الوقود التفاعلية المتكاملة
 class FuelSummarySlider extends StatefulWidget {
   final List<Map<String, dynamic>> fuelTypes;
   final int? selectedFuelId;
@@ -237,8 +258,7 @@ class _FuelSummarySliderState extends State<FuelSummarySlider> {
     super.initState();
     final fuels = _effectiveFuelTypes;
     if (widget.selectedFuelId != null) {
-      final index =
-          fuels.indexWhere((f) => f['id'] == widget.selectedFuelId);
+      final index = fuels.indexWhere((f) => f['id'] == widget.selectedFuelId);
       if (index != -1) {
         _currentPage = index;
       }
@@ -257,8 +277,8 @@ class _FuelSummarySliderState extends State<FuelSummarySlider> {
       return widget.fuelTypes;
     }
     return [
-      {'id': 1, 'name': 'بترول'},
-      {'id': 2, 'name': 'ديزل'},
+      {'id': 1, 'name': AppStrings.fuelPetrol},
+      {'id': 2, 'name': AppStrings.fuelDiesel},
     ];
   }
 
@@ -269,7 +289,6 @@ class _FuelSummarySliderState extends State<FuelSummarySlider> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // سلايدر الكروت بقياس تلقائي مرن وموحد
         SizedBox(
           height: 146,
           child: PageView.builder(
@@ -291,21 +310,21 @@ class _FuelSummarySliderState extends State<FuelSummarySlider> {
             },
           ),
         ),
-
-        // مؤشر التنقل بين الأصناف (نقطتان فقط بدون أسهم)
-        const SizedBox(height: 6),
+        const SizedBox(height: AppDimensions.spaceS),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(fuels.length, (i) {
             final isSelected = i == _currentPage;
             return AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: isSelected ? 16 : 6,
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spaceXS,
+              ),
+              width: isSelected ? AppDimensions.spaceXL : AppDimensions.spaceS,
               height: 5,
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(3),
+                color: isSelected ? AppColors.primary : AppColors.border,
+                borderRadius: AppDimensions.borderRadiusXS,
               ),
             );
           }),
