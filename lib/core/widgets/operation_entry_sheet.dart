@@ -58,8 +58,8 @@ class OperationEntrySheet extends StatefulWidget {
 }
 
 class _OperationEntrySheetState extends State<OperationEntrySheet> {
-  // لون حدود الحقول الواضح والواثق (بدون بهتان)
-  static const Color _fieldBorderColor = Color(0xFF64748B);
+  // لون حدود الحقول الموحد والناعم
+  static const Color _fieldBorderColor = Color(0xFFE2E8F0);
 
   // التبويب العلوي: 0: اعتماد, 1: فعلي, 2: نسبة
   late int _selectedTab;
@@ -298,7 +298,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         constraints: const BoxConstraints(maxWidth: 480),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: const [
             BoxShadow(
               color: Colors.black26,
@@ -308,48 +308,53 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 1. الشريط العلوي: العنوان في المنتصف، وزر X على اليسار (في RTL الأول يمين والثاني يسار)
+                  // 1. الشريط العلوي: العنوان وزر الإغلاق
                   Row(
                     children: [
-                      const SizedBox(width: 32), // موازنة المساحة
                       Expanded(
                         child: Text(
                           _getTitle(),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
+                            color: Color(0xFF0F172A),
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: Color(0xFF475569), size: 22),
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Color(0xFF64748B),
+                          size: 20,
+                        ),
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints: const BoxConstraints(
+                          minWidth: 32,
+                          minHeight: 32,
+                        ),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 18),
 
-                  // 2. التبويبات الثلاثة العلوية (اعتماد / فعلي / نسبة) مع حواف واضحة (6px)
+                  // 2. التبويبات الثلاثة العلوية (اعتماد / فعلي / نسبة)
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: _fieldBorderColor, width: 1.2),
+                      color: const Color(0xFFf8f8f8),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _fieldBorderColor, width: 1.0),
                     ),
                     child: Row(
                       children: [
@@ -385,12 +390,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   // 3. زرا الاتجاه (↓ توريد / ↑ صرف) - أبعاد واضحة ومحددة
                   if (_selectedTab != 2) ...[
                     Container(
-                      height: 42,
-                      padding: const EdgeInsets.all(3),
+                      height: 44,
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: _fieldBorderColor, width: 1.2),
+                        color: const Color(0xFFf8f8f8),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _fieldBorderColor, width: 1.0),
                       ),
                       child: Row(
                         children: [
@@ -408,13 +413,13 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 });
                                 _updateLiveBalances();
                               },
-                              borderRadius: BorderRadius.circular(5),
+                              borderRadius: BorderRadius.circular(10),
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: _selectedDirection == 0
                                       ? const Color(0xFF15803D)
                                       : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(5),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 alignment: Alignment.center,
                                 child: Row(
@@ -458,7 +463,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 });
                                 _updateLiveBalances();
                               },
-                              borderRadius: BorderRadius.circular(5),
+                              borderRadius: BorderRadius.circular(10),
                               child: Container(
                                 decoration: BoxDecoration(
                                   color: _selectedDirection == 1
@@ -466,7 +471,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                           ? const Color(0xFF15803D)
                                           : const Color(0xFFB91C1C))
                                       : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(5),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
                                 alignment: Alignment.center,
                                 child: Row(
@@ -505,14 +510,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   _buildFieldLabel('الحساب'),
                   InkWell(
                     onTap: () => _openAccountPicker(_getFilteredAccounts(accController.accounts)),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(14),
                     child: Container(
-                      height: 46,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: _fieldBorderColor, width: 1.2),
+                        color: const Color(0xFFf8f8f8),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _fieldBorderColor, width: 1.0),
                       ),
                       child: Row(
                         children: [
@@ -573,11 +578,11 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           children: [
                             _buildFieldLabel('الكمية'),
                             Container(
-                              height: 46,
+                              height: 48,
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: _fieldBorderColor, width: 1.2),
+                                color: const Color(0xFFf8f8f8),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _fieldBorderColor, width: 1.0),
                               ),
                               child: Row(
                                 children: [
@@ -585,11 +590,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                     child: TextField(
                                       controller: _quantityController,
                                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                       textAlign: TextAlign.start,
                                       decoration: const InputDecoration(
+                                        isDense: true,
                                         border: InputBorder.none,
-                                        contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                                        contentPadding: EdgeInsets.symmetric(horizontal: 14),
                                         hintText: '0.00',
                                         hintStyle: TextStyle(color: Color(0xFF94A3B8)),
                                       ),
@@ -614,7 +620,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                       decoration: const BoxDecoration(
                                         border: Border(
-                                          right: BorderSide(color: _fieldBorderColor, width: 1.2),
+                                          right: BorderSide(color: _fieldBorderColor, width: 1.0),
                                         ),
                                       ),
                                       child: Row(
@@ -650,12 +656,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           children: [
                             _buildFieldLabel('الصنف'),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              height: 46,
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              height: 48,
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: _fieldBorderColor, width: 1.2),
+                                color: const Color(0xFFf8f8f8),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _fieldBorderColor, width: 1.0),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<int>(
@@ -723,12 +729,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                         Expanded(
                           flex: 5,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            height: 46,
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            height: 48,
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: _fieldBorderColor, width: 1.2),
+                              color: const Color(0xFFf8f8f8),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: _fieldBorderColor, width: 1.0),
                             ),
                             child: Row(
                               children: [
@@ -762,11 +768,11 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 if (!_showReferenceStation && _stationBalanceLiters != null) ...[
                                   const SizedBox(width: 4),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(color: _fieldBorderColor, width: 1),
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: _fieldBorderColor, width: 0.8),
                                     ),
                                     child: Text(
                                       '${AppFormatters.formatQuantity(_stationBalanceLiters!)} لتر',
@@ -789,12 +795,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           Expanded(
                             flex: 5,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              height: 46,
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              height: 48,
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: _fieldBorderColor, width: 1.2),
+                                color: const Color(0xFFf8f8f8),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _fieldBorderColor, width: 1.0),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<int?>(
@@ -835,16 +841,16 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               }
                             });
                           },
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(14),
                           child: Container(
-                            width: 44,
-                            height: 46,
+                            width: 48,
+                            height: 48,
                             decoration: BoxDecoration(
-                              color: _showReferenceStation ? const Color(0xFF102A43) : Colors.white,
-                              borderRadius: BorderRadius.circular(6),
+                              color: _showReferenceStation ? const Color(0xFF1E1E1E) : const Color(0xFFf8f8f8),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: _showReferenceStation ? const Color(0xFF102A43) : _fieldBorderColor,
-                                width: 1.2,
+                                color: _showReferenceStation ? const Color(0xFF1E1E1E) : _fieldBorderColor,
+                                width: 1.0,
                               ),
                             ),
                             alignment: Alignment.center,
@@ -887,14 +893,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                   });
                                 }
                               },
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(14),
                               child: Container(
-                                height: 46,
-                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                height: 48,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: _fieldBorderColor, width: 1.2),
+                                  color: const Color(0xFFf8f8f8),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: _fieldBorderColor, width: 1.0),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -902,14 +908,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                     Row(
                                       children: [
                                         const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF64748B)),
-                                        const SizedBox(width: 6),
+                                        const SizedBox(width: 8),
                                         Text(
                                           _dateController.text,
                                           style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
                                         ),
                                       ],
                                     ),
-                                    const Icon(Icons.arrow_drop_down, color: Color(0xFF64748B), size: 18),
+                                    const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B), size: 18),
                                   ],
                                 ),
                               ),
@@ -917,7 +923,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
 
                       // رقم المرجع على اليسار
                       Expanded(
@@ -927,16 +933,16 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           children: [
                             _buildFieldLabel('رقم المرجع'),
                             Container(
-                              height: 46,
+                              height: 48,
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: _fieldBorderColor, width: 1.2),
+                                color: const Color(0xFFf8f8f8),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: _fieldBorderColor, width: 1.0),
                               ),
                               child: Row(
                                 children: [
                                   const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                                    padding: EdgeInsets.symmetric(horizontal: 10.0),
                                     child: Icon(Icons.tag, color: Color(0xFF64748B), size: 18),
                                   ),
                                   Expanded(
@@ -964,9 +970,9 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   Container(
                     height: 65,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: _fieldBorderColor, width: 1.2),
+                      color: const Color(0xFFf8f8f8),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _fieldBorderColor, width: 1.0),
                     ),
                     child: TextField(
                       controller: _statementController,
@@ -974,61 +980,58 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       style: const TextStyle(fontSize: 13),
                       decoration: const InputDecoration(
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(8),
+                        contentPadding: EdgeInsets.all(10),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // 9. شريط الأزرار السفلي (حفظ الأخضر يميناً flex: 5 وإلغاء الأبيض يساراً flex: 3 في RTL)
+                  // 9. شريط الأزرار السفلي (إلغاء رمادي يميناً flex: 1 وتأكيد أسود يساراً flex: 1 في RTL)
                   Row(
                     children: [
-                      // زر حفظ الأخضر المعتمد
+                      // زر إلغاء على اليمين
                       Expanded(
-                        flex: 5,
-                        child: InkWell(
-                          onTap: _saveOperation,
-                          borderRadius: BorderRadius.circular(6),
-                          child: Container(
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF15803D),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Text(
-                              'حفظ',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
-                      // زر إلغاء الأبيض بحدود واضحة
-                      Expanded(
-                        flex: 3,
                         child: InkWell(
                           onTap: () => Navigator.of(context).pop(),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(14),
                           child: Container(
-                            height: 44,
+                            height: 48,
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: _fieldBorderColor, width: 1.2),
+                              color: const Color(0xFFf8f8f8),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             alignment: Alignment.center,
                             child: const Text(
                               'إلغاء',
                               style: TextStyle(
                                 fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF475569),
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // زر حفظ الأسود على اليسار
+                      Expanded(
+                        child: InkWell(
+                          onTap: _saveOperation,
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E1E1E),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Text(
+                              'حفظ',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -1051,7 +1054,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
         String filterText = '';
@@ -1076,26 +1079,32 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, size: 20),
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                         onPressed: () => Navigator.of(ctx).pop(),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   TextField(
                     decoration: InputDecoration(
                       hintText: 'بحث...',
-                      prefixIcon: const Icon(Icons.search, size: 18),
+                      prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
                       filled: true,
-                      fillColor: const Color(0xFFF8FAFC),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+                      fillColor: const Color(0xFFF8F8F8),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: const BorderSide(color: _fieldBorderColor, width: 1.2),
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: _fieldBorderColor, width: 1.0),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: const BorderSide(color: _fieldBorderColor, width: 1.2),
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: _fieldBorderColor, width: 1.0),
+                      ),
+                      focusedBorder: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(14)),
+                        borderSide: BorderSide(color: Color(0xFF1E1E1E), width: 1.2),
                       ),
                     ),
                     onChanged: (val) {
@@ -1235,12 +1244,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         });
         _updateLiveBalances();
       },
-      borderRadius: BorderRadius.circular(5),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF102A43) : Colors.transparent,
-          borderRadius: BorderRadius.circular(5),
+          color: isSelected ? const Color(0xFF1E1E1E) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.center,
         child: Row(
@@ -1249,15 +1258,15 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
             Icon(
               icon,
               size: 15,
-              color: isSelected ? Colors.white : const Color(0xFF475569),
+              color: isSelected ? Colors.white : const Color(0xFF64748B),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? Colors.white : const Color(0xFF475569),
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? Colors.white : const Color(0xFF64748B),
               ),
             ),
           ],
@@ -1268,13 +1277,13 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
   Widget _buildFieldLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
+      padding: const EdgeInsets.only(bottom: 6.0),
       child: Text(
         label,
         style: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF334155),
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF64748B),
         ),
       ),
     );

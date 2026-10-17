@@ -1,38 +1,40 @@
 import 'package:flutter/material.dart';
 
 /// المكون المشترك الموحد لكافة النوافذ المنبثقة في التطبيق
-/// (تسجيل قيد، إضافة حساب، إضافة محطة، إضافة صنف، إضافة وحدة)
-/// موحد في العرض والارتفاع والألوان والحواف والأزرار بنسبة 100%
+/// (إضافة حساب، إضافة محطة، إضافة صنف)
+/// بتصميم One UI العصري الموحد
 class CustomModalSheet {
   CustomModalSheet._();
 
-  // لون حدود الحقول الموحد الواضح والصريح
-  static const Color fieldBorderColor = Color(0xFF64748B);
+  // لون حدود الحقول الموحد الناعم
+  static const Color fieldBorderColor = Color(0xFFE2E8F0);
 
   /// فتح نافذة منبثقة موحدة في كافة شاشات التطبيق
   static Future<T?> show<T>({
     required BuildContext context,
     required String title,
-    required Widget Function(BuildContext ctx, StateSetter setState) contentBuilder,
+    required Widget Function(BuildContext ctx, StateSetter setState)
+        contentBuilder,
     required Future<void> Function(BuildContext ctx) onSave,
-    String saveText = 'حفظ',
+    String saveText = 'تأكيد',
     String cancelText = 'إلغاء',
   }) {
     return showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withOpacity(0.55),
+      barrierColor: Colors.black.withOpacity(0.5),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (dialogCtx, setModalState) {
             return Center(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 constraints: const BoxConstraints(maxWidth: 480),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black26,
@@ -42,95 +44,100 @@ class CustomModalSheet {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(16),
                   child: Padding(
                     padding: EdgeInsets.only(
                       bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
                     ),
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // 1. الشريط العلوي الموحد (العنوان في المنتصف و زر X على اليسار في RTL)
+                          // 1. الشريط العلوي: العنوان وزر الإغلاق
                           Row(
                             children: [
-                              const SizedBox(width: 32), // لموازنة العنوان
                               Expanded(
                                 child: Text(
                                   title,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
+                                    color: Color(0xFF0F172A),
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.close, color: Color(0xFF475569), size: 22),
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  color: Color(0xFF64748B),
+                                  size: 20,
+                                ),
                                 padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
                                 onPressed: () => Navigator.of(dialogCtx).pop(),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 18),
 
                           // 2. محتوى الحقول
                           contentBuilder(dialogCtx, setModalState),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
 
-                          // 3. شريط الأزرار السفلي الموحد (حفظ الأخضر يميناً flex: 5 وإلغاء الأبيض يساراً flex: 3 في RTL)
+                          // 3. شريط الأزرار السفلي (إلغاء رمادي يميناً، وتأكيد أسود يساراً في RTL)
                           Row(
                             children: [
-                              // زر الحفظ الأخضر على اليمين
+                              // زر الإلغاء على اليمين
                               Expanded(
-                                flex: 5,
-                                child: InkWell(
-                                  onTap: () => onSave(dialogCtx),
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Container(
-                                    height: 44,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF15803D),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Text(
-                                      saveText,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-
-                              // زر الإلغاء الأبيض على اليسار
-                              Expanded(
-                                flex: 3,
                                 child: InkWell(
                                   onTap: () => Navigator.of(dialogCtx).pop(),
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(14),
                                   child: Container(
-                                    height: 44,
+                                    height: 48,
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(color: fieldBorderColor, width: 1.2),
+                                      color: const Color(0xFFf8f8f8),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
                                       cancelText,
                                       style: const TextStyle(
                                         fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF475569),
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // زر التأكيد الأسود على اليسار
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => onSave(dialogCtx),
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Container(
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1E1E1E),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      saveText,
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
                                       ),
                                     ),
                                   ),
@@ -154,13 +161,13 @@ class CustomModalSheet {
   /// بناء عنوان الحقل الموحد
   static Widget buildLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
+      padding: const EdgeInsets.only(bottom: 6.0),
       child: Text(
         label,
         style: const TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF334155),
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF64748B),
         ),
       ),
     );
@@ -183,12 +190,14 @@ class CustomModalSheet {
       children: [
         buildLabel(label),
         Container(
-          height: maxLines == 1 ? 46 : null,
+          height: maxLines == 1 ? 48 : null,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: fieldBorderColor, width: 1.2),
+            color: const Color(0xFFf8f8f8),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: fieldBorderColor, width: 1.0),
           ),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
@@ -196,10 +205,17 @@ class CustomModalSheet {
             readOnly: readOnly,
             onTap: onTap,
             onChanged: onChanged,
-            style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF0F172A),
+            ),
             decoration: InputDecoration(
+              isDense: true,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+              contentPadding: maxLines == 1
+                  ? EdgeInsets.zero
+                  : const EdgeInsets.symmetric(vertical: 12),
               prefixIcon: prefixIcon,
               suffixIcon: suffixIcon,
             ),
@@ -209,3 +225,4 @@ class CustomModalSheet {
     );
   }
 }
+

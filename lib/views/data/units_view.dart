@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/widgets/custom_dialog.dart';
-import '../../core/widgets/custom_modal_sheet.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../../data/local/database_helper.dart';
 
@@ -40,51 +39,232 @@ class _UnitsViewState extends State<UnitsView> {
       text: unit != null ? unit['conversion_factor'].toString() : '',
     );
 
-    CustomModalSheet.show(
+    showModalBottomSheet(
       context: context,
-      title: unit == null ? 'إضافة وحدة' : 'تعديل وحدة',
-      contentBuilder: (ctx, setModalState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CustomModalSheet.buildTextField(
-              label: 'اسم الوحدة',
-              controller: nameController,
-            ),
-            const SizedBox(height: 12),
-            CustomModalSheet.buildTextField(
-              label: 'معامل التحويل إلى لتر',
-              controller: factorController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
-          ],
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withOpacity(0.5),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setModalState) {
+            return Center(
+              child: Container(
+                margin:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                constraints: const BoxConstraints(maxWidth: 480),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 20,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 1. رأس النافذة المنبثقة: العنوان وزر الإغلاق
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  unit == null ? 'إضافة وحدة' : 'تعديل وحدة',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  color: Color(0xFF64748B),
+                                  size: 20,
+                                ),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
+                                onPressed: () => Navigator.of(dialogCtx).pop(),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+
+                          // 2. حقل اسم الوحدة مع حدود ناعمة وبدون أي نصوص إضافية
+                          _buildMinimalInputField(
+                            label: 'اسم الوحدة',
+                            controller: nameController,
+                          ),
+                          const SizedBox(height: 14),
+
+                          // 3. حقل معامل التحويل مع حدود ناعمة وبدون أي نصوص إضافية
+                          _buildMinimalInputField(
+                            label: 'معامل التحويل إلى لتر',
+                            controller: factorController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // 4. زري الإلغاء والتأكيد المتطابقين مع الصورة
+                          Row(
+                            children: [
+                              // زر الإلغاء (يظهر يميناً في RTL)
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () => Navigator.of(dialogCtx).pop(),
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Container(
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFf8f8f8),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: const Text(
+                                      'إلغاء',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // زر التأكيد (يظهر يساراً في RTL)
+                              Expanded(
+                                child: InkWell(
+                                  onTap: () async {
+                                    final name = nameController.text.trim();
+                                    final factor = double.tryParse(
+                                            factorController.text.trim()) ??
+                                        1.0;
+                                    if (name.isEmpty) return;
+
+                                    final navigator = Navigator.of(dialogCtx);
+                                    final db =
+                                        await DatabaseHelper.instance.database;
+                                    if (unit == null) {
+                                      await db.insert('units', {
+                                        'name': name,
+                                        'conversion_factor': factor,
+                                        'is_base_unit': 0,
+                                      });
+                                    } else {
+                                      await db.update(
+                                        'units',
+                                        {
+                                          'name': name,
+                                          'conversion_factor': factor
+                                        },
+                                        where: 'id = ?',
+                                        whereArgs: [unit['id']],
+                                      );
+                                    }
+                                    navigator.pop();
+                                    _loadUnits();
+                                  },
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Container(
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1E1E1E),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: const Text(
+                                      'تأكيد',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
-      onSave: (ctx) async {
-        final name = nameController.text.trim();
-        final factor = double.tryParse(factorController.text.trim()) ?? 1.0;
-        if (name.isEmpty) return;
+    );
+  }
 
-        final navigator = Navigator.of(ctx);
-        final db = await DatabaseHelper.instance.database;
-        if (unit == null) {
-          await db.insert('units', {
-            'name': name,
-            'conversion_factor': factor,
-            'is_base_unit': 0,
-          });
-        } else {
-          await db.update(
-            'units',
-            {'name': name, 'conversion_factor': factor},
-            where: 'id = ?',
-            whereArgs: [unit['id']],
-          );
-        }
-        navigator.pop();
-        _loadUnits();
-      },
+  Widget _buildMinimalInputField({
+    required String label,
+    required TextEditingController controller,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: const Color(0xFFf8f8f8),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: const Color(0xFFE2E8F0),
+              width: 1.0,
+            ),
+          ),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: TextField(
+            controller: controller,
+            keyboardType: keyboardType,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF0F172A),
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

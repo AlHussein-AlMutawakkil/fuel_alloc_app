@@ -69,13 +69,13 @@ class _AccountsViewState extends State<AccountsView> {
             const SizedBox(height: 12),
             CustomModalSheet.buildLabel(AppStrings.accountType),
             Container(
-              height: 46,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
+                color: const Color(0xFFf8f8f8),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                    color: CustomModalSheet.fieldBorderColor, width: 1.2),
+                    color: CustomModalSheet.fieldBorderColor, width: 1.0),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<AccountType>(
