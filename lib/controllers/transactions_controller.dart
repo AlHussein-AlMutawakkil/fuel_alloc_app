@@ -67,6 +67,7 @@ class TransactionsController extends ChangeNotifier {
             (tx.stationName?.toLowerCase().contains(q) ?? false) ||
             (tx.referenceStationName?.toLowerCase().contains(q) ?? false) ||
             (tx.accountName?.toLowerCase().contains(q) ?? false) ||
+            (tx.recipientName?.toLowerCase().contains(q) ?? false) ||
             (tx.fuelTypeName?.toLowerCase().contains(q) ?? false) ||
             (tx.typeName?.toLowerCase().contains(q) ?? false) ||
             tx.transactionDate.contains(q);
@@ -162,14 +163,32 @@ class TransactionsController extends ChangeNotifier {
             getStationAerationForFuel(fuelTypeId));
   }
 
-  /// رصيد محطة معينة حالياً
-  Future<double> getStationBalance(int stationId) async {
-    return await _repository.getStationBalance(stationId);
+  List<String> _recipientsList = [];
+  List<String> get recipientsList => _recipientsList;
+
+  /// رصيد محطة معينة حالياً (اختيارياً لصنف محدد)
+  Future<double> getStationBalance(int stationId, {int? fuelTypeId}) async {
+    return await _repository.getStationBalance(stationId,
+        fuelTypeId: fuelTypeId);
   }
 
-  /// رصيد حساب معين حالياً
-  Future<double> getAccountBalance(int accountId, bool isSupplier) async {
-    return await _repository.getAccountBalance(accountId, isSupplier);
+  /// رصيد حساب معين حالياً (اختيارياً لصنف محدد)
+  Future<double> getAccountBalance(int accountId, bool isSupplier,
+      {int? fuelTypeId}) async {
+    return await _repository.getAccountBalance(accountId, isSupplier,
+        fuelTypeId: fuelTypeId);
+  }
+
+  /// جلب قائمة المستلمين المميزين
+  Future<List<String>> fetchRecipients() async {
+    try {
+      _recipientsList = await _repository.getDistinctRecipients();
+      notifyListeners();
+      return _recipientsList;
+    } catch (e) {
+      debugPrint('Error loading recipients: $e');
+      return [];
+    }
   }
 
   int? _currentAccountId;
@@ -270,6 +289,7 @@ class TransactionsController extends ChangeNotifier {
       _fuelTypes = await _repository.getFuelTypes();
       _units = await _repository.getUnits();
       _transactionTypes = await _repository.getTransactionTypes();
+      _recipientsList = await _repository.getDistinctRecipients();
     } catch (e) {
       debugPrint('Error loading form reference data: $e');
     }

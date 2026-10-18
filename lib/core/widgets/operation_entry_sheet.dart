@@ -95,13 +95,25 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
   final TextEditingController _statementController = TextEditingController();
   final TextEditingController _referenceNumberController =
       TextEditingController();
+  final TextEditingController _recipientController = TextEditingController();
+  final FocusNode _recipientFocusNode = FocusNode();
 
+  bool _sameAsAccount = true;
+  bool _showRecipientSuggestions = false;
   bool _isEdit = false;
 
   @override
   void initState() {
     super.initState();
     _isEdit = widget.editTransaction != null;
+
+    _recipientFocusNode.addListener(() {
+      if (mounted) {
+        setState(() {
+          _showRecipientSuggestions = _recipientFocusNode.hasFocus;
+        });
+      }
+    });
 
     if (_isEdit) {
       final tx = widget.editTransaction!;
@@ -127,6 +139,14 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       _dateController.text = tx.transactionDate.replaceAll('-', '/');
       _statementController.text = tx.notes ?? '';
       _referenceNumberController.text = tx.referenceNumber ?? '';
+
+      if (tx.recipientName != null && tx.recipientName!.trim().isNotEmpty) {
+        _recipientController.text = tx.recipientName!.trim();
+        _sameAsAccount = (tx.recipientName == tx.accountName);
+      } else {
+        _sameAsAccount = true;
+        _recipientController.text = tx.accountName ?? '';
+      }
     } else {
       _selectedTab = widget.initialTabIndex;
       _selectedDirection = widget.initialDirection;
@@ -136,6 +156,11 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       final now = DateTime.now();
       _dateController.text =
           '${now.year}/${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')}';
+
+      _sameAsAccount = true;
+      if (widget.initialAccount != null) {
+        _recipientController.text = widget.initialAccount!.name;
+      }
     }
 
     _selectedAccount = widget.initialAccount;
@@ -165,6 +190,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         }
       }
 
+      if (_sameAsAccount &&
+          _selectedAccount != null &&
+          _recipientController.text.isEmpty) {
+        _recipientController.text = _selectedAccount!.name;
+      }
+
       if (_selectedFuelTypeId == null && txController.fuelTypes.isNotEmpty) {
         _selectedFuelTypeId = txController.fuelTypes.first['id'] as int?;
       }
@@ -186,6 +217,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     _dateController.dispose();
     _statementController.dispose();
     _referenceNumberController.dispose();
+    _recipientController.dispose();
+    _recipientFocusNode.dispose();
     super.dispose();
   }
 
@@ -210,7 +243,10 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     if (_selectedAccount?.id != null) {
       final isSupplier = _selectedAccount!.accountType == AccountType.supplier;
       final bal = await txController.getAccountBalance(
-          _selectedAccount!.id!, isSupplier);
+        _selectedAccount!.id!,
+        isSupplier,
+        fuelTypeId: _selectedFuelTypeId,
+      );
       if (mounted) {
         setState(() {
           _accountBalanceLiters = bal;
@@ -221,7 +257,10 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     }
 
     if (_selectedStationId != null) {
-      final stBal = await txController.getStationBalance(_selectedStationId!);
+      final stBal = await txController.getStationBalance(
+        _selectedStationId!,
+        fuelTypeId: _selectedFuelTypeId,
+      );
       if (mounted) {
         setState(() {
           _stationBalanceLiters = stBal;
@@ -596,7 +635,11 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   ],
                   const SizedBox(height: AppDimensions.spaceL),
 
-                  // 5. صف: الكمية والصنف
+                  // 5. قسم المستلم (تحت الحساب مباشرة)
+                  _buildRecipientSection(txController),
+                  const SizedBox(height: AppDimensions.spaceL),
+
+                  // 6. صف: الكمية والصنف
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -718,6 +761,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 setState(() {
                                   _selectedFuelTypeId = val;
                                 });
+                                _updateLiveBalances();
                               },
                             ),
                           ],
@@ -1101,6 +1145,227 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     );
   }
 
+  Widget _buildRecipientSection(TransactionsController txController) {
+    final currentText = _recipientController.text.trim().toLowerCase();
+    final matchingSuggestions = txController.recipientsList.where((name) {
+      if (currentText.isEmpty) return true;
+      return name.toLowerCase().contains(currentText);
+    }).toList();
+
+    final bool showDropdown =
+        _showRecipientSuggestions && matchingSuggestions.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              height: 22,
+              width: 22,
+              child: Checkbox(
+                value: _sameAsAccount,
+                activeColor: AppColors.primary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                onChanged: (val) {
+                  setState(() {
+                    _sameAsAccount = val ?? true;
+                    if (_sameAsAccount) {
+                      _recipientController.text = _selectedAccount?.name ?? '';
+                      _showRecipientSuggestions = false;
+                    } else {
+                      _recipientController.clear();
+                    }
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: AppDimensions.spaceM),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _sameAsAccount = !_sameAsAccount;
+                  if (_sameAsAccount) {
+                    _recipientController.text = _selectedAccount?.name ?? '';
+                    _showRecipientSuggestions = false;
+                  } else {
+                    _recipientController.clear();
+                  }
+                });
+              },
+              child: const Text(
+                AppStrings.sameAsAccountName,
+                style: TextStyle(
+                  fontSize: AppTypography.sizeBodySecondary,
+                  fontWeight: AppTypography.weightMedium,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (!_sameAsAccount) ...[
+          const SizedBox(height: AppDimensions.spaceM),
+          _buildFieldLabel(AppStrings.recipientNameLabel),
+          Container(
+            height: AppDimensions.inputHeight,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: showDropdown
+                  ? const BorderRadius.vertical(
+                      top: Radius.circular(AppDimensions.radius2XL),
+                    )
+                  : AppDimensions.borderRadius2XL,
+              border: Border.all(
+                color: _fieldBorderColor,
+                width: AppDimensions.borderWidthThin,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppDimensions.spaceL - 2,
+                  ),
+                  child: Icon(
+                    AppIcons.accountOutline,
+                    color: AppColors.textTertiary,
+                    size: AppDimensions.iconRegular,
+                  ),
+                ),
+                Expanded(
+                  child: TextField(
+                    controller: _recipientController,
+                    focusNode: _recipientFocusNode,
+                    style: const TextStyle(
+                      fontSize: AppTypography.sizeBodySecondary,
+                      color: AppColors.textPrimary,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: AppStrings.enterRecipientNameHint,
+                      hintStyle: TextStyle(
+                        color: AppColors.textMuted,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: AppDimensions.spaceXXS,
+                      ),
+                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        _showRecipientSuggestions = true;
+                      });
+                    },
+                    onTap: () {
+                      setState(() {
+                        _showRecipientSuggestions = true;
+                      });
+                    },
+                  ),
+                ),
+                if (_recipientController.text.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(
+                      AppIcons.close,
+                      size: AppDimensions.iconSmall,
+                      color: AppColors.textTertiary,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _recipientController.clear();
+                        _showRecipientSuggestions = true;
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+          if (showDropdown)
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(maxHeight: 160),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(AppDimensions.radius2XL),
+                ),
+                border: Border(
+                  left: BorderSide(
+                    color: _fieldBorderColor,
+                    width: AppDimensions.borderWidthThin,
+                  ),
+                  right: BorderSide(
+                    color: _fieldBorderColor,
+                    width: AppDimensions.borderWidthThin,
+                  ),
+                  bottom: BorderSide(
+                    color: _fieldBorderColor,
+                    width: AppDimensions.borderWidthThin,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.overlayLight,
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: matchingSuggestions.length,
+                separatorBuilder: (_, __) => const Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: AppColors.borderSubtle,
+                ),
+                itemBuilder: (context, index) {
+                  final suggestion = matchingSuggestions[index];
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _recipientController.text = suggestion;
+                        _showRecipientSuggestions = false;
+                        _recipientFocusNode.unfocus();
+                      });
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppDimensions.spaceL,
+                        vertical: AppDimensions.spaceM,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            AppIcons.accountOutline,
+                            size: AppDimensions.iconSmall,
+                            color: AppColors.textTertiary,
+                          ),
+                          const SizedBox(width: AppDimensions.spaceM),
+                          Expanded(
+                            child: Text(
+                              suggestion,
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeBodySecondary,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+
   void _openAccountPicker(List<AccountModel> accounts) async {
     final selected = await CustomModalSheet.showItemPicker<AccountModel>(
       context: context,
@@ -1115,6 +1380,9 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     if (selected != null && mounted) {
       setState(() {
         _selectedAccount = selected;
+        if (_sameAsAccount) {
+          _recipientController.text = selected.name;
+        }
       });
       _updateLiveBalances();
     }
@@ -1158,6 +1426,9 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     final baseLiters = qty * unitFactor;
 
     final manualRef = _referenceNumberController.text.trim();
+    final recipientText = _sameAsAccount
+        ? (_selectedAccount?.name ?? _recipientController.text.trim())
+        : _recipientController.text.trim();
 
     final tx = TransactionModel(
       id: widget.editTransaction?.id,
@@ -1173,6 +1444,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       enteredQuantity: qty,
       baseQuantityLiters: baseLiters,
       referenceNumber: manualRef.isEmpty ? null : manualRef,
+      recipientName: recipientText.isEmpty ? null : recipientText,
       notes: _statementController.text.trim().isEmpty
           ? null
           : _statementController.text.trim(),
@@ -1186,6 +1458,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     }
 
     if (success && mounted) {
+      txController.fetchRecipients();
       navigator.pop(true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

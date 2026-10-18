@@ -63,10 +63,15 @@ class TransactionRepository {
     return maps.map((m) => TransactionModel.fromMap(m)).toList();
   }
 
-  /// حساب رصيد المحطة الفعلي المتاح حالياً باللتر
+  /// حساب رصيد المحطة الفعلي المتاح حالياً باللتر (لكل الأصناف أو لصنف محدد)
   /// (التوريدات الفعلية) - (عمولات التهوية) - (المنصرف الفعلي منها أو من مرجعها)
-  Future<double> getStationBalance(int stationId) async {
+  Future<double> getStationBalance(int stationId, {int? fuelTypeId}) async {
     final db = await _dbHelper.database;
+    final String fuelFilter = fuelTypeId != null ? ' AND fuel_type_id = ?' : '';
+    final List<dynamic> args = fuelTypeId != null
+        ? [stationId, fuelTypeId, stationId, fuelTypeId]
+        : [stationId, stationId];
+
     final res = await db.rawQuery('''
       SELECT 
         COALESCE(SUM(CASE 
@@ -76,16 +81,21 @@ class TransactionRepository {
           ELSE 0 
         END), 0.0) AS balance
       FROM transactions
-      WHERE (type_id IN (2, 3) AND station_id = ?)
-         OR (type_id = 5 AND COALESCE(reference_station_id, station_id) = ?)
-    ''', [stationId, stationId]);
+      WHERE (type_id IN (2, 3) AND station_id = ?$fuelFilter)
+         OR (type_id = 5 AND COALESCE(reference_station_id, station_id) = ?$fuelFilter)
+    ''', args);
 
     return (res.first['balance'] as num?)?.toDouble() ?? 0.0;
   }
 
-  /// حساب الرصيد المتاح لحساب عميل أو مورد حالياً باللتر
-  Future<double> getAccountBalance(int accountId, bool isSupplier) async {
+  /// حساب الرصيد المتاح لحساب عميل أو مورد حالياً باللتر (لكل الأصناف أو لصنف محدد)
+  Future<double> getAccountBalance(int accountId, bool isSupplier,
+      {int? fuelTypeId}) async {
     final db = await _dbHelper.database;
+    final String fuelFilter = fuelTypeId != null ? ' AND fuel_type_id = ?' : '';
+    final List<dynamic> args =
+        fuelTypeId != null ? [accountId, fuelTypeId] : [accountId];
+
     if (isSupplier) {
       // للمورد: توريد اعتماد (+) - توريد فعلي (-) = عجز أو متبقي التوريد
       final res = await db.rawQuery('''
@@ -96,8 +106,8 @@ class TransactionRepository {
             ELSE 0 
           END), 0.0) AS balance
         FROM transactions
-        WHERE account_id = ?
-      ''', [accountId]);
+        WHERE account_id = ?$fuelFilter
+      ''', args);
       return (res.first['balance'] as num?)?.toDouble() ?? 0.0;
     } else {
       // للعميل: صرف اعتماد (+) - صرف فعلي (-) = الرصيد المتبقي له
@@ -109,10 +119,22 @@ class TransactionRepository {
             ELSE 0 
           END), 0.0) AS balance
         FROM transactions
-        WHERE account_id = ?
-      ''', [accountId]);
+        WHERE account_id = ?$fuelFilter
+      ''', args);
       return (res.first['balance'] as num?)?.toDouble() ?? 0.0;
     }
+  }
+
+  /// جلب أسماء المستلمين المسجلين سابقاً بدون تكرار
+  Future<List<String>> getDistinctRecipients() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> res = await db.rawQuery('''
+      SELECT DISTINCT recipient_name
+      FROM transactions
+      WHERE recipient_name IS NOT NULL AND TRIM(recipient_name) != ''
+      ORDER BY recipient_name ASC
+    ''');
+    return res.map((r) => r['recipient_name'] as String).toList();
   }
 
   /// إدراج عملية جديدة مع التوليد الآلي لعمولة التهوية عند التوريد الفعلي

@@ -29,6 +29,11 @@ class DatabaseHelper {
           await db.execute(
               'ALTER TABLE transactions ADD COLUMN reference_number TEXT;');
         }
+        final hasRecipient = columns.any((c) => c['name'] == 'recipient_name');
+        if (!hasRecipient) {
+          await db.execute(
+              'ALTER TABLE transactions ADD COLUMN recipient_name TEXT;');
+        }
       },
     );
   }
@@ -102,6 +107,7 @@ class DatabaseHelper {
         entered_quantity REAL NOT NULL,
         base_quantity_liters REAL NOT NULL,
         reference_number TEXT,
+        recipient_name TEXT,
         parent_transaction_id INTEGER,
         notes TEXT,
         created_at TEXT NOT NULL,

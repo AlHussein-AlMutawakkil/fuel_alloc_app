@@ -146,6 +146,11 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
             label: AppStrings.referenceNumberLabel,
             value: tx.referenceNumber!,
           ),
+        if (tx.recipientName != null && tx.recipientName!.isNotEmpty)
+          DialogDetailRow(
+            label: AppStrings.recipientLabel,
+            value: tx.recipientName!,
+          ),
         if (tx.notes != null && tx.notes!.isNotEmpty)
           DialogDetailRow(
             label: AppStrings.labelStatement,
@@ -507,7 +512,31 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                 ],
               ),
 
-              // 2. نص البيان / الملاحظة (إن وجد)
+              // 2. سطر اسم المستلم (أسفل التاريخ وقبل البيان)
+              if (tx.recipientName != null &&
+                  tx.recipientName!.trim().isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.spaceXS),
+                Row(
+                  children: [
+                    const Icon(
+                      AppIcons.accountOutline,
+                      size: AppDimensions.iconMicro,
+                      color: AppColors.textMuted,
+                    ),
+                    const SizedBox(width: AppDimensions.spaceXS),
+                    Text(
+                      '${AppStrings.recipientPrefix}${tx.recipientName!.trim()}',
+                      style: const TextStyle(
+                        fontSize: AppTypography.sizeCaption,
+                        fontWeight: AppTypography.weightMedium,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // 3. نص البيان / الملاحظة (إن وجد)
               if (tx.notes != null && tx.notes!.trim().isNotEmpty) ...[
                 const SizedBox(height: AppDimensions.spaceXS + 1),
                 Text(

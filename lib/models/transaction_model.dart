@@ -20,6 +20,7 @@ class TransactionModel {
   final double enteredQuantity;
   final double baseQuantityLiters;
   final String? referenceNumber;
+  final String? recipientName;
   final int? parentTransactionId;
   final String? notes;
   final String? createdAt;
@@ -45,6 +46,7 @@ class TransactionModel {
     required this.enteredQuantity,
     required this.baseQuantityLiters,
     this.referenceNumber,
+    this.recipientName,
     this.parentTransactionId,
     this.notes,
     this.createdAt,
@@ -64,6 +66,7 @@ class TransactionModel {
       'entered_quantity': enteredQuantity,
       'base_quantity_liters': baseQuantityLiters,
       'reference_number': referenceNumber,
+      'recipient_name': recipientName,
       'parent_transaction_id': parentTransactionId,
       'notes': notes,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),
@@ -92,6 +95,7 @@ class TransactionModel {
       enteredQuantity: (map['entered_quantity'] as num).toDouble(),
       baseQuantityLiters: (map['base_quantity_liters'] as num).toDouble(),
       referenceNumber: map['reference_number'] as String?,
+      recipientName: map['recipient_name'] as String?,
       parentTransactionId: map['parent_transaction_id'] as int?,
       notes: map['notes'] as String?,
       createdAt: map['created_at'] as String?,
