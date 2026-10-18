@@ -169,6 +169,11 @@ class AppStrings {
   static const String labelStatement = 'البيان:';
   static const String referenceNumberLabel = 'رقم المرجع:';
   static const String linkedAccountLabel = 'الحساب المرتبط:';
+  static const String recipientLabel = 'المستلم:';
+  static const String recipientNameLabel = 'اسم المستلم';
+  static const String sameAsAccountName = 'المستلم بنفس اسم الحساب';
+  static const String enterRecipientNameHint = 'اكتب اسم المستلم أو اختر من القائمة...';
+  static const String recipientPrefix = 'المستلم: ';
 
   // الأصناف والوحدات
   static const String unitLiter = 'لتر';

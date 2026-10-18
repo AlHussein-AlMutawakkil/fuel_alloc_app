@@ -66,6 +66,7 @@ class TransactionsController extends ChangeNotifier {
         matchesSearch = (tx.notes?.toLowerCase().contains(q) ?? false) ||
             (tx.stationName?.toLowerCase().contains(q) ?? false) ||
             (tx.referenceStationName?.toLowerCase().contains(q) ?? false) ||
+            (tx.accountName?.toLowerCase().contains(q) ?? false) ||
             (tx.fuelTypeName?.toLowerCase().contains(q) ?? false) ||
             (tx.typeName?.toLowerCase().contains(q) ?? false) ||
             tx.transactionDate.contains(q);

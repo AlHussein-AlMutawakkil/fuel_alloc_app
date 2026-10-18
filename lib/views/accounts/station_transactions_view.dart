@@ -12,12 +12,13 @@ import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../core/widgets/filter_chip_widget.dart';
+import '../../core/widgets/one_ui_card.dart';
 import '../../core/widgets/operation_entry_sheet.dart';
 import '../../models/station_model.dart';
 import '../../models/transaction_model.dart';
 import 'widgets/fuel_summary_card.dart';
 
-/// واجهة كشف حساب وعمليات المحطة (وارد فعلي، منصرف فعلي، عمولة تهوية، ومقاصات)
+/// واجهة كشف حساب وعمليات المحطة بتصميم One UI الموحد
 class StationTransactionsView extends StatefulWidget {
   final StationModel station;
 
@@ -95,6 +96,7 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
   }
 
   void _showTransactionDetails(TransactionModel tx) {
+    final bool isSupply = tx.typeId == 2;
     CustomDialog.showDetails(
       context: context,
       title: AppStrings.operationDetails,
@@ -107,12 +109,14 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
           label: AppStrings.labelDate,
           value: AppFormatters.formatDate(tx.transactionDate),
         ),
-        if (tx.accountName != null)
+        if (tx.accountName != null && tx.accountName!.trim().isNotEmpty)
           DialogDetailRow(
-            label: AppStrings.linkedAccountLabel,
+            label: isSupply
+                ? AppStrings.supplierPrefix.replaceAll(':', '').trim()
+                : AppStrings.beneficiaryPrefix.replaceAll(':', '').trim(),
             value: tx.accountName!,
           ),
-        if (tx.stationName != null)
+        if (tx.stationName != null && tx.stationName!.trim().isNotEmpty)
           DialogDetailRow(
             label: AppStrings.labelStation,
             value: tx.stationName!,
@@ -157,32 +161,33 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
       builder: (context, controller, child) {
         return Scaffold(
           backgroundColor: AppColors.background,
-          appBar: AppBar(
-            title: _isSearching
+          appBar: OneUiAppBar(
+            title: widget.station.name,
+            titleWidget: _isSearching
                 ? TextField(
                     controller: _searchController,
                     autofocus: true,
                     style: const TextStyle(
-                      color: AppColors.textWhite,
+                      color: AppColors.textPrimary,
                       fontSize: AppTypography.sizeBody + 1,
                     ),
-                    cursorColor: AppColors.textWhite,
-                    decoration: InputDecoration(
-                      hintText: AppStrings.searchStationTransactionsHint,
+                    cursorColor: AppColors.primary,
+                    decoration: const InputDecoration(
+                      hintText: AppStrings.searchTransactionHint,
                       hintStyle: TextStyle(
-                        color: AppColors.textWhite.withOpacity(0.7),
+                        color: AppColors.textMuted,
                       ),
                       border: InputBorder.none,
                     ),
                     onChanged: (val) => controller.setSearchQuery(val),
                   )
-                : Text(
-                    '${AppStrings.stationStatementPrefix}${widget.station.name}',
-                    style: AppTypography.appBarTitle,
-                  ),
+                : null,
             actions: [
               IconButton(
-                icon: Icon(_isSearching ? AppIcons.close : AppIcons.search),
+                icon: Icon(
+                  _isSearching ? AppIcons.close : AppIcons.search,
+                  color: AppColors.textPrimary,
+                ),
                 tooltip:
                     _isSearching ? AppStrings.closeSearch : AppStrings.search,
                 onPressed: () {
@@ -195,98 +200,92 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                   });
                 },
               ),
-              IconButton(
-                icon: const Icon(AppIcons.add),
-                tooltip: AppStrings.addOperation,
-                onPressed: () => _openAddTransactionDialog(),
-              ),
-              IconButton(
-                icon: const Icon(AppIcons.refresh),
-                tooltip: AppStrings.refresh,
-                onPressed: () {
-                  if (widget.station.id != null) {
-                    controller.fetchStationTransactions(widget.station.id!);
-                  }
-                },
-              ),
+              if (!_isSearching)
+                IconButton(
+                  icon: const Icon(
+                    AppIcons.add,
+                    color: AppColors.textPrimary,
+                  ),
+                  tooltip: AppStrings.addOperation,
+                  onPressed: () => _openAddTransactionDialog(),
+                ),
             ],
           ),
-          body: Padding(
-            padding: AppDimensions.paddingScreen,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStationSummaryCard(controller),
-                const SizedBox(height: AppDimensions.spaceL),
-                Row(
-                  children: [
-                    AppFilterChip(
-                      label: AppStrings.allFilter,
-                      isSelected: controller.selectedFilter == 'ALL',
-                      onTap: () => controller.setFilter('ALL'),
-                    ),
-                    const SizedBox(width: AppDimensions.spaceM),
-                    AppFilterChip(
-                      label: AppStrings.filterSupplyActual,
-                      isSelected: controller.selectedFilter == 'SUPPLY',
-                      onTap: () => controller.setFilter('SUPPLY'),
-                    ),
-                    const SizedBox(width: AppDimensions.spaceM),
-                    AppFilterChip(
-                      label: AppStrings.filterDispenseActual,
-                      isSelected: controller.selectedFilter == 'DISPENSE',
-                      onTap: () => controller.setFilter('DISPENSE'),
-                    ),
-                    const SizedBox(width: AppDimensions.spaceM),
-                    AppFilterChip(
-                      label: AppStrings.filterAeration,
-                      isSelected: controller.selectedFilter == 'AERATION',
-                      onTap: () => controller.setFilter('AERATION'),
-                    ),
-                    const Spacer(),
-                    Text(
-                      '${AppStrings.totalOperations}: ${_getFilteredTransactions(controller).length}',
-                      style: AppTypography.captionBold,
-                    ),
-                  ],
+          body: controller.isLoading
+              ? const Center(child: AppLoadingIndicator())
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: () async {
+                    if (widget.station.id != null) {
+                      await controller
+                          .fetchStationTransactions(widget.station.id!);
+                    }
+                  },
+                  child: ListView(
+                    padding: AppDimensions.paddingScreen,
+                    children: [
+                      _buildStationSummaryCard(controller),
+                      const SizedBox(height: AppDimensions.spaceL),
+                      _buildFilterChips(controller),
+                      const SizedBox(height: AppDimensions.spaceL),
+                      _buildSectionHeader(controller),
+                      const SizedBox(height: AppDimensions.spaceS),
+                      if (controller.transactions.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            top: AppDimensions.space3XL,
+                          ),
+                          child: EmptyStateWidget(
+                            icon: AppIcons.gasStationOutlined,
+                            title: AppStrings.noStationTransactionsFound,
+                            actionText:
+                                AppStrings.recordFirstStationOperation,
+                            actionIcon: AppIcons.add,
+                            onAction: () => _openAddTransactionDialog(),
+                          ),
+                        )
+                      else
+                        _buildTransactionsContainer(controller.transactions),
+                      const SizedBox(height: AppDimensions.space3XL),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: AppDimensions.spaceL + 2),
-                Expanded(
-                  child: controller.isLoading
-                      ? const AppLoadingIndicator()
-                      : _getFilteredTransactions(controller).isEmpty
-                          ? EmptyStateWidget(
-                              icon: AppIcons.gasStationOutlined,
-                              title: AppStrings.noStationTransactionsFound,
-                              actionText:
-                                  AppStrings.recordFirstStationOperation,
-                              actionIcon: AppIcons.add,
-                              onAction: () => _openAddTransactionDialog(),
-                            )
-                          : ListView.separated(
-                              itemCount:
-                                  _getFilteredTransactions(controller).length,
-                              separatorBuilder: (_, __) => const SizedBox(
-                                height: AppDimensions.spaceM + 2,
-                              ),
-                              itemBuilder: (context, index) {
-                                final tx =
-                                    _getFilteredTransactions(controller)[index];
-                                return _buildStationTransactionCard(tx);
-                              },
-                            ),
-                ),
-              ],
-            ),
-          ),
         );
       },
     );
   }
 
-  List<TransactionModel> _getFilteredTransactions(
-      TransactionsController controller) {
-    return controller.transactions;
+  Widget _buildFilterChips(TransactionsController controller) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          AppFilterChip(
+            label: AppStrings.allFilter,
+            isSelected: controller.selectedFilter == 'ALL',
+            onTap: () => controller.setFilter('ALL'),
+          ),
+          const SizedBox(width: AppDimensions.spaceM),
+          AppFilterChip(
+            label: AppStrings.filterSupplyActual,
+            isSelected: controller.selectedFilter == 'SUPPLY',
+            onTap: () => controller.setFilter('SUPPLY'),
+          ),
+          const SizedBox(width: AppDimensions.spaceM),
+          AppFilterChip(
+            label: AppStrings.filterDispenseActual,
+            isSelected: controller.selectedFilter == 'DISPENSE',
+            onTap: () => controller.setFilter('DISPENSE'),
+          ),
+          const SizedBox(width: AppDimensions.spaceM),
+          AppFilterChip(
+            label: AppStrings.filterAeration,
+            isSelected: controller.selectedFilter == 'AERATION',
+            onTap: () => controller.setFilter('AERATION'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildStationSummaryCard(TransactionsController controller) {
@@ -326,216 +325,317 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
     );
   }
 
-  Widget _buildStationTransactionCard(TransactionModel tx) {
-    final bool isSupply = tx.typeId == 2;
-    final bool isDispense = tx.typeId == 5;
-    final bool isAeration = tx.typeId == 3;
-
-    final Color badgeColor = isDispense
-        ? AppColors.dispenseRed
-        : (isAeration ? AppColors.warning : AppColors.supplyGreen);
-
-    final Color badgeBg = isDispense
-        ? AppColors.dispenseLight
-        : (isAeration ? AppColors.warningLight : AppColors.supplyLight);
-
-    final String sign = isSupply ? '+' : '-';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppDimensions.borderRadiusM,
-        border: Border.all(
-          color: AppColors.border,
-          width: AppDimensions.borderWidthThin,
-        ),
+  Widget _buildSectionHeader(TransactionsController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spaceXS,
+        vertical: AppDimensions.spaceXS,
       ),
-      child: ClipRRect(
-        borderRadius: AppDimensions.borderRadiusM,
-        child: IntrinsicHeight(
-          child: Row(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            AppStrings.operationsHistory,
+            style: TextStyle(
+              fontSize: AppTypography.sizeBody,
+              fontWeight: AppTypography.weightSemiBold,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (controller.transactions.isNotEmpty)
+            Text(
+              '${controller.transactions.length} ${AppStrings.operation}',
+              style: const TextStyle(
+                fontSize: AppTypography.sizeCaption,
+                color: AppColors.textMuted,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionsContainer(List<TransactionModel> transactions) {
+    return OneUiCard(
+      margin: EdgeInsets.zero,
+      children: transactions.map(_buildTransactionItem).toList(),
+    );
+  }
+
+  Widget _buildTransactionItem(TransactionModel tx) {
+    final bool isSupply = tx.typeId == 2;
+    final bool isAeration = tx.typeId == 3;
+    final bool isPositive = isSupply || isAeration;
+
+    final Color badgeColor = isSupply
+        ? AppColors.supplyGreen
+        : (isAeration ? AppColors.warning : AppColors.dispenseRed);
+
+    final IconData opIcon = isSupply
+        ? AppIcons.supply
+        : (isAeration ? AppIcons.tabAeration : AppIcons.dispense);
+
+    final String sign = isPositive ? '+' : '-';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showTransactionOptions(tx),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.spaceL,
+            vertical: AppDimensions.spaceM + 2,
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(width: 5, color: badgeColor),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.spaceL,
-                    vertical: AppDimensions.spaceM + 2,
+              // 1. الصف الرئيسي: الأيقونة + البيانات + الكمية
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    opIcon,
+                    size: AppDimensions.iconLarge,
+                    color: badgeColor,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: AppDimensions.paddingTag,
-                            decoration: BoxDecoration(
-                              color: badgeBg,
-                              borderRadius: AppDimensions.borderRadiusXS,
-                            ),
-                            child: Text(
-                              tx.typeName ?? AppStrings.operation,
-                              style: TextStyle(
-                                fontSize: AppTypography.sizeCaption,
-                                color: badgeColor,
-                                fontWeight: AppTypography.weightBold,
-                              ),
-                            ),
+                  const SizedBox(width: AppDimensions.spaceM),
+
+                  // اسم العملية والحساب والتاريخ
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          tx.typeName ?? AppStrings.operation,
+                          style: const TextStyle(
+                            fontSize: AppTypography.sizeBody,
+                            fontWeight: AppTypography.weightSemiBold,
+                            color: AppColors.textPrimary,
                           ),
-                          Row(
-                            children: [
-                              const Icon(
-                                AppIcons.calendar,
-                                size: AppDimensions.iconMicro,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: AppDimensions.spaceXXS),
+                        Row(
+                          children: [
+                            Text(
+                              AppFormatters.formatDate(tx.transactionDate),
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeCaption,
                                 color: AppColors.textMuted,
                               ),
-                              const SizedBox(width: AppDimensions.spaceXS),
-                              Text(
-                                AppFormatters.formatDate(tx.transactionDate),
-                                style: AppTypography.caption,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppDimensions.spaceM),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Row(
-                              children: [
-                                if (tx.fuelTypeName != null) ...[
-                                  Container(
-                                    padding: AppDimensions.paddingMiniTag,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.chipBackground,
-                                      borderRadius:
-                                          AppDimensions.borderRadiusXS,
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          AppIcons.gasStation,
-                                          size: AppDimensions.iconMicro,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                        const SizedBox(
-                                          width: AppDimensions.spaceXXS + 1,
-                                        ),
-                                        Text(
-                                          tx.fuelTypeName!,
-                                          style: AppTypography.caption.copyWith(
-                                            fontWeight:
-                                                AppTypography.weightSemiBold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppDimensions.spaceM),
-                                ],
-                                if (tx.accountName != null)
-                                  Flexible(
-                                    child: Text(
-                                      '${isSupply ? AppStrings.supplierPrefix : AppStrings.beneficiaryPrefix} ${tx.accountName!}',
-                                      style:
-                                          AppTypography.bodySecondary.copyWith(
-                                        fontWeight:
-                                            AppTypography.weightSemiBold,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                              ],
                             ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '$sign ${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? ''}',
+                            if (tx.accountName != null &&
+                                tx.accountName!.trim().isNotEmpty) ...[
+                              const SizedBox(width: AppDimensions.spaceXS),
+                              const Text(
+                                '•',
                                 style: TextStyle(
-                                  fontSize: AppTypography.sizeBody + 1,
-                                  fontWeight: AppTypography.weightBold,
-                                  color: badgeColor,
-                                ),
-                              ),
-                              Text(
-                                '(${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter})',
-                                style: AppTypography.caption.copyWith(
+                                  fontSize: AppTypography.sizeCaption,
                                   color: AppColors.textMuted,
                                 ),
                               ),
+                              const SizedBox(width: AppDimensions.spaceXS),
+                              Flexible(
+                                child: Text(
+                                  '${isSupply ? AppStrings.supplierPrefix : AppStrings.beneficiaryPrefix}${tx.accountName!}',
+                                  style: const TextStyle(
+                                    fontSize: AppTypography.sizeCaption,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
-                          ),
-                        ],
-                      ),
-                      if (tx.referenceStationName != null &&
-                          tx.referenceStationName != tx.stationName) ...[
-                        const SizedBox(height: AppDimensions.spaceXS),
-                        Container(
-                          padding: AppDimensions.paddingMiniTag,
-                          decoration: const BoxDecoration(
-                            color: AppColors.infoLight,
-                            borderRadius: AppDimensions.borderRadiusXS,
-                          ),
-                          child: Text(
-                            '${AppStrings.offsetDiscountFromPrefix}${tx.referenceStationName!}',
-                            style: const TextStyle(
-                              fontSize: AppTypography.sizeSmall,
-                              color: AppColors.infoText,
-                            ),
-                          ),
+                            if (tx.referenceStationName != null &&
+                                tx.referenceStationName != tx.stationName) ...[
+                              const SizedBox(width: AppDimensions.spaceXS),
+                              const Text(
+                                '•',
+                                style: TextStyle(
+                                  fontSize: AppTypography.sizeCaption,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(width: AppDimensions.spaceXS),
+                              Flexible(
+                                child: Text(
+                                  '${AppStrings.offsetDiscountFromPrefix}${tx.referenceStationName!}',
+                                  style: const TextStyle(
+                                    fontSize: AppTypography.sizeCaption,
+                                    color: AppColors.infoText,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
-                      if (tx.notes != null && tx.notes!.isNotEmpty) ...[
-                        const SizedBox(height: AppDimensions.spaceS),
-                        Row(
+                    ),
+                  ),
+                  const SizedBox(width: AppDimensions.spaceM),
+
+                  // الكمية والصنف والوحدة
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$sign ${AppFormatters.formatQuantity(tx.enteredQuantity)}',
+                        style: TextStyle(
+                          fontSize: AppTypography.sizeBody + 1,
+                          fontWeight: AppTypography.weightBold,
+                          color: badgeColor,
+                        ),
+                      ),
+                      const SizedBox(height: AppDimensions.spaceXXS - 1),
+                      Text(
+                        '${tx.unitName ?? AppStrings.unitLiter} ${tx.fuelTypeName ?? ''}'
+                            .trim(),
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeCaption - 0.5,
+                          fontWeight: AppTypography.weightMedium,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              // 2. نص البيان / الملاحظة (إن وجد)
+              if (tx.notes != null && tx.notes!.trim().isNotEmpty) ...[
+                const SizedBox(height: AppDimensions.spaceXS + 1),
+                Text(
+                  tx.notes!.trim(),
+                  style: const TextStyle(
+                    fontSize: AppTypography.sizeCaption,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTransactionOptions(TransactionModel tx) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: AppColors.overlay,
+      builder: (ctx) => Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.spaceXL,
+            vertical: AppDimensions.space2XL,
+          ),
+          constraints: const BoxConstraints(
+            maxWidth: AppDimensions.modalMaxWidth,
+          ),
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppDimensions.borderRadius3XL,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.overlayLight,
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: AppDimensions.borderRadius3XL,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(AppDimensions.spaceL),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(
-                              AppIcons.statement,
-                              size: AppDimensions.iconMini,
-                              color: AppColors.textMuted,
+                            Text(
+                              tx.typeName ?? AppStrings.operation,
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeH2,
+                                fontWeight: AppTypography.weightBold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                            const SizedBox(width: AppDimensions.spaceXS),
-                            Expanded(
-                              child: Text(
-                                tx.notes!,
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                            const SizedBox(height: AppDimensions.spaceXXS),
+                            Text(
+                              '${AppFormatters.formatDate(tx.transactionDate)} • ${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? AppStrings.unitLiter} ${tx.fuelTypeName ?? ''}'
+                                  .trim(),
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeCaption,
+                                color: AppColors.textMuted,
                               ),
                             ),
                           ],
                         ),
-                      ],
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          AppIcons.closeRounded,
+                          color: AppColors.textTertiary,
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
                     ],
                   ),
                 ),
-              ),
-              PopupMenuButton<String>(
-                icon: const Icon(
-                  AppIcons.moreVert,
-                  color: AppColors.textSecondary,
-                  size: AppDimensions.iconRegular,
+                const Divider(
+                  height: AppDimensions.dividerHeight,
+                  thickness: AppDimensions.borderWidthHairline,
+                  color: AppColors.borderSubtle,
                 ),
-                color: AppColors.surface,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: AppDimensions.borderRadiusM,
-                  side: BorderSide(
-                    color: AppColors.border,
-                    width: AppDimensions.borderWidthThin,
+                ListTile(
+                  leading: const Icon(
+                    AppIcons.info,
+                    color: AppColors.textSecondary,
                   ),
-                ),
-                onSelected: (action) {
-                  if (action == 'details') {
+                  title: const Text(
+                    AppStrings.details,
+                    style: TextStyle(
+                      fontSize: AppTypography.sizeBody,
+                      fontWeight: AppTypography.weightMedium,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
                     _showTransactionDetails(tx);
-                  } else if (action == 'edit') {
+                  },
+                ),
+                const Divider(
+                  height: AppDimensions.dividerHeight,
+                  thickness: AppDimensions.borderWidthHairline,
+                  color: AppColors.borderSubtle,
+                ),
+                ListTile(
+                  leading: const Icon(
+                    AppIcons.edit,
+                    color: AppColors.textSecondary,
+                  ),
+                  title: const Text(
+                    AppStrings.edit,
+                    style: TextStyle(
+                      fontSize: AppTypography.sizeBody,
+                      fontWeight: AppTypography.weightMedium,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
                     OperationEntrySheet.show(
                       context: context,
                       editTransaction: tx,
@@ -546,62 +646,34 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                             .fetchStationTransactions(widget.station.id!);
                       }
                     });
-                  } else if (action == 'delete') {
+                  },
+                ),
+                const Divider(
+                  height: AppDimensions.dividerHeight,
+                  thickness: AppDimensions.borderWidthHairline,
+                  color: AppColors.borderSubtle,
+                ),
+                ListTile(
+                  leading: const Icon(
+                    AppIcons.delete,
+                    color: AppColors.dispenseRed,
+                  ),
+                  title: const Text(
+                    AppStrings.delete,
+                    style: TextStyle(
+                      fontSize: AppTypography.sizeBody,
+                      fontWeight: AppTypography.weightMedium,
+                      color: AppColors.dispenseRed,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(ctx).pop();
                     _deleteTransaction(tx);
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'details',
-                    child: Row(
-                      children: [
-                        Icon(
-                          AppIcons.info,
-                          size: AppDimensions.iconRegular,
-                          color: AppColors.textSecondary,
-                        ),
-                        SizedBox(width: AppDimensions.spaceM),
-                        Text(AppStrings.details, style: AppTypography.body),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(
-                          AppIcons.edit,
-                          size: AppDimensions.iconRegular,
-                          color: AppColors.textSecondary,
-                        ),
-                        SizedBox(width: AppDimensions.spaceM),
-                        Text(AppStrings.edit, style: AppTypography.body),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(
-                          AppIcons.delete,
-                          size: AppDimensions.iconRegular,
-                          color: AppColors.dispenseRed,
-                        ),
-                        SizedBox(width: AppDimensions.spaceM),
-                        Text(
-                          AppStrings.delete,
-                          style: TextStyle(
-                            color: AppColors.dispenseRed,
-                            fontSize: AppTypography.sizeBody,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  },
+                ),
+                const SizedBox(height: AppDimensions.spaceS),
+              ],
+            ),
           ),
         ),
       ),
