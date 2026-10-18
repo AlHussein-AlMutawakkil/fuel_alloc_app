@@ -123,7 +123,7 @@ class FuelSummaryCard extends StatelessWidget {
                 ),
               ),
 
-              // 2. الجزء الأوسط: الرقم مع أيقونة ✦ + شارة إضافية اختيارية
+              // 2. الجزء الأوسط: الرقم مع أيقونة ✦ والوحدة والصنف + شارة إضافية اختيارية
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -143,6 +143,15 @@ class FuelSummaryCard extends StatelessWidget {
                           fontSize: AppTypography.sizeH2 + 1,
                           fontWeight: AppTypography.weightBold,
                           color: AppColors.textDarkSlate,
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.spaceS),
+                      Text(
+                        '${AppStrings.unitLiter} ${data.fuelName}',
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeBody,
+                          fontWeight: AppTypography.weightSemiBold,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                     ],

@@ -95,6 +95,7 @@ class AppStrings {
   static const String dispense = 'صرف';
   static const String accountOperations = 'عمليات الحساب';
   static const String accountStatement = 'كشف حساب';
+  static const String operationsHistory = 'سجل العمليات';
   static const String stationStatementTitle = 'كشف حساب المحطة';
   static const String stationStatementPrefix = 'كشف حساب محطة: ';
   static const String newOperation = 'تسجيل عملية جديدة';
@@ -114,7 +115,7 @@ class AppStrings {
   static const String station = 'المحطة';
   static const String executingStation = 'المحطة المنفذة';
   static const String referenceStation = 'مرجع الخصم (محطة أخرى)';
-  static const String referenceStationShort = 'مرجع المحطة';
+  static const String referenceStationShort = 'م/ المحطة';
   static const String selectStation = 'اختر المحطة';
   static const String selectExecutingStation = 'اختر المحطة المنفذة';
   static const String selectReferenceStation = 'اختر المحطة المرجعية';

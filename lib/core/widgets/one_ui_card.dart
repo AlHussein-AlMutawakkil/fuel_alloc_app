@@ -278,13 +278,15 @@ class OneUiSelectionTile extends StatelessWidget {
 /// شريط علوي بنمط One UI مطابق للقطات الشاشة
 class OneUiAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
+  final Widget? titleWidget;
   final List<Widget>? actions;
   final bool showBackButton;
   final VoidCallback? onBackPressed;
 
   const OneUiAppBar({
     super.key,
-    required this.title,
+    this.title = '',
+    this.titleWidget,
     this.actions,
     this.showBackButton = true,
     this.onBackPressed,
@@ -318,10 +320,11 @@ class OneUiAppBar extends StatelessWidget implements PreferredSizeWidget {
                   onBackPressed ?? () => Navigator.of(context).maybePop(),
             )
           : null,
-      title: Text(
-        title,
-        style: AppTypography.oneUiAppBarTitle,
-      ),
+      title: titleWidget ??
+          Text(
+            title,
+            style: AppTypography.oneUiAppBarTitle,
+          ),
       actions: actions,
     );
   }
