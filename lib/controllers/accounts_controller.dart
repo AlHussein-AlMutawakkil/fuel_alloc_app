@@ -86,7 +86,7 @@ class AccountsController extends ChangeNotifier {
     }
   }
 
-  // حذف حساب
+  // حذف حساب (نقل لسلة المحذوفات)
   Future<bool> deleteAccount(int id) async {
     try {
       await _repository.deleteAccount(id);
@@ -94,6 +94,91 @@ class AccountsController extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error deleting account: $e');
+      return false;
+    }
+  }
+
+  List<AccountModel> _archivedAccounts = [];
+  List<AccountModel> get archivedAccounts => _archivedAccounts;
+
+  List<AccountModel> _deletedAccounts = [];
+  List<AccountModel> get deletedAccounts => _deletedAccounts;
+
+  /// جلب الحسابات المؤرشفة
+  Future<void> fetchArchivedAccounts() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _archivedAccounts = await _repository.getArchivedAccounts();
+    } catch (e) {
+      debugPrint('Error fetching archived accounts: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// جلب الحسابات المحذوفة
+  Future<void> fetchDeletedAccounts() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _deletedAccounts = await _repository.getDeletedAccounts();
+    } catch (e) {
+      debugPrint('Error fetching deleted accounts: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// أرشفة حساب
+  Future<bool> archiveAccount(int id) async {
+    try {
+      await _repository.archiveAccount(id);
+      await fetchAccounts();
+      await fetchArchivedAccounts();
+      return true;
+    } catch (e) {
+      debugPrint('Error archiving account: $e');
+      return false;
+    }
+  }
+
+  /// إلغاء أرشفة حساب
+  Future<bool> unarchiveAccount(int id) async {
+    try {
+      await _repository.unarchiveAccount(id);
+      await fetchAccounts();
+      await fetchArchivedAccounts();
+      return true;
+    } catch (e) {
+      debugPrint('Error unarchiving account: $e');
+      return false;
+    }
+  }
+
+  /// استعادة حساب من سلة المحذوفات
+  Future<bool> restoreAccount(int id) async {
+    try {
+      await _repository.restoreAccount(id);
+      await fetchAccounts();
+      await fetchDeletedAccounts();
+      return true;
+    } catch (e) {
+      debugPrint('Error restoring account: $e');
+      return false;
+    }
+  }
+
+  /// حذف حساب نهائياً من قاعدة البيانات
+  Future<bool> permanentlyDeleteAccount(int id) async {
+    try {
+      await _repository.permanentlyDeleteAccount(id);
+      await fetchDeletedAccounts();
+      return true;
+    } catch (e) {
+      debugPrint('Error permanently deleting account: $e');
       return false;
     }
   }

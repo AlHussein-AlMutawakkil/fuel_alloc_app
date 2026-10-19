@@ -389,7 +389,6 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                           color: AppColors.textTertiary,
                           size: AppDimensions.iconMedium,
                         ),
-                        padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(
                           minWidth: AppDimensions.space4XL,
                           minHeight: AppDimensions.space4XL,
@@ -400,15 +399,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   ),
                   const SizedBox(height: AppDimensions.spaceL + 6),
 
-                  // 2. التبويبات الثلاثة العلوية (اعتماد / فعلي / نسبة)
+                  // 2. التبويبات الثلاثة العلوية (اعتماد / فعلي / نسبة) بنمط One UI SegmentControl بارتفاع مخفض
                   Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: AppDimensions.borderRadius2XL,
-                      border: Border.all(
-                        color: _fieldBorderColor,
-                        width: AppDimensions.borderWidthThin,
-                      ),
+                    padding: AppDimensions.paddingAllXS,
+                    decoration: const BoxDecoration(
+                      color: AppColors.segmentBackground,
+                      borderRadius: AppDimensions.borderRadiusXL,
                     ),
                     child: Row(
                       children: [
@@ -438,131 +434,40 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   ),
                   const SizedBox(height: AppDimensions.spaceL),
 
-                  // 3. زرا الاتجاه (↓ توريد / ↑ صرف)
+                  // 3. زرا الاتجاه (↓ توريد / ↑ صرف) بنمط SegmentControl بأبعاد متناسقة ومصغرة
                   if (_selectedTab != 2) ...[
-                    Container(
-                      height: AppDimensions.segmentHeight,
-                      padding: AppDimensions.paddingAllXS,
-                      decoration: BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: AppDimensions.borderRadius2XL,
-                        border: Border.all(
-                          color: _fieldBorderColor,
-                          width: AppDimensions.borderWidthThin,
+                    Center(
+                      child: Container(
+                        width: 250,
+                        padding: AppDimensions.paddingAllXS,
+                        decoration: const BoxDecoration(
+                          color: AppColors.segmentBackground,
+                          borderRadius: AppDimensions.borderRadiusXL,
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _selectedDirection = 0;
-                                  final validAccounts = _getFilteredAccounts(
-                                      accController.accounts);
-                                  if (_selectedAccount == null ||
-                                      !validAccounts
-                                          .contains(_selectedAccount)) {
-                                    _selectedAccount = validAccounts.isNotEmpty
-                                        ? validAccounts.first
-                                        : null;
-                                  }
-                                });
-                                _updateLiveBalances();
-                              },
-                              borderRadius: AppDimensions.borderRadiusL,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: _selectedDirection == 0
-                                      ? AppColors.supplyGreen
-                                      : Colors.transparent,
-                                  borderRadius: AppDimensions.borderRadiusL,
-                                ),
-                                alignment: Alignment.center,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      AppIcons.supply,
-                                      size: AppDimensions.iconSmall,
-                                      color: _selectedDirection == 0
-                                          ? AppColors.textWhite
-                                          : AppColors.textTertiary,
-                                    ),
-                                    const SizedBox(
-                                        width: AppDimensions.spaceXS),
-                                    Text(
-                                      AppStrings.supply,
-                                      style: TextStyle(
-                                        fontSize: AppTypography.sizeBody,
-                                        fontWeight: AppTypography.weightBold,
-                                        color: _selectedDirection == 0
-                                            ? AppColors.textWhite
-                                            : AppColors.textTertiary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _buildDirectionItem(
+                                direction: 0,
+                                label: AppStrings.supply,
+                                icon: AppIcons.supply,
+                                activeColor: AppColors.supplyGreen,
+                                accController: accController,
                               ),
                             ),
-                          ),
-                          const SizedBox(width: AppDimensions.spaceXS),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  _selectedDirection = 1;
-                                  final validAccounts = _getFilteredAccounts(
-                                      accController.accounts);
-                                  if (_selectedAccount == null ||
-                                      !validAccounts
-                                          .contains(_selectedAccount)) {
-                                    _selectedAccount = validAccounts.isNotEmpty
-                                        ? validAccounts.first
-                                        : null;
-                                  }
-                                });
-                                _updateLiveBalances();
-                              },
-                              borderRadius: AppDimensions.borderRadiusL,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: _selectedDirection == 1
-                                      ? (_selectedTab == 0
-                                          ? AppColors.supplyGreen
-                                          : AppColors.dispenseRed)
-                                      : Colors.transparent,
-                                  borderRadius: AppDimensions.borderRadiusL,
-                                ),
-                                alignment: Alignment.center,
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      AppIcons.dispense,
-                                      size: AppDimensions.iconSmall,
-                                      color: _selectedDirection == 1
-                                          ? AppColors.textWhite
-                                          : AppColors.textTertiary,
-                                    ),
-                                    const SizedBox(
-                                        width: AppDimensions.spaceXS),
-                                    Text(
-                                      AppStrings.dispense,
-                                      style: TextStyle(
-                                        fontSize: AppTypography.sizeBody,
-                                        fontWeight: AppTypography.weightBold,
-                                        color: _selectedDirection == 1
-                                            ? AppColors.textWhite
-                                            : AppColors.textTertiary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                            Expanded(
+                              child: _buildDirectionItem(
+                                direction: 1,
+                                label: AppStrings.dispense,
+                                icon: AppIcons.dispense,
+                                activeColor: _selectedTab == 0
+                                    ? AppColors.supplyGreen
+                                    : AppColors.dispenseRed,
+                                accController: accController,
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: AppDimensions.spaceL),
@@ -573,13 +478,13 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   InkWell(
                     onTap: () => _openAccountPicker(
                         _getFilteredAccounts(accController.accounts)),
-                    borderRadius: AppDimensions.borderRadius2XL,
+                    borderRadius: AppDimensions.borderRadiusL,
                     child: Container(
                       height: AppDimensions.inputHeight,
                       padding: AppDimensions.paddingInputDense,
                       decoration: BoxDecoration(
                         color: AppColors.background,
-                        borderRadius: AppDimensions.borderRadius2XL,
+                        borderRadius: AppDimensions.borderRadiusL,
                         border: Border.all(
                           color: _fieldBorderColor,
                           width: AppDimensions.borderWidthThin,
@@ -881,7 +786,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               }
                             });
                           },
-                          borderRadius: AppDimensions.borderRadius2XL,
+                          borderRadius: AppDimensions.borderRadiusL,
                           child: Container(
                             width: AppDimensions.inputHeight,
                             height: AppDimensions.inputHeight,
@@ -889,7 +794,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               color: _showReferenceStation
                                   ? AppColors.charcoal
                                   : AppColors.background,
-                              borderRadius: AppDimensions.borderRadius2XL,
+                              borderRadius: AppDimensions.borderRadiusL,
                               border: Border.all(
                                 color: _showReferenceStation
                                     ? AppColors.charcoal
@@ -911,7 +816,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                         ),
                       ],
                     ),
-                    if (!_showReferenceStation && _stationBalanceLiters != null) ...[
+                    if (!_showReferenceStation &&
+                        _stationBalanceLiters != null) ...[
                       const SizedBox(height: AppDimensions.spaceS),
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -956,7 +862,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                   });
                                 }
                               },
-                              borderRadius: AppDimensions.borderRadius2XL,
+                              borderRadius: AppDimensions.borderRadiusL,
                               child: Container(
                                 height: AppDimensions.inputHeight,
                                 padding: const EdgeInsets.symmetric(
@@ -964,7 +870,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: AppColors.background,
-                                  borderRadius: AppDimensions.borderRadius2XL,
+                                  borderRadius: AppDimensions.borderRadiusL,
                                   border: Border.all(
                                     color: _fieldBorderColor,
                                     width: AppDimensions.borderWidthThin,
@@ -1016,7 +922,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               height: AppDimensions.inputHeight,
                               decoration: BoxDecoration(
                                 color: AppColors.background,
-                                borderRadius: AppDimensions.borderRadius2XL,
+                                borderRadius: AppDimensions.borderRadiusL,
                                 border: Border.all(
                                   color: _fieldBorderColor,
                                   width: AppDimensions.borderWidthThin,
@@ -1092,12 +998,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       Expanded(
                         child: InkWell(
                           onTap: () => Navigator.of(context).pop(),
-                          borderRadius: AppDimensions.borderRadius2XL,
+                          borderRadius: AppDimensions.borderRadiusL,
                           child: Container(
                             height: AppDimensions.inputHeight,
                             decoration: const BoxDecoration(
                               color: AppColors.background,
-                              borderRadius: AppDimensions.borderRadius2XL,
+                              borderRadius: AppDimensions.borderRadiusL,
                             ),
                             alignment: Alignment.center,
                             child: const Text(
@@ -1115,12 +1021,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                       Expanded(
                         child: InkWell(
                           onTap: _saveOperation,
-                          borderRadius: AppDimensions.borderRadius2XL,
+                          borderRadius: AppDimensions.borderRadiusL,
                           child: Container(
                             height: AppDimensions.inputHeight,
                             decoration: const BoxDecoration(
                               color: AppColors.charcoal,
-                              borderRadius: AppDimensions.borderRadius2XL,
+                              borderRadius: AppDimensions.borderRadiusL,
                             ),
                             alignment: Alignment.center,
                             child: const Text(
@@ -1217,7 +1123,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   ? const BorderRadius.vertical(
                       top: Radius.circular(AppDimensions.radius2XL),
                     )
-                  : AppDimensions.borderRadius2XL,
+                  : AppDimensions.borderRadiusL,
               border: Border.all(
                 color: _fieldBorderColor,
                 width: AppDimensions.borderWidthThin,
@@ -1476,7 +1382,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
   }) {
     final isSelected = _selectedTab == index;
 
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         setState(() {
           _selectedTab = index;
@@ -1490,34 +1396,108 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         });
         _updateLiveBalances();
       },
-      borderRadius: AppDimensions.borderRadiusXL,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: AppDimensions.spaceM,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.charcoal : Colors.transparent,
-          borderRadius: AppDimensions.borderRadiusXL,
-        ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 7),
         alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+          boxShadow: isSelected
+              ? const [
+                  BoxShadow(
+                    color: AppColors.shadowSubtle,
+                    blurRadius: 4,
+                    offset: Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               size: 15,
-              color: isSelected ? AppColors.textWhite : AppColors.textTertiary,
+              color:
+                  isSelected ? AppColors.textPrimary : AppColors.textTertiary,
             ),
-            const SizedBox(width: AppDimensions.spaceS),
+            const SizedBox(width: AppDimensions.spaceXS + 2),
             Text(
               label,
               style: TextStyle(
                 fontSize: AppTypography.sizeBodySecondary,
                 fontWeight: isSelected
-                    ? AppTypography.weightSemiBold
+                    ? AppTypography.weightBold
                     : AppTypography.weightMedium,
                 color:
-                    isSelected ? AppColors.textWhite : AppColors.textTertiary,
+                    isSelected ? AppColors.textPrimary : AppColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDirectionItem({
+    required int direction,
+    required String label,
+    required IconData icon,
+    required Color activeColor,
+    required AccountsController accController,
+  }) {
+    final isSelected = _selectedDirection == direction;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedDirection = direction;
+          final validAccounts = _getFilteredAccounts(accController.accounts);
+          if (_selectedAccount == null ||
+              !validAccounts.contains(_selectedAccount)) {
+            _selectedAccount =
+                validAccounts.isNotEmpty ? validAccounts.first : null;
+          }
+        });
+        _updateLiveBalances();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+          boxShadow: isSelected
+              ? const [
+                  BoxShadow(
+                    color: AppColors.shadowSubtle,
+                    blurRadius: 4,
+                    offset: Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: isSelected ? activeColor : AppColors.textTertiary,
+            ),
+            const SizedBox(width: AppDimensions.spaceXS),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: AppTypography.sizeBodySecondary,
+                fontWeight: isSelected
+                    ? AppTypography.weightBold
+                    : AppTypography.weightMedium,
+                color: isSelected ? activeColor : AppColors.textTertiary,
               ),
             ),
           ],

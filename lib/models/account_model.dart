@@ -10,6 +10,7 @@ class AccountModel {
   final AccountType accountType;
   final String? phoneNumber;
   final bool isActive;
+  final bool isArchived;
   final String? createdAt;
 
   AccountModel({
@@ -18,6 +19,7 @@ class AccountModel {
     required this.accountType,
     this.phoneNumber,
     this.isActive = true,
+    this.isArchived = false,
     this.createdAt,
   });
 
@@ -29,6 +31,7 @@ class AccountModel {
           accountType == AccountType.supplier ? 'SUPPLIER' : 'BENEFICIARY',
       'phone_number': phoneNumber,
       'is_active': isActive ? 1 : 0,
+      'is_archived': isArchived ? 1 : 0,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),
     };
   }
@@ -42,6 +45,7 @@ class AccountModel {
           : AccountType.beneficiary,
       phoneNumber: map['phone_number'] as String?,
       isActive: (map['is_active'] as int? ?? 1) == 1,
+      isArchived: (map['is_archived'] as int? ?? 0) == 1,
       createdAt: map['created_at'] as String?,
     );
   }
@@ -52,6 +56,7 @@ class AccountModel {
     AccountType? accountType,
     String? phoneNumber,
     bool? isActive,
+    bool? isArchived,
     String? createdAt,
   }) {
     return AccountModel(
@@ -60,6 +65,7 @@ class AccountModel {
       accountType: accountType ?? this.accountType,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       isActive: isActive ?? this.isActive,
+      isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
     );
   }

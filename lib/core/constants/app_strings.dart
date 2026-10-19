@@ -247,12 +247,48 @@ class AppStrings {
   static const String languageArabic = 'العربية (Arabic)';
   static const String languageEnglish = 'الإنجليزية (English)';
   static const String hapticFeedback = 'ردود فعل لمسية';
+  // سلة المحذوفات والأرشيف
+  static const String recycleBinTitle = 'سلة المحذوفات';
+  static const String recycleBinSubtitle = 'استعادة أو حذف العمليات والحسابات نهائياً';
+  static const String archiveTitle = 'الأرشيف';
+  static const String archiveSubtitle = 'عرض الحسابات المؤرشفة واستعادتها';
+  static const String tabOperations = 'العمليات';
+  static const String tabAccounts = 'الحسابات';
+  static const String restore = 'استعادة';
+  static const String unarchive = 'إلغاء الأرشفة';
+  static const String permanentDelete = 'حذف نهائي';
+  static const String emptyRecycleBin = 'سلة المحذوفات فارغة';
+  static const String noDeletedOperations = 'لا توجد عمليات محذوفة';
+  static const String noDeletedAccounts = 'لا توجد حسابات محذوفة';
+  static const String noArchivedAccounts = 'لا توجد حسابات مؤرشفة';
+  static const String confirmPermanentDeleteTitle = 'تأكيد الحذف النهائي';
+  static const String confirmPermanentDeleteMsg =
+      'هل أنت متأكد من الحذف النهائي؟ لا يمكن التراجع عن هذا الإجراء أبداً.';
+  static const String confirmRestoreTitle = 'تأكيد الاستعادة';
+  static const String confirmRestoreMsg = 'هل تريد استعادة هذا العنصر من سلة المحذوفات؟';
+  static const String confirmUnarchiveTitle = 'تأكيد إلغاء الأرشفة';
+  static const String confirmUnarchiveMsg = 'هل تريد إعادة تنشيط هذا الحساب وإخراجه من الأرشيف؟';
+  static const String confirmArchiveAccountMsg = 'هل تريد نقل هذا الحساب إلى الأرشيف؟';
+  static const String itemRestoredSuccess = 'تمت استعادة العنصر بنجاح';
+  static const String itemDeletedPermanentSuccess = 'تم الحذف النهائي بنجاح';
+  static const String accountArchivedSuccess = 'تمت أرشفة الحساب بنجاح';
+  static const String accountUnarchivedSuccess = 'تمت استعادة الحساب من الأرشيف بنجاح';
+
+  // جهات الاتصال والأذونات
   static const String permissionsManagement = 'إدارة الأذونات';
   static const String micPermission = 'ميكروفون';
   static const String cameraPermission = 'كاميرا';
   static const String photosPermission = 'صور';
-  static const String permissionOn = 'تشغيل';
-  static const String permissionOff = 'إغلاق';
+  static const String contactsPermission = 'جهات الاتصال';
+  static const String contactsPermissionDesc =
+      'الوصول لجهات الاتصال لاختيار وتعبئة أرقام الهواتف والأسماء تلقائياً';
+  static const String pickFromContacts = 'اختيار من جهات الاتصال';
+  static const String contactsPermissionDenied = 'تم رفض الإذن بالوصول لجهات الاتصال';
+  static const String contactsEmpty = 'لم يتم العثور على جهات اتصال في الهاتف';
+  static const String searchContactsHint = 'بحث بالاسم أو رقم الهاتف...';
+  static const String selectContact = 'اختر جهة اتصال';
+  static const String contactHasNoPhone = 'جهة الاتصال المحددة لا تحتوي على رقم هاتف';
+
   static const String aboutApp = 'حول التطبيق';
   static const String logout = 'تسجيل الخروج';
   static const String underDevelopment = 'تحت التطوير';

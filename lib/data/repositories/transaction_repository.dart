@@ -27,7 +27,7 @@ class TransactionRepository {
       LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
       LEFT JOIN units u ON t.unit_id = u.id
       LEFT JOIN accounts a ON t.account_id = a.id
-      WHERE t.account_id = ?
+      WHERE t.account_id = ? AND t.is_deleted = 0
       ORDER BY t.transaction_date DESC, t.id DESC
     ''', [accountId]);
 
@@ -56,7 +56,7 @@ class TransactionRepository {
       LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
       LEFT JOIN units u ON t.unit_id = u.id
       LEFT JOIN accounts a ON t.account_id = a.id
-      WHERE t.station_id = ? OR t.reference_station_id = ?
+      WHERE (t.station_id = ? OR t.reference_station_id = ?) AND t.is_deleted = 0
       ORDER BY t.transaction_date DESC, t.id DESC
     ''', [stationId, stationId]);
 
@@ -81,8 +81,10 @@ class TransactionRepository {
           ELSE 0 
         END), 0.0) AS balance
       FROM transactions
-      WHERE (type_id IN (2, 3) AND station_id = ?$fuelFilter)
-         OR (type_id = 5 AND COALESCE(reference_station_id, station_id) = ?$fuelFilter)
+      WHERE is_deleted = 0 AND (
+        (type_id IN (2, 3) AND station_id = ?$fuelFilter)
+        OR (type_id = 5 AND COALESCE(reference_station_id, station_id) = ?$fuelFilter)
+      )
     ''', args);
 
     return (res.first['balance'] as num?)?.toDouble() ?? 0.0;
@@ -106,7 +108,7 @@ class TransactionRepository {
             ELSE 0 
           END), 0.0) AS balance
         FROM transactions
-        WHERE account_id = ?$fuelFilter
+        WHERE is_deleted = 0 AND account_id = ?$fuelFilter
       ''', args);
       return (res.first['balance'] as num?)?.toDouble() ?? 0.0;
     } else {
@@ -119,10 +121,135 @@ class TransactionRepository {
             ELSE 0 
           END), 0.0) AS balance
         FROM transactions
-        WHERE account_id = ?$fuelFilter
+        WHERE is_deleted = 0 AND account_id = ?$fuelFilter
       ''', args);
       return (res.first['balance'] as num?)?.toDouble() ?? 0.0;
     }
+  }
+
+  /// جلب ملخص أرصدة الحسابات لجميع أنواع الوقود النشطة دفعة واحدة
+  /// Return: Map<accountId, Map<fuelTypeId, balance>>
+  Future<Map<int, Map<int, double>>> getAllAccountFuelBalances() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> rows = await db.rawQuery('''
+      SELECT 
+        t.account_id,
+        t.fuel_type_id,
+        a.account_type,
+        SUM(CASE 
+          WHEN a.account_type = 'SUPPLIER' THEN 
+            (CASE WHEN t.type_id = 1 THEN t.base_quantity_liters WHEN t.type_id = 2 THEN -t.base_quantity_liters ELSE 0 END)
+          ELSE 
+            (CASE WHEN t.type_id = 4 THEN t.base_quantity_liters WHEN t.type_id = 5 THEN -t.base_quantity_liters ELSE 0 END)
+        END) AS balance
+      FROM transactions t
+      JOIN accounts a ON t.account_id = a.id
+      WHERE t.is_deleted = 0 AND t.account_id IS NOT NULL AND t.fuel_type_id IS NOT NULL
+      GROUP BY t.account_id, t.fuel_type_id, a.account_type
+    ''');
+
+    final Map<int, Map<int, double>> result = {};
+    for (final r in rows) {
+      final accountId = r['account_id'] as int;
+      final fuelTypeId = r['fuel_type_id'] as int;
+      final balance = (r['balance'] as num?)?.toDouble() ?? 0.0;
+      result.putIfAbsent(accountId, () => {})[fuelTypeId] = balance;
+    }
+    return result;
+  }
+
+  /// جلب ملخص أرصدة المحطات لجميع أنواع الوقود النشطة دفعة واحدة
+  /// Return: Map<stationId, Map<fuelTypeId, balance>>
+  Future<Map<int, Map<int, double>>> getAllStationFuelBalances() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> rows = await db.rawQuery('''
+      SELECT 
+        station_id,
+        fuel_type_id,
+        SUM(delta) AS balance
+      FROM (
+        SELECT 
+          station_id,
+          fuel_type_id,
+          CASE 
+            WHEN type_id = 2 THEN base_quantity_liters
+            WHEN type_id = 3 THEN -base_quantity_liters
+            ELSE 0
+          END AS delta
+        FROM transactions
+        WHERE is_deleted = 0 AND type_id IN (2, 3) AND station_id IS NOT NULL AND fuel_type_id IS NOT NULL
+
+        UNION ALL
+
+        SELECT 
+          COALESCE(reference_station_id, station_id) AS station_id,
+          fuel_type_id,
+          -base_quantity_liters AS delta
+        FROM transactions
+        WHERE is_deleted = 0 AND type_id = 5 AND COALESCE(reference_station_id, station_id) IS NOT NULL AND fuel_type_id IS NOT NULL
+      )
+      GROUP BY station_id, fuel_type_id
+    ''');
+
+    final Map<int, Map<int, double>> result = {};
+    for (final r in rows) {
+      final stationId = r['station_id'] as int;
+      final fuelTypeId = r['fuel_type_id'] as int;
+      final balance = (r['balance'] as num?)?.toDouble() ?? 0.0;
+      result.putIfAbsent(stationId, () => {})[fuelTypeId] = balance;
+    }
+    return result;
+  }
+
+  /// جلب العمليات المحذوفة (سلة المحذوفات)
+  Future<List<TransactionModel>> getDeletedTransactions() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        t.*,
+        tt.name AS type_name,
+        tt.code AS type_code,
+        s.name AS station_name,
+        rs.name AS reference_station_name,
+        ft.name AS fuel_type_name,
+        u.name AS unit_name,
+        u.conversion_factor AS unit_factor,
+        a.name AS account_name
+      FROM transactions t
+      LEFT JOIN transaction_types tt ON t.type_id = tt.id
+      LEFT JOIN stations s ON t.station_id = s.id
+      LEFT JOIN stations rs ON t.reference_station_id = rs.id
+      LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
+      LEFT JOIN units u ON t.unit_id = u.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      WHERE t.is_deleted = 1
+      ORDER BY t.transaction_date DESC, t.id DESC
+    ''');
+
+    return maps.map((m) => TransactionModel.fromMap(m)).toList();
+  }
+
+  /// استعادة عملية من سلة المحذوفات
+  Future<int> restoreTransaction(int id) async {
+    final db = await _dbHelper.database;
+    return await db.update(
+      'transactions',
+      {'is_deleted': 0},
+      where: 'id = ? OR parent_transaction_id = ?',
+      whereArgs: [id, id],
+    );
+  }
+
+  /// حذف نهائي لعملية من قاعدة البيانات
+  Future<int> permanentlyDeleteTransaction(int id) async {
+    final db = await _dbHelper.database;
+    await db.delete('transactions',
+        where: 'parent_transaction_id = ?', whereArgs: [id]);
+    return await db.delete(
+      'transactions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   /// جلب أسماء المستلمين المسجلين سابقاً بدون تكرار
@@ -202,15 +329,14 @@ class TransactionRepository {
     );
   }
 
-  /// حذف عملية مع أي قيود تابعة لها
+  /// حذف عملية مع أي قيود تابعة لها (نقل لسلة المحذوفات)
   Future<int> deleteTransaction(int id) async {
     final db = await _dbHelper.database;
-    await db.delete('transactions',
-        where: 'parent_transaction_id = ?', whereArgs: [id]);
-    return await db.delete(
+    return await db.update(
       'transactions',
-      where: 'id = ?',
-      whereArgs: [id],
+      {'is_deleted': 1},
+      where: 'id = ? OR parent_transaction_id = ?',
+      whereArgs: [id, id],
     );
   }
 

@@ -29,6 +29,20 @@ class TransactionsController extends ChangeNotifier {
   List<Map<String, dynamic>> get units => _units;
   List<Map<String, dynamic>> get transactionTypes => _transactionTypes;
 
+  /// الأصناف التي توجد لها عمليات مسجلة فعلياً للحساب/المحطة الحالي
+  List<Map<String, dynamic>> get activeFuelTypes {
+    final activeIds = _allTransactions
+        .map((tx) => tx.fuelTypeId)
+        .whereType<int>()
+        .toSet();
+    if (activeIds.isEmpty) return [];
+    return _fuelTypes.where((ft) => activeIds.contains(ft['id'])).toList();
+  }
+
+  /// جميع العمليات الحالية للحساب/المحطة دون فلترة بصنف الوقود
+  List<TransactionModel> get allTransactions =>
+      List.unmodifiable(_allTransactions);
+
   void setSelectedFuelTypeId(int? fuelTypeId) {
     if (_selectedFuelTypeId != fuelTypeId) {
       _selectedFuelTypeId = fuelTypeId;
@@ -238,8 +252,18 @@ class TransactionsController extends ChangeNotifier {
       _allTransactions =
           await _repository.getTransactionsByAccountId(accountId);
       await loadFormData();
-      if (defaultFuelTypeId != null) {
+      final activeIds = _allTransactions
+          .map((tx) => tx.fuelTypeId)
+          .whereType<int>()
+          .toSet();
+
+      if (defaultFuelTypeId != null && activeIds.contains(defaultFuelTypeId)) {
         _selectedFuelTypeId = defaultFuelTypeId;
+      } else if (activeIds.isNotEmpty) {
+        if (_selectedFuelTypeId == null ||
+            !activeIds.contains(_selectedFuelTypeId)) {
+          _selectedFuelTypeId = activeIds.first;
+        }
       } else if (_fuelTypes.isNotEmpty) {
         final exists = _fuelTypes.any((ft) => ft['id'] == _selectedFuelTypeId);
         if (!exists) {
@@ -266,8 +290,18 @@ class TransactionsController extends ChangeNotifier {
       _allTransactions =
           await _repository.getTransactionsByStationId(stationId);
       await loadFormData();
-      if (defaultFuelTypeId != null) {
+      final activeIds = _allTransactions
+          .map((tx) => tx.fuelTypeId)
+          .whereType<int>()
+          .toSet();
+
+      if (defaultFuelTypeId != null && activeIds.contains(defaultFuelTypeId)) {
         _selectedFuelTypeId = defaultFuelTypeId;
+      } else if (activeIds.isNotEmpty) {
+        if (_selectedFuelTypeId == null ||
+            !activeIds.contains(_selectedFuelTypeId)) {
+          _selectedFuelTypeId = activeIds.first;
+        }
       } else if (_fuelTypes.isNotEmpty) {
         final exists = _fuelTypes.any((ft) => ft['id'] == _selectedFuelTypeId);
         if (!exists) {
@@ -343,12 +377,72 @@ class TransactionsController extends ChangeNotifier {
     }
   }
 
+  List<TransactionModel> _deletedTransactions = [];
+  List<TransactionModel> get deletedTransactions => _deletedTransactions;
+
+  Map<int, Map<int, double>> _allAccountBalances = {};
+  Map<int, Map<int, double>> _allStationBalances = {};
+  Map<int, Map<int, double>> get allAccountBalances => _allAccountBalances;
+  Map<int, Map<int, double>> get allStationBalances => _allStationBalances;
+
+  /// جلب ملخص أرصدة كافة الحسابات والمحطات لكافة الأصناف
+  Future<void> fetchAllBalancesSummary() async {
+    try {
+      _allAccountBalances = await _repository.getAllAccountFuelBalances();
+      _allStationBalances = await _repository.getAllStationFuelBalances();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching all balances summary: $e');
+    }
+  }
+
+  /// جلب العمليات المحذوفة
+  Future<void> fetchDeletedTransactions() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _deletedTransactions = await _repository.getDeletedTransactions();
+    } catch (e) {
+      debugPrint('Error fetching deleted transactions: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// استعادة عملية من سلة المحذوفات
+  Future<bool> restoreTransaction(int id) async {
+    try {
+      await _repository.restoreTransaction(id);
+      await fetchDeletedTransactions();
+      await fetchAllBalancesSummary();
+      await reloadCurrentView();
+      return true;
+    } catch (e) {
+      debugPrint('Error restoring transaction: $e');
+      return false;
+    }
+  }
+
+  /// حذف نهائي لعملية من قاعدة البيانات
+  Future<bool> permanentlyDeleteTransaction(int id) async {
+    try {
+      await _repository.permanentlyDeleteTransaction(id);
+      await fetchDeletedTransactions();
+      return true;
+    } catch (e) {
+      debugPrint('Error permanently deleting transaction: $e');
+      return false;
+    }
+  }
+
   /// حذف عملية لحساب
   Future<bool> deleteTransaction(int id, int accountId) async {
     try {
       await _repository.deleteTransaction(id);
       _allTransactions =
           await _repository.getTransactionsByAccountId(accountId);
+      await fetchAllBalancesSummary();
       notifyListeners();
       return true;
     } catch (e) {
@@ -363,6 +457,7 @@ class TransactionsController extends ChangeNotifier {
       await _repository.deleteTransaction(id);
       _allTransactions =
           await _repository.getTransactionsByStationId(stationId);
+      await fetchAllBalancesSummary();
       notifyListeners();
       return true;
     } catch (e) {

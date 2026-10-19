@@ -24,6 +24,7 @@ class TransactionModel {
   final int? parentTransactionId;
   final String? notes;
   final String? createdAt;
+  final bool isDeleted;
 
   TransactionModel({
     this.id,
@@ -50,6 +51,7 @@ class TransactionModel {
     this.parentTransactionId,
     this.notes,
     this.createdAt,
+    this.isDeleted = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -70,6 +72,7 @@ class TransactionModel {
       'parent_transaction_id': parentTransactionId,
       'notes': notes,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),
+      'is_deleted': isDeleted ? 1 : 0,
     };
   }
 
@@ -99,6 +102,7 @@ class TransactionModel {
       parentTransactionId: map['parent_transaction_id'] as int?,
       notes: map['notes'] as String?,
       createdAt: map['created_at'] as String?,
+      isDeleted: (map['is_deleted'] as int? ?? 0) == 1,
     );
   }
 

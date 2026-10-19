@@ -10,8 +10,10 @@ import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../data/fuel_types_view.dart';
 import '../data/units_view.dart';
+import 'archived_accounts_view.dart';
 import 'language_settings_view.dart';
 import 'permissions_settings_view.dart';
+import 'recycle_bin_view.dart';
 import 'theme_settings_view.dart';
 
 /// واجهة الإعدادات بنمط One UI مطابقة للقطات الشاشة
@@ -187,7 +189,42 @@ class _SettingsViewState extends State<SettingsView> {
             ],
           ),
 
-          // 4. كرت المظهر واللغة
+          // 4. كرت سلة المحذوفات والأرشيف (منفصل لحاله)
+          OneUiCard(
+            children: [
+              OneUiTile(
+                leading: const Icon(
+                  AppIcons.recycleBin,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
+                ),
+                title: AppStrings.recycleBinTitle,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const RecycleBinView()),
+                  );
+                },
+              ),
+              OneUiTile(
+                leading: const Icon(
+                  AppIcons.archive,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
+                ),
+                title: AppStrings.archiveTitle,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ArchivedAccountsView()),
+                  );
+                },
+              ),
+            ],
+          ),
+
+          // 5. كرت المظهر واللغة
           OneUiCard(
             children: [
               OneUiTile(

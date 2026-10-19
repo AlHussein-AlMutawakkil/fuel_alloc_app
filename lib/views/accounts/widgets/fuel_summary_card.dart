@@ -276,6 +276,29 @@ class _FuelSummarySliderState extends State<FuelSummarySlider> {
   }
 
   @override
+  void didUpdateWidget(covariant FuelSummarySlider oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final fuels = _effectiveFuelTypes;
+    if (fuels.isEmpty) return;
+    int targetPage = _currentPage;
+    if (targetPage >= fuels.length) {
+      targetPage = fuels.length - 1;
+    }
+    if (widget.selectedFuelId != null) {
+      final index = fuels.indexWhere((f) => f['id'] == widget.selectedFuelId);
+      if (index != -1) {
+        targetPage = index;
+      }
+    }
+    if (targetPage != _currentPage) {
+      _currentPage = targetPage;
+      if (_pageController.hasClients) {
+        _pageController.jumpToPage(targetPage);
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -302,6 +325,9 @@ class _FuelSummarySliderState extends State<FuelSummarySlider> {
           height: 146,
           child: PageView.builder(
             controller: _pageController,
+            physics: fuels.length <= 1
+                ? const NeverScrollableScrollPhysics()
+                : const PageScrollPhysics(),
             itemCount: fuels.length,
             onPageChanged: (index) {
               setState(() => _currentPage = index);
@@ -319,25 +345,27 @@ class _FuelSummarySliderState extends State<FuelSummarySlider> {
             },
           ),
         ),
-        const SizedBox(height: AppDimensions.spaceS),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(fuels.length, (i) {
-            final isSelected = i == _currentPage;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.spaceXS,
-              ),
-              width: isSelected ? AppDimensions.spaceXL : AppDimensions.spaceS,
-              height: 5,
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primary : AppColors.border,
-                borderRadius: AppDimensions.borderRadiusXS,
-              ),
-            );
-          }),
-        ),
+        if (fuels.length > 1) ...[
+          const SizedBox(height: AppDimensions.spaceS),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(fuels.length, (i) {
+              final isSelected = i == _currentPage;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.spaceXS,
+                ),
+                width: isSelected ? AppDimensions.spaceXL : AppDimensions.spaceS,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColors.primary : AppColors.border,
+                  borderRadius: AppDimensions.borderRadiusXS,
+                ),
+              );
+            }),
+          ),
+        ],
       ],
     );
   }

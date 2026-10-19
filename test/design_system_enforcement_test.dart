@@ -51,6 +51,10 @@ void main() {
       expect(AppIcons.delete, isNotNull);
       expect(AppIcons.archive, isNotNull);
       expect(AppIcons.gasStation, isNotNull);
+      expect(AppIcons.recycleBin, isNotNull);
+      expect(AppIcons.restore, isNotNull);
+      expect(AppIcons.contacts, isNotNull);
+      expect(AppIcons.unarchive, isNotNull);
 
       // AppStrings
       expect(AppStrings.appTitle.isNotEmpty, isTrue);
@@ -62,6 +66,9 @@ void main() {
       expect(AppStrings.delete.isNotEmpty, isTrue);
       expect(AppStrings.edit.isNotEmpty, isTrue);
       expect(AppStrings.searchHere.isNotEmpty, isTrue);
+      expect(AppStrings.recycleBinTitle.isNotEmpty, isTrue);
+      expect(AppStrings.archiveTitle.isNotEmpty, isTrue);
+      expect(AppStrings.contactsPermission.isNotEmpty, isTrue);
 
       // AppTypography
       expect(AppTypography.fontFamily, equals('Cairo'));
@@ -153,6 +160,9 @@ void main() {
         'lib/core/widgets/app_loading_indicator.dart',
         'lib/core/widgets/filter_chip_widget.dart',
         'lib/core/widgets/app_snackbar.dart',
+        'lib/core/widgets/contact_picker_sheet.dart',
+        'lib/views/settings/recycle_bin_view.dart',
+        'lib/views/settings/archived_accounts_view.dart',
         '.agents/rules/design.md',
       ];
 

@@ -229,8 +229,10 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                   child: ListView(
                     padding: AppDimensions.paddingScreen,
                     children: [
-                      _buildStationSummaryCard(controller),
-                      const SizedBox(height: AppDimensions.spaceL),
+                      if (controller.activeFuelTypes.isNotEmpty) ...[
+                        _buildStationSummaryCard(controller),
+                        const SizedBox(height: AppDimensions.spaceL),
+                      ],
                       _buildFilterChips(controller),
                       const SizedBox(height: AppDimensions.spaceL),
                       _buildSectionHeader(controller),
@@ -295,7 +297,7 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
 
   Widget _buildStationSummaryCard(TransactionsController controller) {
     return FuelSummarySlider(
-      fuelTypes: controller.fuelTypes,
+      fuelTypes: controller.activeFuelTypes,
       selectedFuelId: controller.selectedFuelTypeId,
       onFuelChanged: (fuelId) => controller.setSelectedFuelTypeId(fuelId),
       cardBuilder: (fuelId, fuelName) {

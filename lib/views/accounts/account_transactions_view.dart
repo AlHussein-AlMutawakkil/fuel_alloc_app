@@ -223,8 +223,10 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                   child: ListView(
                     padding: AppDimensions.paddingScreen,
                     children: [
-                      _buildSummaryCard(controller, isSupplier),
-                      const SizedBox(height: AppDimensions.spaceL),
+                      if (controller.activeFuelTypes.isNotEmpty) ...[
+                        _buildSummaryCard(controller, isSupplier),
+                        const SizedBox(height: AppDimensions.spaceL),
+                      ],
                       _buildSectionHeader(controller),
                       const SizedBox(height: AppDimensions.spaceS),
                       if (controller.transactions.isEmpty)
@@ -253,7 +255,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
 
   Widget _buildSummaryCard(TransactionsController controller, bool isSupplier) {
     return FuelSummarySlider(
-      fuelTypes: controller.fuelTypes,
+      fuelTypes: controller.activeFuelTypes,
       selectedFuelId: controller.selectedFuelTypeId,
       onFuelChanged: (fuelId) => controller.setSelectedFuelTypeId(fuelId),
       cardBuilder: (fuelId, fuelName) {

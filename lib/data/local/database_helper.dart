@@ -34,6 +34,18 @@ class DatabaseHelper {
           await db.execute(
               'ALTER TABLE transactions ADD COLUMN recipient_name TEXT;');
         }
+        final hasDeleted = columns.any((c) => c['name'] == 'is_deleted');
+        if (!hasDeleted) {
+          await db.execute(
+              'ALTER TABLE transactions ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0;');
+        }
+
+        final accCols = await db.rawQuery('PRAGMA table_info(accounts)');
+        final hasArchived = accCols.any((c) => c['name'] == 'is_archived');
+        if (!hasArchived) {
+          await db.execute(
+              'ALTER TABLE accounts ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0;');
+        }
       },
     );
   }
@@ -47,6 +59,7 @@ class DatabaseHelper {
         account_type TEXT NOT NULL, -- 'SUPPLIER' أو 'BENEFICIARY'
         phone_number TEXT,
         is_active INTEGER NOT NULL DEFAULT 1,
+        is_archived INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL
       )
     ''');
@@ -111,6 +124,7 @@ class DatabaseHelper {
         parent_transaction_id INTEGER,
         notes TEXT,
         created_at TEXT NOT NULL,
+        is_deleted INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (account_id) REFERENCES accounts (id),
         FOREIGN KEY (station_id) REFERENCES stations (id),
         FOREIGN KEY (reference_station_id) REFERENCES stations (id),

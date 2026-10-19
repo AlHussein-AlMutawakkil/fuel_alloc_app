@@ -66,4 +66,10 @@ class AppIcons {
   static const IconData camera = Icons.camera_alt_outlined;
   static const IconData photos = Icons.photo_library_outlined;
   static const IconData dashboard = Icons.dashboard_outlined;
+  static const IconData contacts = Icons.contacts_outlined;
+  static const IconData contactPhone = Icons.contact_phone_outlined;
+  static const IconData restore = Icons.restore;
+  static const IconData recycleBin = Icons.delete_sweep_outlined;
+  static const IconData phone = Icons.phone_outlined;
+  static const IconData unarchive = Icons.unarchive_outlined;
 }

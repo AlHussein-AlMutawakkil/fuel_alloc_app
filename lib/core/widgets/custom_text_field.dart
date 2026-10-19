@@ -75,6 +75,7 @@ class CustomTextField extends StatelessWidget {
           onChanged: onChanged,
           maxLines: maxLines,
           textAlign: textAlign,
+          textAlignVertical: TextAlignVertical.center,
           style: AppTypography.body,
           decoration: InputDecoration(
             hintText: hint,
@@ -163,6 +164,7 @@ class CustomTextField extends StatelessWidget {
             onChanged: onChanged,
             maxLines: maxLines,
             textAlign: textAlign,
+            textAlignVertical: TextAlignVertical.center,
             style: const TextStyle(
               fontSize: AppTypography.sizeBody,
               fontWeight: AppTypography.weightMedium,
@@ -172,7 +174,7 @@ class CustomTextField extends StatelessWidget {
               isDense: true,
               border: InputBorder.none,
               contentPadding: maxLines == 1
-                  ? AppDimensions.paddingNone
+                  ? const EdgeInsets.symmetric(vertical: 11.0)
                   : const EdgeInsets.symmetric(vertical: AppDimensions.spaceM),
               hintText: hint,
               hintStyle: const TextStyle(
@@ -181,7 +183,23 @@ class CustomTextField extends StatelessWidget {
                 color: AppColors.textMuted,
               ),
               prefixIcon: prefixIcon,
+              prefixIconConstraints: prefixIcon != null
+                  ? const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                      maxWidth: 36,
+                      maxHeight: 36,
+                    )
+                  : null,
               suffixIcon: suffixIcon,
+              suffixIconConstraints: suffixIcon != null
+                  ? const BoxConstraints(
+                      minWidth: 36,
+                      minHeight: 36,
+                      maxWidth: 36,
+                      maxHeight: 36,
+                    )
+                  : null,
             ),
           ),
         ),

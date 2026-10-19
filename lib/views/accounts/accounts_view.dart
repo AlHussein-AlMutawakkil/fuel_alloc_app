@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/accounts_controller.dart';
 import '../../controllers/stations_controller.dart';
+import '../../controllers/transactions_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_typography.dart';
+import '../../core/utils/formatters.dart';
 import '../../core/widgets/app_loading_indicator.dart';
 import '../../core/widgets/app_snackbar.dart';
+import '../../core/widgets/contact_picker_sheet.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/custom_dropdown.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
@@ -43,6 +46,7 @@ class _AccountsViewState extends State<AccountsView> {
       accCtrl.fetchAccounts();
       accCtrl.setTypeFilter(AccountType.beneficiary);
       context.read<StationsController>().fetchStations();
+      context.read<TransactionsController>().fetchAllBalancesSummary();
     });
   }
 
@@ -99,6 +103,27 @@ class _AccountsViewState extends State<AccountsView> {
               label: AppStrings.phoneNumber,
               controller: phoneController,
               keyboardType: TextInputType.phone,
+              suffixIcon: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                icon: const Icon(
+                  AppIcons.contacts,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                tooltip: AppStrings.pickFromContacts,
+                onPressed: () async {
+                  final contact = await ContactPickerSheet.show(context);
+                  if (contact != null) {
+                    setModalState(() {
+                      phoneController.text = contact.phone;
+                      if (nameController.text.trim().isEmpty) {
+                        nameController.text = contact.name;
+                      }
+                    });
+                  }
+                },
+              ),
             ),
           ],
         );
@@ -139,6 +164,9 @@ class _AccountsViewState extends State<AccountsView> {
 
     if (confirm && account.id != null && mounted) {
       await context.read<AccountsController>().deleteAccount(account.id!);
+      if (mounted) {
+        context.read<TransactionsController>().fetchAllBalancesSummary();
+      }
     }
   }
 
@@ -146,17 +174,17 @@ class _AccountsViewState extends State<AccountsView> {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
       title: AppStrings.archiveAccountTitle,
-      message:
-          'هل تريد أرشفة "${account.name}"؟ سيتم نقله للأرشيف مع حفظ كافة عملياته وسجلاته.',
+      message: AppStrings.confirmArchiveAccountMsg,
       confirmText: AppStrings.archive,
       cancelText: AppStrings.cancel,
       isDanger: false,
     );
 
     if (confirm && account.id != null && mounted) {
-      await context.read<AccountsController>().deleteAccount(account.id!);
+      await context.read<AccountsController>().archiveAccount(account.id!);
       if (mounted) {
-        AppSnackBar.showWarning(context, 'تمت أرشفة ${account.name} بنجاح');
+        AppSnackBar.showSuccess(context, AppStrings.accountArchivedSuccess);
+        context.read<TransactionsController>().fetchAllBalancesSummary();
       }
     }
   }
@@ -194,6 +222,27 @@ class _AccountsViewState extends State<AccountsView> {
               label: AppStrings.phoneNumber,
               controller: phoneController,
               keyboardType: TextInputType.phone,
+              suffixIcon: IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                icon: const Icon(
+                  AppIcons.contacts,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+                tooltip: AppStrings.pickFromContacts,
+                onPressed: () async {
+                  final contact = await ContactPickerSheet.show(context);
+                  if (contact != null) {
+                    setModalState(() {
+                      phoneController.text = contact.phone;
+                      if (nameController.text.trim().isEmpty) {
+                        nameController.text = contact.name;
+                      }
+                    });
+                  }
+                },
+              ),
             ),
             const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
@@ -252,6 +301,9 @@ class _AccountsViewState extends State<AccountsView> {
 
     if (confirm && station.id != null && mounted) {
       await context.read<StationsController>().deleteStation(station.id!);
+      if (mounted) {
+        context.read<TransactionsController>().fetchAllBalancesSummary();
+      }
     }
   }
 
@@ -270,16 +322,23 @@ class _AccountsViewState extends State<AccountsView> {
       await context.read<StationsController>().deleteStation(station.id!);
       if (mounted) {
         AppSnackBar.showWarning(context, 'تمت أرشفة ${station.name} بنجاح');
+        context.read<TransactionsController>().fetchAllBalancesSummary();
       }
     }
   }
 
   void _navigateToTransactions(AccountModel account) {
-    Navigator.of(context).push(
+    Navigator.of(context)
+        .push(
       MaterialPageRoute(
         builder: (_) => AccountTransactionsView(account: account),
       ),
-    );
+    )
+        .then((_) {
+      if (mounted) {
+        context.read<TransactionsController>().fetchAllBalancesSummary();
+      }
+    });
   }
 
   void _navigateToStationTransactions(StationModel station) {
@@ -292,6 +351,7 @@ class _AccountsViewState extends State<AccountsView> {
         .then((_) {
       if (mounted) {
         context.read<StationsController>().fetchStations();
+        context.read<TransactionsController>().fetchAllBalancesSummary();
       }
     });
   }
@@ -512,9 +572,48 @@ class _AccountsViewState extends State<AccountsView> {
     );
   }
 
+  Widget _buildBalanceLine({
+    required String fuelName,
+    required double amount,
+  }) {
+    final isNegative = amount < 0;
+    final color = isNegative ? AppColors.dispenseRed : AppColors.textSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Text(
+        '${AppFormatters.formatQuantity(amount)} ${AppStrings.unitLiter} $fuelName',
+        textDirection: TextDirection.rtl,
+        style: TextStyle(
+          fontSize: AppTypography.sizeCaption,
+          fontWeight: AppTypography.weightSemiBold,
+          color: color,
+        ),
+      ),
+    );
+  }
+
   Widget _buildAccountRow(AccountModel account) {
     final hasPhone =
         account.phoneNumber != null && account.phoneNumber!.trim().isNotEmpty;
+    final txCtrl = context.watch<TransactionsController>();
+    final balances = txCtrl.allAccountBalances[account.id] ?? {};
+    final petrolBalance = balances[1] ?? 0.0;
+    final dieselBalance = balances[2] ?? 0.0;
+
+    final List<Widget> balanceLines = [];
+    if (petrolBalance != 0.0) {
+      balanceLines.add(_buildBalanceLine(
+        fuelName: AppStrings.fuelPetrol,
+        amount: petrolBalance,
+      ));
+    }
+    if (dieselBalance != 0.0) {
+      balanceLines.add(_buildBalanceLine(
+        fuelName: AppStrings.fuelDiesel,
+        amount: dieselBalance,
+      ));
+    }
 
     return SlidableAccountTile(
       key: ValueKey('account_${account.id}'),
@@ -551,6 +650,14 @@ class _AccountsViewState extends State<AccountsView> {
                 ],
               ),
             ),
+            if (balanceLines.isNotEmpty) ...[
+              const SizedBox(width: AppDimensions.spaceM),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: balanceLines,
+              ),
+            ],
           ],
         ),
       ),
@@ -598,6 +705,25 @@ class _AccountsViewState extends State<AccountsView> {
           '${AppStrings.commissionRatePrefix}${station.defaultCommissionRate}%';
     }
 
+    final txCtrl = context.watch<TransactionsController>();
+    final balances = txCtrl.allStationBalances[station.id] ?? {};
+    final petrolBalance = balances[1] ?? 0.0;
+    final dieselBalance = balances[2] ?? 0.0;
+
+    final List<Widget> balanceLines = [];
+    if (petrolBalance != 0.0) {
+      balanceLines.add(_buildBalanceLine(
+        fuelName: AppStrings.fuelPetrol,
+        amount: petrolBalance,
+      ));
+    }
+    if (dieselBalance != 0.0) {
+      balanceLines.add(_buildBalanceLine(
+        fuelName: AppStrings.fuelDiesel,
+        amount: dieselBalance,
+      ));
+    }
+
     return SlidableAccountTile(
       key: ValueKey('station_${station.id}'),
       onTap: () => _navigateToStationTransactions(station),
@@ -631,6 +757,14 @@ class _AccountsViewState extends State<AccountsView> {
                 ],
               ),
             ),
+            if (balanceLines.isNotEmpty) ...[
+              const SizedBox(width: AppDimensions.spaceM),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: balanceLines,
+              ),
+            ],
           ],
         ),
       ),
