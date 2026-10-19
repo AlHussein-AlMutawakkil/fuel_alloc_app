@@ -4,7 +4,8 @@ class TransactionModel {
   final String? transactionNumber;
   final String transactionDate;
   final int typeId;
-  final String? typeName;
+  final String? _typeName;
+  String? get typeName => isTransfer ? 'تحويل' : _typeName;
   final String? typeCode;
   final int? accountId;
   final String? accountName;
@@ -33,7 +34,7 @@ class TransactionModel {
     this.transactionNumber,
     required this.transactionDate,
     required this.typeId,
-    this.typeName,
+    String? typeName,
     this.typeCode,
     this.accountId,
     this.accountName,
@@ -56,7 +57,7 @@ class TransactionModel {
     this.createdAt,
     this.deletedAt,
     this.isDeleted = false,
-  });
+  }) : _typeName = typeName;
 
   Map<String, dynamic> toMap() {
     return {
@@ -139,4 +140,14 @@ class TransactionModel {
       typeId == 5;
 
   bool get isAeration => typeCode == 'AERATION_COMMISSION' || typeId == 3;
+
+  bool get isTransfer =>
+      typeCode == 'TRANSFER_OUT' ||
+      typeCode == 'TRANSFER_IN' ||
+      typeId == 6 ||
+      typeId == 7;
+
+  bool get isTransferOut => typeCode == 'TRANSFER_OUT' || typeId == 6;
+
+  bool get isTransferIn => typeCode == 'TRANSFER_IN' || typeId == 7;
 }

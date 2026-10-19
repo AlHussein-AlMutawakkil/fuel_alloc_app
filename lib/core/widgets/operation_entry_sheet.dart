@@ -65,15 +65,19 @@ class OperationEntrySheet extends StatefulWidget {
 class _OperationEntrySheetState extends State<OperationEntrySheet> {
   static const Color _fieldBorderColor = AppColors.borderLight;
 
-  // التبويب العلوي: 0: اعتماد, 1: فعلي, 2: نسبة
+  // التبويب العلوي: 0: اعتماد, 1: فعلي, 2: نسبة, 3: تحويل
   late int _selectedTab;
 
   // اتجاه الحركة: 0: توريد, 1: صرف
   late int _selectedDirection;
 
-  // الحساب المختار ورصيده المباشر
+  // الحساب المختار (من حساب) ورصيده المباشر
   AccountModel? _selectedAccount;
   double? _accountBalanceLiters;
+
+  // الحساب المحول إليه (إلى حساب) ورصيده المباشر
+  AccountModel? _toAccount;
+  double? _toAccountBalanceLiters;
 
   // المحطة المنفذة ورصيدها المتبقي
   int? _selectedStationId;
@@ -117,7 +121,10 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
     if (_isEdit) {
       final tx = widget.editTransaction!;
-      if (tx.typeId == 3) {
+      if (tx.isTransfer) {
+        _selectedTab = 3;
+        _selectedDirection = 0;
+      } else if (tx.typeId == 3) {
         _selectedTab = 2; // نسبة
         _selectedDirection = 1;
       } else if (tx.isActual) {
@@ -230,7 +237,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
   List<AccountModel> _getFilteredAccounts(List<AccountModel> accounts) {
     if (accounts.isEmpty) return const [];
-    if (_selectedTab == 2) {
+    if (_selectedTab == 2 || _selectedTab == 3) {
       return accounts;
     }
     final filtered = _selectedDirection == 0
@@ -250,19 +257,45 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     final txController = context.read<TransactionsController>();
 
     if (_selectedAccount?.id != null) {
-      final isSupplier = _selectedAccount!.accountType == AccountType.supplier;
-      final bal = await txController.getAccountBalance(
-        _selectedAccount!.id!,
-        isSupplier,
-        fuelTypeId: _selectedFuelTypeId,
-      );
-      if (mounted) {
-        setState(() {
-          _accountBalanceLiters = bal;
-        });
+      final isStation = _selectedAccount!.accountType == AccountType.station;
+      if (isStation) {
+        final bal = await txController.getStationBalance(
+          _selectedAccount!.id!,
+          fuelTypeId: _selectedFuelTypeId,
+        );
+        if (mounted) setState(() => _accountBalanceLiters = bal);
+      } else {
+        final isSupplier = _selectedAccount!.accountType == AccountType.supplier;
+        final bal = await txController.getAccountBalance(
+          _selectedAccount!.id!,
+          isSupplier,
+          fuelTypeId: _selectedFuelTypeId,
+        );
+        if (mounted) setState(() => _accountBalanceLiters = bal);
       }
     } else {
       if (mounted) setState(() => _accountBalanceLiters = null);
+    }
+
+    if (_toAccount?.id != null) {
+      final isStation = _toAccount!.accountType == AccountType.station;
+      if (isStation) {
+        final bal = await txController.getStationBalance(
+          _toAccount!.id!,
+          fuelTypeId: _selectedFuelTypeId,
+        );
+        if (mounted) setState(() => _toAccountBalanceLiters = bal);
+      } else {
+        final isSupplier = _toAccount!.accountType == AccountType.supplier;
+        final bal = await txController.getAccountBalance(
+          _toAccount!.id!,
+          isSupplier,
+          fuelTypeId: _selectedFuelTypeId,
+        );
+        if (mounted) setState(() => _toAccountBalanceLiters = bal);
+      }
+    } else {
+      if (mounted) setState(() => _toAccountBalanceLiters = null);
     }
 
     if (_selectedStationId != null) {
@@ -281,7 +314,9 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
   }
 
   int _calculateTypeId() {
-    if (_selectedTab == 0) {
+    if (_selectedTab == 3) {
+      return 6;
+    } else if (_selectedTab == 0) {
       return _selectedDirection == 0 ? 1 : 4;
     } else if (_selectedTab == 1) {
       return _selectedDirection == 0 ? 2 : 5;
@@ -291,7 +326,9 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
   }
 
   String _getTitle() {
-    return _isEdit ? AppStrings.editOperation : AppStrings.registerOperation;
+    if (_isEdit) return AppStrings.editOperation;
+    if (_selectedTab == 3) return AppStrings.transfer;
+    return AppStrings.registerOperation;
   }
 
   @override
@@ -408,7 +445,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   ),
                   const SizedBox(height: AppDimensions.spaceL + 6),
 
-                  // 2. التبويبات الثلاثة العلوية (اعتماد / فعلي / نسبة) بنمط One UI SegmentControl بارتفاع مخفض
+                  // 2. التبويبات العلوية (اعتماد / فعلي / نسبة / تحويل) بنمط One UI SegmentControl بارتفاع مخفض
                   Container(
                     padding: AppDimensions.paddingAllXS,
                     decoration: const BoxDecoration(
@@ -438,13 +475,20 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             icon: AppIcons.tabAeration,
                           ),
                         ),
+                        Expanded(
+                          child: _buildTopTabItem(
+                            index: 3,
+                            label: AppStrings.transfer,
+                            icon: AppIcons.tabTransfer,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: AppDimensions.spaceL),
 
                   // 3. زرا الاتجاه (↓ توريد / ↑ صرف) بنمط SegmentControl بأبعاد متناسقة ومصغرة
-                  if (_selectedTab != 2) ...[
+                  if (_selectedTab != 2 && _selectedTab != 3) ...[
                     Center(
                       child: Container(
                         width: 250,
@@ -482,80 +526,51 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                     const SizedBox(height: AppDimensions.spaceL),
                   ],
 
-                  // 4. حقل الحساب مع الرصيد المباشر
-                  _buildFieldLabel(AppStrings.account),
-                  InkWell(
-                    onTap: () {
-                      final allAccs = accController.allAccounts.isNotEmpty
-                          ? accController.allAccounts
-                          : accController.accounts;
-                      _openAccountPicker(allAccs);
-                    },
-                    borderRadius: AppDimensions.borderRadiusL,
-                    child: Container(
-                      height: AppDimensions.inputHeight,
-                      padding: AppDimensions.paddingInputDense,
-                      decoration: BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: AppDimensions.borderRadiusL,
-                        border: Border.all(
-                          color: _fieldBorderColor,
-                          width: AppDimensions.borderWidthThin,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            AppIcons.account,
-                            color: AppColors.textTertiary,
-                            size: AppDimensions.iconMedium,
-                          ),
-                          const SizedBox(width: AppDimensions.spaceM),
-                          Expanded(
-                            child: Text(
-                              _selectedAccount?.name ??
-                                  AppStrings.selectAccount,
-                              style: TextStyle(
-                                fontSize: AppTypography.sizeBody,
-                                color: _selectedAccount != null
-                                    ? AppColors.textDarkSlate
-                                    : AppColors.textMuted,
-                                fontWeight: _selectedAccount != null
-                                    ? AppTypography.weightSemiBold
-                                    : AppTypography.weightRegular,
-                              ),
-                            ),
-                          ),
-                          const Icon(
-                            AppIcons.dropdownArrowPlain,
-                            color: AppColors.textTertiary,
-                            size: AppDimensions.iconRegular,
-                          ),
-                        ],
-                      ),
+                  // 4. حقول الحساب (من حساب وإلى حساب للتحويل، أو الحساب العادي لباقي العمليات)
+                  if (_selectedTab == 3) ...[
+                    _buildFieldLabel(AppStrings.fromAccount),
+                    _buildAccountSelector(
+                      account: _selectedAccount,
+                      balance: _accountBalanceLiters,
+                      hintText: AppStrings.selectFromAccount,
+                      onTap: () {
+                        final allAccs = accController.allAccounts.isNotEmpty
+                            ? accController.allAccounts
+                            : accController.accounts;
+                        _openFromAccountPicker(allAccs);
+                      },
                     ),
-                  ),
-                  if (_accountBalanceLiters != null) ...[
-                    const SizedBox(height: AppDimensions.spaceS),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.spaceXS,
-                      ),
-                      child: Text(
-                        '${AppStrings.accountBalance} ${AppFormatters.formatQuantity(_accountBalanceLiters!)} ${AppStrings.unitLiter}',
-                        style: const TextStyle(
-                          fontSize: AppTypography.sizeBodySecondary,
-                          fontWeight: AppTypography.weightSemiBold,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
+                    const SizedBox(height: AppDimensions.spaceL),
+                    _buildFieldLabel(AppStrings.toAccount),
+                    _buildAccountSelector(
+                      account: _toAccount,
+                      balance: _toAccountBalanceLiters,
+                      hintText: AppStrings.selectToAccount,
+                      onTap: () {
+                        final allAccs = accController.allAccounts.isNotEmpty
+                            ? accController.allAccounts
+                            : accController.accounts;
+                        _openToAccountPicker(allAccs);
+                      },
                     ),
+                    const SizedBox(height: AppDimensions.spaceL),
+                  ] else ...[
+                    _buildFieldLabel(AppStrings.account),
+                    _buildAccountSelector(
+                      account: _selectedAccount,
+                      balance: _accountBalanceLiters,
+                      hintText: AppStrings.selectAccount,
+                      onTap: () {
+                        final allAccs = accController.allAccounts.isNotEmpty
+                            ? accController.allAccounts
+                            : accController.accounts;
+                        _openAccountPicker(allAccs);
+                      },
+                    ),
+                    const SizedBox(height: AppDimensions.spaceL),
+                    _buildRecipientSection(txController),
+                    const SizedBox(height: AppDimensions.spaceL),
                   ],
-                  const SizedBox(height: AppDimensions.spaceL),
-
-                  // 5. قسم المستلم (تحت الحساب مباشرة)
-                  _buildRecipientSection(txController),
-                  const SizedBox(height: AppDimensions.spaceL),
 
                   // 6. صف: الكمية والصنف
                   Row(
@@ -1285,13 +1300,95 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     );
   }
 
+  Widget _buildAccountSelector({
+    required AccountModel? account,
+    required double? balance,
+    required String hintText,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        InkWell(
+          onTap: onTap,
+          borderRadius: AppDimensions.borderRadiusL,
+          child: Container(
+            height: AppDimensions.inputHeight,
+            padding: AppDimensions.paddingInputDense,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: AppDimensions.borderRadiusL,
+              border: Border.all(
+                color: _fieldBorderColor,
+                width: AppDimensions.borderWidthThin,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  AppIcons.account,
+                  color: AppColors.textTertiary,
+                  size: AppDimensions.iconMedium,
+                ),
+                const SizedBox(width: AppDimensions.spaceM),
+                Expanded(
+                  child: Text(
+                    account?.name ?? hintText,
+                    style: TextStyle(
+                      fontSize: AppTypography.sizeBody,
+                      color: account != null
+                          ? AppColors.textDarkSlate
+                          : AppColors.textMuted,
+                      fontWeight: account != null
+                          ? AppTypography.weightSemiBold
+                          : AppTypography.weightRegular,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const Icon(
+                  AppIcons.dropdownArrowPlain,
+                  color: AppColors.textTertiary,
+                  size: AppDimensions.iconRegular,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (balance != null) ...[
+          const SizedBox(height: AppDimensions.spaceS),
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.spaceXS,
+            ),
+            child: Text(
+              '${AppStrings.accountBalance} ${AppFormatters.formatQuantity(balance)} ${AppStrings.unitLiter}',
+              style: const TextStyle(
+                fontSize: AppTypography.sizeBodySecondary,
+                fontWeight: AppTypography.weightSemiBold,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   void _openAccountPicker(List<AccountModel> accounts) async {
     final selected = await CustomModalSheet.showItemPicker<AccountModel>(
       context: context,
       title: AppStrings.account,
       items: accounts,
-      itemLabel: (acc) =>
-          '${acc.name} (${acc.accountType == AccountType.supplier ? AppStrings.typeSupplier : AppStrings.typeBeneficiary})',
+      itemLabel: (acc) {
+        final typeStr = acc.accountType == AccountType.station
+            ? AppStrings.typeStation
+            : (acc.accountType == AccountType.supplier
+                ? AppStrings.typeSupplier
+                : AppStrings.typeBeneficiary);
+        return '${acc.name} ($typeStr)';
+      },
       searchHint: AppStrings.searchHere,
       emptyText: AppStrings.noAccountsFound,
       selectedItem: _selectedAccount,
@@ -1303,6 +1400,58 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         if (_sameAsAccount) {
           _recipientController.text = selected.name;
         }
+      });
+      _updateLiveBalances();
+    }
+  }
+
+  void _openFromAccountPicker(List<AccountModel> accounts) async {
+    final selected = await CustomModalSheet.showItemPicker<AccountModel>(
+      context: context,
+      title: AppStrings.fromAccount,
+      items: accounts,
+      itemLabel: (acc) {
+        final typeStr = acc.accountType == AccountType.station
+            ? AppStrings.typeStation
+            : (acc.accountType == AccountType.supplier
+                ? AppStrings.typeSupplier
+                : AppStrings.typeBeneficiary);
+        return '${acc.name} ($typeStr)';
+      },
+      searchHint: AppStrings.searchHere,
+      emptyText: AppStrings.noAccountsFound,
+      selectedItem: _selectedAccount,
+    );
+
+    if (selected != null && mounted) {
+      setState(() {
+        _selectedAccount = selected;
+      });
+      _updateLiveBalances();
+    }
+  }
+
+  void _openToAccountPicker(List<AccountModel> accounts) async {
+    final selected = await CustomModalSheet.showItemPicker<AccountModel>(
+      context: context,
+      title: AppStrings.toAccount,
+      items: accounts,
+      itemLabel: (acc) {
+        final typeStr = acc.accountType == AccountType.station
+            ? AppStrings.typeStation
+            : (acc.accountType == AccountType.supplier
+                ? AppStrings.typeSupplier
+                : AppStrings.typeBeneficiary);
+        return '${acc.name} ($typeStr)';
+      },
+      searchHint: AppStrings.searchHere,
+      emptyText: AppStrings.noAccountsFound,
+      selectedItem: _toAccount,
+    );
+
+    if (selected != null && mounted) {
+      setState(() {
+        _toAccount = selected;
       });
       _updateLiveBalances();
     }
@@ -1346,6 +1495,65 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
     final baseLiters = qty * unitFactor;
 
     final manualRef = _referenceNumberController.text.trim();
+
+    // التحقق والتنفيذ في حال كانت العملية تحويل بين حسابين
+    if (_selectedTab == 3) {
+      if (_selectedAccount == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(AppStrings.selectFromAccount),
+            backgroundColor: AppColors.dispenseRed,
+          ),
+        );
+        return;
+      }
+      if (_toAccount == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(AppStrings.selectToAccount),
+            backgroundColor: AppColors.dispenseRed,
+          ),
+        );
+        return;
+      }
+      if (_selectedAccount!.id == _toAccount!.id) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(AppStrings.sameAccountError),
+            backgroundColor: AppColors.dispenseRed,
+          ),
+        );
+        return;
+      }
+
+      final success = await txController.addTransferTransaction(
+        fromAccountId: _selectedAccount!.id!,
+        fromAccountName: _selectedAccount!.name,
+        toAccountId: _toAccount!.id!,
+        toAccountName: _toAccount!.name,
+        fuelTypeId: _selectedFuelTypeId!,
+        unitId: _selectedUnitId!,
+        enteredQuantity: qty,
+        baseQuantityLiters: baseLiters,
+        transactionDate: _dateController.text.trim().replaceAll('/', '-'),
+        referenceNumber: manualRef.isEmpty ? null : manualRef,
+        notes: _statementController.text.trim().isEmpty
+            ? null
+            : _statementController.text.trim(),
+      );
+
+      if (success && mounted) {
+        navigator.pop(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(AppStrings.transferSuccess),
+            backgroundColor: AppColors.supplyGreen,
+          ),
+        );
+      }
+      return;
+    }
+
     final recipientText = _sameAsAccount
         ? (_selectedAccount?.name ?? _recipientController.text.trim())
         : _recipientController.text.trim();
@@ -1400,17 +1608,19 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       onTap: () {
         setState(() {
           _selectedTab = index;
-          final accController = context.read<AccountsController>();
-          final allAccs = accController.allAccounts.isNotEmpty
-              ? accController.allAccounts
-              : accController.accounts;
-          final validAccounts = _getFilteredAccounts(allAccs);
-          if (_selectedAccount == null ||
-              !validAccounts.contains(_selectedAccount)) {
-            if (validAccounts.isNotEmpty) {
-              _selectedAccount = validAccounts.first;
-            } else if (allAccs.isNotEmpty) {
-              _selectedAccount = allAccs.first;
+          if (_selectedTab != 3) {
+            final accController = context.read<AccountsController>();
+            final allAccs = accController.allAccounts.isNotEmpty
+                ? accController.allAccounts
+                : accController.accounts;
+            final validAccounts = _getFilteredAccounts(allAccs);
+            if (_selectedAccount == null ||
+                !validAccounts.contains(_selectedAccount)) {
+              if (validAccounts.isNotEmpty) {
+                _selectedAccount = validAccounts.first;
+              } else if (allAccs.isNotEmpty) {
+                _selectedAccount = allAccs.first;
+              }
             }
           }
         });

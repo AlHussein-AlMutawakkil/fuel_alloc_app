@@ -87,6 +87,17 @@ class DatabaseHelper {
           );
         ''');
 
+        // التأكد من وجود نوعي عملية التحويل في transaction_types وتحديث الاسم إلى "تحويل"
+        await db.execute('''
+          INSERT OR IGNORE INTO transaction_types (id, name, code)
+          VALUES 
+            (6, 'تحويل', 'TRANSFER_OUT'),
+            (7, 'تحويل', 'TRANSFER_IN');
+        ''');
+        await db.execute('''
+          UPDATE transaction_types SET name = 'تحويل' WHERE id IN (6, 7);
+        ''');
+
         // ترحيل بيانات المحطات من جدول stations إلى جدول accounts الموحد (إن وجدت)
         final tables = await db.rawQuery(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='stations'");
@@ -261,6 +272,10 @@ class DatabaseHelper {
         {'id': 4, 'name': 'صرف اعتماد', 'code': 'DISPENSE_QUOTA'});
     await db.insert('transaction_types',
         {'id': 5, 'name': 'صرف فعلي', 'code': 'DISPENSE_ACTUAL'});
+    await db.insert('transaction_types',
+        {'id': 6, 'name': 'تحويل', 'code': 'TRANSFER_OUT'});
+    await db.insert('transaction_types',
+        {'id': 7, 'name': 'تحويل', 'code': 'TRANSFER_IN'});
   }
 
   /// فحص هل سلة المحذوفات مفعلة

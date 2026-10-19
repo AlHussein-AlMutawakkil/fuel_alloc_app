@@ -55,7 +55,11 @@ class TransactionDetailsDialog extends StatelessWidget {
   }
 
   Color _getBadgeColor() {
-    if (transaction.isSupply ||
+    if (transaction.typeId == 6 || transaction.isTransferOut) {
+      return AppColors.dispenseRed;
+    } else if (transaction.typeId == 7 || transaction.isTransferIn) {
+      return AppColors.supplyGreen;
+    } else if (transaction.isSupply ||
         transaction.typeId == 1 ||
         transaction.typeId == 2) {
       return AppColors.supplyGreen;
@@ -204,7 +208,9 @@ class TransactionDetailsDialog extends StatelessWidget {
                         _buildDetailRow(
                           label: AppStrings.operationLabel,
                           valueWidget: Text(
-                            transaction.typeName ?? AppStrings.operationLabel,
+                            transaction.isTransfer
+                                ? AppStrings.transfer
+                                : (transaction.typeName ?? AppStrings.operationLabel),
                             style: const TextStyle(
                               fontSize: AppTypography.sizeBody,
                               fontWeight: AppTypography.weightBold,
@@ -241,116 +247,162 @@ class TransactionDetailsDialog extends StatelessWidget {
                           color: AppColors.borderLight,
                         ),
 
-                        // الحساب (الاسم ورقم الهاتف إن وجد)
-                        if (transaction.accountName != null &&
-                            transaction.accountName!.trim().isNotEmpty) ...[
+                        if (transaction.isTransfer) ...[
+                          // من حساب
                           _buildDetailRow(
-                            label: AppStrings.account,
-                            valueWidget: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  transaction.accountName!.trim(),
-                                  style: const TextStyle(
-                                    fontSize: AppTypography.sizeBody,
-                                    fontWeight: AppTypography.weightBold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                  textAlign: TextAlign.left,
-                                ),
-                                if (effectivePhone != null &&
-                                    effectivePhone.trim().isNotEmpty) ...[
-                                  const SizedBox(
-                                      height: AppDimensions.spaceXXS),
+                            label: AppStrings.fromAccount,
+                            valueWidget: Text(
+                              (transaction.isTransferOut
+                                      ? transaction.accountName
+                                      : transaction.recipientName) ??
+                                  '',
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeBody,
+                                fontWeight: AppTypography.weightBold,
+                                color: AppColors.textPrimary,
+                              ),
+                              textAlign: TextAlign.left,
+                            ),
+                          ),
+                          const Divider(
+                            height: AppDimensions.dividerHeight,
+                            thickness: AppDimensions.borderWidthHairline,
+                            color: AppColors.borderSubtle,
+                          ),
+
+                          // إلى حساب
+                          _buildDetailRow(
+                            label: AppStrings.toAccount,
+                            valueWidget: Text(
+                              (transaction.isTransferOut
+                                      ? transaction.recipientName
+                                      : transaction.accountName) ??
+                                  '',
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeBody,
+                                fontWeight: AppTypography.weightBold,
+                                color: AppColors.textPrimary,
+                              ),
+                              textAlign: TextAlign.left,
+                            ),
+                          ),
+                          const Divider(
+                            height: AppDimensions.dividerHeight,
+                            thickness: AppDimensions.borderWidthHairline,
+                            color: AppColors.borderSubtle,
+                          ),
+                        ] else ...[
+                          // الحساب (الاسم ورقم الهاتف إن وجد)
+                          if (transaction.accountName != null &&
+                              transaction.accountName!.trim().isNotEmpty) ...[
+                            _buildDetailRow(
+                              label: AppStrings.account,
+                              valueWidget: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
                                   Text(
-                                    effectivePhone.trim(),
+                                    transaction.accountName!.trim(),
                                     style: const TextStyle(
-                                      fontSize: AppTypography.sizeCaption,
-                                      color: AppColors.textSecondary,
-                                      fontWeight: AppTypography.weightRegular,
+                                      fontSize: AppTypography.sizeBody,
+                                      fontWeight: AppTypography.weightBold,
+                                      color: AppColors.textPrimary,
                                     ),
                                     textAlign: TextAlign.left,
                                   ),
+                                  if (effectivePhone != null &&
+                                      effectivePhone.trim().isNotEmpty) ...[
+                                    const SizedBox(
+                                        height: AppDimensions.spaceXXS),
+                                    Text(
+                                      effectivePhone.trim(),
+                                      style: const TextStyle(
+                                        fontSize: AppTypography.sizeCaption,
+                                        color: AppColors.textSecondary,
+                                        fontWeight: AppTypography.weightRegular,
+                                      ),
+                                      textAlign: TextAlign.left,
+                                    ),
+                                  ],
                                 ],
-                              ],
-                            ),
-                          ),
-                          const Divider(
-                            height: AppDimensions.dividerHeight,
-                            thickness: AppDimensions.borderWidthHairline,
-                            color: AppColors.borderSubtle,
-                          ),
-                        ],
-
-                        // المحطة (إن وجدت)
-                        if (transaction.stationName != null &&
-                            transaction.stationName!.trim().isNotEmpty) ...[
-                          _buildDetailRow(
-                            label: AppStrings.station,
-                            valueWidget: Text(
-                              transaction.stationName!.trim(),
-                              style: const TextStyle(
-                                fontSize: AppTypography.sizeBody,
-                                fontWeight: AppTypography.weightBold,
-                                color: AppColors.textPrimary,
                               ),
-                              textAlign: TextAlign.left,
                             ),
-                          ),
-                          const Divider(
-                            height: AppDimensions.dividerHeight,
-                            thickness: AppDimensions.borderWidthHairline,
-                            color: AppColors.borderSubtle,
-                          ),
-                        ],
+                            const Divider(
+                              height: AppDimensions.dividerHeight,
+                              thickness: AppDimensions.borderWidthHairline,
+                              color: AppColors.borderSubtle,
+                            ),
+                          ],
 
-                        // محطة المقاصة / المحطة المرجعية (إن وجدت وكانت مختلفة)
-                        if (transaction.referenceStationName != null &&
-                            transaction.referenceStationName!
-                                .trim()
-                                .isNotEmpty &&
-                            transaction.referenceStationName !=
-                                transaction.stationName) ...[
-                          _buildDetailRow(
-                            label: AppStrings.referenceStationShort,
-                            valueWidget: Text(
-                              transaction.referenceStationName!.trim(),
-                              style: const TextStyle(
-                                fontSize: AppTypography.sizeBody,
-                                fontWeight: AppTypography.weightBold,
-                                color: AppColors.textPrimary,
+                          // المحطة (إن وجدت)
+                          if (transaction.stationName != null &&
+                              transaction.stationName!.trim().isNotEmpty) ...[
+                            _buildDetailRow(
+                              label: AppStrings.station,
+                              valueWidget: Text(
+                                transaction.stationName!.trim(),
+                                style: const TextStyle(
+                                  fontSize: AppTypography.sizeBody,
+                                  fontWeight: AppTypography.weightBold,
+                                  color: AppColors.textPrimary,
+                                ),
+                                textAlign: TextAlign.left,
                               ),
-                              textAlign: TextAlign.left,
                             ),
-                          ),
-                          const Divider(
-                            height: AppDimensions.dividerHeight,
-                            thickness: AppDimensions.borderWidthHairline,
-                            color: AppColors.borderSubtle,
-                          ),
-                        ],
+                            const Divider(
+                              height: AppDimensions.dividerHeight,
+                              thickness: AppDimensions.borderWidthHairline,
+                              color: AppColors.borderSubtle,
+                            ),
+                          ],
 
-                        // المستلم (إن وجد)
-                        if (transaction.recipientName != null &&
-                            transaction.recipientName!.trim().isNotEmpty) ...[
-                          _buildDetailRow(
-                            label: AppStrings.recipientLabel,
-                            valueWidget: Text(
-                              transaction.recipientName!.trim(),
-                              style: const TextStyle(
-                                fontSize: AppTypography.sizeBody,
-                                fontWeight: AppTypography.weightBold,
-                                color: AppColors.textPrimary,
+                          // محطة المقاصة / المحطة المرجعية (إن وجدت وكانت مختلفة)
+                          if (transaction.referenceStationName != null &&
+                              transaction.referenceStationName!
+                                  .trim()
+                                  .isNotEmpty &&
+                              transaction.referenceStationName !=
+                                  transaction.stationName) ...[
+                            _buildDetailRow(
+                              label: AppStrings.referenceStationShort,
+                              valueWidget: Text(
+                                transaction.referenceStationName!.trim(),
+                                style: const TextStyle(
+                                  fontSize: AppTypography.sizeBody,
+                                  fontWeight: AppTypography.weightBold,
+                                  color: AppColors.textPrimary,
+                                ),
+                                textAlign: TextAlign.left,
                               ),
-                              textAlign: TextAlign.left,
                             ),
-                          ),
-                          const Divider(
-                            height: AppDimensions.dividerHeight,
-                            thickness: AppDimensions.borderWidthHairline,
-                            color: AppColors.borderSubtle,
-                          ),
+                            const Divider(
+                              height: AppDimensions.dividerHeight,
+                              thickness: AppDimensions.borderWidthHairline,
+                              color: AppColors.borderSubtle,
+                            ),
+                          ],
+
+                          // المستلم (إن وجد)
+                          if (transaction.recipientName != null &&
+                              transaction.recipientName!.trim().isNotEmpty) ...[
+                            _buildDetailRow(
+                              label: AppStrings.recipientLabel,
+                              valueWidget: Text(
+                                transaction.recipientName!.trim(),
+                                style: const TextStyle(
+                                  fontSize: AppTypography.sizeBody,
+                                  fontWeight: AppTypography.weightBold,
+                                  color: AppColors.textPrimary,
+                                ),
+                                textAlign: TextAlign.left,
+                              ),
+                            ),
+                            const Divider(
+                              height: AppDimensions.dividerHeight,
+                              thickness: AppDimensions.borderWidthHairline,
+                              color: AppColors.borderSubtle,
+                            ),
+                          ],
                         ],
 
                         // رقم السند / رقم المرجع (إن وجد)

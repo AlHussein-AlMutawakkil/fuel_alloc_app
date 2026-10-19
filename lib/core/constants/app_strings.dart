@@ -92,6 +92,15 @@ class AppStrings {
   static const String quota = 'اعتماد';
   static const String actual = 'فعلي';
   static const String ratio = 'نسبة';
+  static const String transfer = 'تحويل';
+  static const String fromAccount = 'من حساب';
+  static const String toAccount = 'إلى حساب';
+  static const String transferOut = 'تحويل';
+  static const String transferIn = 'تحويل';
+  static const String selectFromAccount = 'اختر الحساب المحوّل منه';
+  static const String selectToAccount = 'اختر الحساب المحوّل إليه';
+  static const String sameAccountError = 'لا يمكن التحويل لنفس الحساب';
+  static const String transferSuccess = 'تمت عملية التحويل بنجاح';
   static const String supply = 'توريد';
   static const String dispense = 'صرف';
   static const String accountOperations = 'عمليات الحساب';

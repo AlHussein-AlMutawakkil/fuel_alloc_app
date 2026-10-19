@@ -365,6 +365,45 @@ class TransactionsController extends ChangeNotifier {
     }
   }
 
+  /// تسجيل عملية تحويل بين حسابين
+  Future<bool> addTransferTransaction({
+    required int fromAccountId,
+    required String fromAccountName,
+    required int toAccountId,
+    required String toAccountName,
+    required int fuelTypeId,
+    required int unitId,
+    required double enteredQuantity,
+    required double baseQuantityLiters,
+    required String transactionDate,
+    String? referenceNumber,
+    String? notes,
+  }) async {
+    try {
+      final success = await _repository.insertTransfer(
+        fromAccountId: fromAccountId,
+        fromAccountName: fromAccountName,
+        toAccountId: toAccountId,
+        toAccountName: toAccountName,
+        fuelTypeId: fuelTypeId,
+        unitId: unitId,
+        enteredQuantity: enteredQuantity,
+        baseQuantityLiters: baseQuantityLiters,
+        transactionDate: transactionDate,
+        referenceNumber: referenceNumber,
+        notes: notes,
+      );
+      if (success) {
+        await reloadCurrentView();
+        await fetchAllBalancesSummary();
+      }
+      return success;
+    } catch (e) {
+      debugPrint('Error adding transfer: $e');
+      return false;
+    }
+  }
+
   /// تعديل عملية قائمة
   Future<bool> updateTransaction(TransactionModel tx) async {
     try {

@@ -45,6 +45,8 @@ class AppIcons {
   static const IconData tabQuota = Icons.receipt_long_outlined;
   static const IconData tabActual = Icons.swap_horiz;
   static const IconData tabAeration = Icons.percent;
+  static const IconData tabTransfer = Icons.sync_alt_rounded;
+  static const IconData transfer = Icons.sync_alt_rounded;
   static const IconData star = Icons.auto_awesome;
   static const IconData account = Icons.person;
   static const IconData accountOutline = Icons.person_outline;

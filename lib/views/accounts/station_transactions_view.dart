@@ -327,15 +327,18 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
   Widget _buildTransactionItem(TransactionModel tx) {
     final bool isSupply = tx.typeId == 2;
     final bool isAeration = tx.typeId == 3;
-    final bool isPositive = isSupply || isAeration;
+    final bool isTransfer = tx.typeId == 6 || tx.typeId == 7;
+    final bool isPositive = isSupply || isAeration || tx.typeId == 7;
 
-    final Color badgeColor = isSupply
+    final Color badgeColor = isPositive
         ? AppColors.supplyGreen
         : (isAeration ? AppColors.warning : AppColors.dispenseRed);
 
-    final IconData opIcon = isSupply
-        ? AppIcons.supply
-        : (isAeration ? AppIcons.tabAeration : AppIcons.dispense);
+    final IconData opIcon = isTransfer
+        ? AppIcons.transfer
+        : (isPositive
+            ? AppIcons.supply
+            : (isAeration ? AppIcons.tabAeration : AppIcons.dispense));
 
     final String sign = isPositive ? '+' : '-';
 
@@ -388,7 +391,30 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                                 color: AppColors.textMuted,
                               ),
                             ),
-                            if (tx.accountName != null &&
+                            if (isTransfer &&
+                                tx.recipientName != null &&
+                                tx.recipientName!.trim().isNotEmpty) ...[
+                              const SizedBox(width: AppDimensions.spaceXS),
+                              const Text(
+                                '•',
+                                style: TextStyle(
+                                  fontSize: AppTypography.sizeCaption,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(width: AppDimensions.spaceXS),
+                              Flexible(
+                                child: Text(
+                                  '${tx.isTransferOut ? AppStrings.toAccount : AppStrings.fromAccount}: ${tx.recipientName!.trim()}',
+                                  style: const TextStyle(
+                                    fontSize: AppTypography.sizeCaption,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ] else if (tx.accountName != null &&
                                 tx.accountName!.trim().isNotEmpty) ...[
                               const SizedBox(width: AppDimensions.spaceXS),
                               const Text(
@@ -411,7 +437,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                                 ),
                               ),
                             ],
-                            if (tx.referenceStationName != null &&
+                            if (!isTransfer &&
+                                tx.referenceStationName != null &&
                                 tx.referenceStationName != tx.stationName) ...[
                               const SizedBox(width: AppDimensions.spaceXS),
                               const Text(
@@ -470,14 +497,16 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
               ),
 
               // 2. سطر اسم المستلم والمرجع (أيقونات فقط وبجانب بعضهما)
-              if ((tx.recipientName != null &&
+              if ((!isTransfer &&
+                      tx.recipientName != null &&
                       tx.recipientName!.trim().isNotEmpty) ||
                   (tx.referenceNumber != null &&
                       tx.referenceNumber!.trim().isNotEmpty)) ...[
                 const SizedBox(height: AppDimensions.spaceXS),
                 Row(
                   children: [
-                    if (tx.recipientName != null &&
+                    if (!isTransfer &&
+                        tx.recipientName != null &&
                         tx.recipientName!.trim().isNotEmpty) ...[
                       const Icon(
                         AppIcons.accountOutline,
@@ -496,7 +525,8 @@ class _StationTransactionsViewState extends State<StationTransactionsView> {
                     ],
                     if (tx.referenceNumber != null &&
                         tx.referenceNumber!.trim().isNotEmpty) ...[
-                      if (tx.recipientName != null &&
+                      if (!isTransfer &&
+                          tx.recipientName != null &&
                           tx.recipientName!.trim().isNotEmpty)
                         const SizedBox(width: AppDimensions.spaceM),
                       const Icon(

@@ -341,5 +341,39 @@ void main() {
       expect(find.text(AppStrings.statement), findsOneWidget);
       expect(find.text('بيان الرصيد السابق'), findsOneWidget);
     });
+
+    test('9. Transfer design tokens and TransactionModel getters work accurately', () {
+      expect(AppStrings.transfer, equals('تحويل'));
+      expect(AppStrings.fromAccount, equals('من حساب'));
+      expect(AppStrings.toAccount, equals('إلى حساب'));
+      expect(AppIcons.transfer, isNotNull);
+      expect(AppIcons.tabTransfer, isNotNull);
+
+      final transferOutTx = TransactionModel(
+        transactionDate: '2026-10-19',
+        typeId: 6,
+        typeCode: 'TRANSFER_OUT',
+        unitId: 1,
+        enteredQuantity: 100,
+        baseQuantityLiters: 100,
+      );
+
+      final transferInTx = TransactionModel(
+        transactionDate: '2026-10-19',
+        typeId: 7,
+        typeCode: 'TRANSFER_IN',
+        unitId: 1,
+        enteredQuantity: 100,
+        baseQuantityLiters: 100,
+      );
+
+      expect(transferOutTx.isTransfer, isTrue);
+      expect(transferOutTx.isTransferOut, isTrue);
+      expect(transferOutTx.isTransferIn, isFalse);
+
+      expect(transferInTx.isTransfer, isTrue);
+      expect(transferInTx.isTransferOut, isFalse);
+      expect(transferInTx.isTransferIn, isTrue);
+    });
   });
 }

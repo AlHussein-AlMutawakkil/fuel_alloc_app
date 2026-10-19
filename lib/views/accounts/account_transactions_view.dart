@@ -353,18 +353,22 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   }
 
   Widget _buildTransactionItem(TransactionModel tx) {
-    final bool isPositive = tx.typeId == 1 || tx.typeId == 2 || tx.typeId == 4;
+    final bool isPositive =
+        tx.typeId == 1 || tx.typeId == 2 || tx.typeId == 4 || tx.typeId == 7;
     final bool isAeration = tx.typeId == 3;
+    final bool isTransfer = tx.typeId == 6 || tx.typeId == 7;
 
     final Color badgeColor = isPositive
         ? AppColors.supplyGreen
         : (isAeration ? AppColors.warning : AppColors.dispenseRed);
 
-    final IconData opIcon = isPositive
-        ? AppIcons.supply
-        : (isAeration ? AppIcons.tabAeration : AppIcons.dispense);
+    final IconData opIcon = isTransfer
+        ? AppIcons.transfer
+        : (isPositive
+            ? AppIcons.supply
+            : (isAeration ? AppIcons.tabAeration : AppIcons.dispense));
 
-    final String sign = isPositive ? '+' : (isAeration ? '+' : '-');
+    final String sign = isPositive ? '+' : '-';
 
     return Material(
       color: Colors.transparent,
@@ -416,7 +420,30 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                                 color: AppColors.textMuted,
                               ),
                             ),
-                            if (tx.stationName != null &&
+                            if (isTransfer &&
+                                tx.recipientName != null &&
+                                tx.recipientName!.trim().isNotEmpty) ...[
+                              const SizedBox(width: AppDimensions.spaceXS),
+                              const Text(
+                                '•',
+                                style: TextStyle(
+                                  fontSize: AppTypography.sizeCaption,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(width: AppDimensions.spaceXS),
+                              Flexible(
+                                child: Text(
+                                  '${tx.isTransferOut ? AppStrings.toAccount : AppStrings.fromAccount}: ${tx.recipientName!.trim()}',
+                                  style: const TextStyle(
+                                    fontSize: AppTypography.sizeCaption,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ] else if (tx.stationName != null &&
                                 tx.stationName!.trim().isNotEmpty) ...[
                               const SizedBox(width: AppDimensions.spaceXS),
                               const Text(
@@ -479,14 +506,16 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
               ),
 
               // 2. سطر اسم المستلم والمرجع (أيقونات فقط وبجانب بعضهما)
-              if ((tx.recipientName != null &&
+              if ((!isTransfer &&
+                      tx.recipientName != null &&
                       tx.recipientName!.trim().isNotEmpty) ||
                   (tx.referenceNumber != null &&
                       tx.referenceNumber!.trim().isNotEmpty)) ...[
                 const SizedBox(height: AppDimensions.spaceXS),
                 Row(
                   children: [
-                    if (tx.recipientName != null &&
+                    if (!isTransfer &&
+                        tx.recipientName != null &&
                         tx.recipientName!.trim().isNotEmpty) ...[
                       const Icon(
                         AppIcons.accountOutline,
@@ -505,7 +534,8 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                     ],
                     if (tx.referenceNumber != null &&
                         tx.referenceNumber!.trim().isNotEmpty) ...[
-                      if (tx.recipientName != null &&
+                      if (!isTransfer &&
+                          tx.recipientName != null &&
                           tx.recipientName!.trim().isNotEmpty)
                         const SizedBox(width: AppDimensions.spaceM),
                       const Icon(

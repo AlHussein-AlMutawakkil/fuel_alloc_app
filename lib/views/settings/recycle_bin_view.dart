@@ -279,7 +279,8 @@ class _RecycleBinViewState extends State<RecycleBinView> {
       itemCount: deleted.length,
       itemBuilder: (ctx, index) {
         final tx = deleted[index];
-        final isSupply = tx.typeId == 1 || tx.typeId == 2;
+        final isSupply =
+            tx.typeId == 1 || tx.typeId == 2 || tx.typeId == 7;
 
         return Card(
           margin: const EdgeInsets.only(bottom: AppDimensions.spaceM),
@@ -412,32 +413,52 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (tx.accountName != null)
+                            if (tx.isTransfer) ...[
                               Text(
-                                '${AppStrings.account}: ${tx.accountName}',
+                                '${AppStrings.fromAccount}: ${tx.isTransferOut ? (tx.accountName ?? '') : (tx.recipientName ?? '')}',
                                 style: const TextStyle(
                                   fontSize: AppTypography.sizeBodySecondary,
                                   fontWeight: AppTypography.weightSemiBold,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
-                            if (tx.stationName != null)
                               Text(
-                                '${AppStrings.station}: ${tx.stationName}',
+                                '${AppStrings.toAccount}: ${tx.isTransferOut ? (tx.recipientName ?? '') : (tx.accountName ?? '')}',
                                 style: const TextStyle(
                                   fontSize: AppTypography.sizeCaption,
                                   color: AppColors.textSecondary,
                                 ),
                               ),
+                            ] else ...[
+                              if (tx.accountName != null)
+                                Text(
+                                  '${AppStrings.account}: ${tx.accountName}',
+                                  style: const TextStyle(
+                                    fontSize: AppTypography.sizeBodySecondary,
+                                    fontWeight: AppTypography.weightSemiBold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              if (tx.stationName != null)
+                                Text(
+                                  '${AppStrings.station}: ${tx.stationName}',
+                                  style: const TextStyle(
+                                    fontSize: AppTypography.sizeCaption,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                            ],
                             // المستلم مع الأيقونة فقط وإضافة المرجع بجانبه
-                            if ((tx.recipientName != null &&
+                            if ((!tx.isTransfer &&
+                                    tx.recipientName != null &&
                                     tx.recipientName!.trim().isNotEmpty) ||
                                 (tx.referenceNumber != null &&
                                     tx.referenceNumber!.trim().isNotEmpty)) ...[
                               const SizedBox(height: AppDimensions.spaceXS),
                               Row(
                                 children: [
-                                  if (tx.recipientName != null &&
+                                  if (!tx.isTransfer &&
+                                      tx.recipientName != null &&
                                       tx.recipientName!.trim().isNotEmpty) ...[
                                     const Icon(
                                       AppIcons.accountOutline,
