@@ -39,11 +39,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (widget.account.id != null) {
-        context
-            .read<TransactionsController>()
-            .fetchAccountTransactions(widget.account.id!);
-      }
+      _loadTransactions();
     });
   }
 
@@ -53,39 +49,68 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     super.dispose();
   }
 
+  Future<void> _loadTransactions({int? fuelId}) async {
+    if (widget.account.id == null) return;
+    final ctrl = context.read<TransactionsController>();
+    if (widget.account.accountType == AccountType.station) {
+      await ctrl.fetchStationTransactions(widget.account.id!,
+          defaultFuelTypeId: fuelId);
+    } else {
+      await ctrl.fetchAccountTransactions(widget.account.id!,
+          defaultFuelTypeId: fuelId);
+    }
+  }
+
   void _openAddTransactionDialog() async {
-    final isSupplier = widget.account.accountType == AccountType.supplier;
     final controller = context.read<TransactionsController>();
     final currentFuelId = controller.selectedFuelTypeId;
+    final isStation = widget.account.accountType == AccountType.station;
+    final isSupplier = widget.account.accountType == AccountType.supplier;
 
-    await OperationEntrySheet.show(
-      context: context,
-      account: widget.account,
-      initialTabIndex: 0,
-      initialDirection: isSupplier ? 0 : 1,
-      initialFuelTypeId: currentFuelId,
-    );
-    if (widget.account.id != null && mounted) {
-      context.read<TransactionsController>().fetchAccountTransactions(
-            widget.account.id!,
-            defaultFuelTypeId: currentFuelId,
-          );
+    if (isStation) {
+      await OperationEntrySheet.show(
+        context: context,
+        initialTabIndex: 1,
+        initialDirection: 0,
+        initialStationId: widget.account.id,
+        initialFuelTypeId: currentFuelId,
+      );
+    } else {
+      await OperationEntrySheet.show(
+        context: context,
+        account: widget.account,
+        initialTabIndex: 0,
+        initialDirection: isSupplier ? 0 : 1,
+        initialFuelTypeId: currentFuelId,
+      );
+    }
+
+    if (mounted) {
+      await _loadTransactions(fuelId: currentFuelId);
     }
   }
 
   void _deleteTransaction(TransactionModel tx) async {
+    final isStation = widget.account.accountType == AccountType.station;
+    final txCtrl = context.read<TransactionsController>();
     final confirm = await CustomDialog.showConfirmation(
       context: context,
       title: AppStrings.confirmExclamation,
-      message: AppStrings.confirmDeleteTransactionShortMsg,
+      message: isStation
+          ? AppStrings.confirmDeleteStationTransactionMsg
+          : AppStrings.confirmDeleteTransactionShortMsg,
       confirmText: AppStrings.ok,
       cancelText: AppStrings.cancel,
       isDanger: true,
     );
 
     if (confirm && tx.id != null && widget.account.id != null && mounted) {
-      final success =
-          await context.read<TransactionsController>().deleteTransaction(
+      final success = isStation
+          ? await txCtrl.deleteStationTransaction(
+                tx.id!,
+                widget.account.id!,
+              )
+          : await txCtrl.deleteTransaction(
                 tx.id!,
                 widget.account.id!,
               );
@@ -96,6 +121,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   }
 
   void _showTransactionDetails(TransactionModel tx) {
+    final txCtrl = context.read<TransactionsController>();
     CustomDialog.showTransactionDetails(
       context: context,
       transaction: tx,
@@ -103,16 +129,18 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
       onEdit: () {
         OperationEntrySheet.show(
           context: context,
-          account: widget.account,
+          account: widget.account.accountType != AccountType.station
+              ? widget.account
+              : null,
+          initialStationId: widget.account.accountType == AccountType.station
+              ? widget.account.id
+              : null,
           editTransaction: tx,
         ).then((_) {
-          if (widget.account.id != null && mounted) {
-            context.read<TransactionsController>().fetchAccountTransactions(
-                  widget.account.id!,
-                  defaultFuelTypeId: context
-                      .read<TransactionsController>()
-                      .selectedFuelTypeId,
-                );
+          if (mounted) {
+            _loadTransactions(
+              fuelId: txCtrl.selectedFuelTypeId,
+            );
           }
         });
       },
@@ -122,8 +150,6 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
 
   @override
   Widget build(BuildContext context) {
-    final isSupplier = widget.account.accountType == AccountType.supplier;
-
     return Consumer<TransactionsController>(
       builder: (context, controller, child) {
         return Scaffold(
@@ -183,16 +209,14 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
               : RefreshIndicator(
                   color: AppColors.primary,
                   onRefresh: () async {
-                    if (widget.account.id != null) {
-                      await controller
-                          .fetchAccountTransactions(widget.account.id!);
-                    }
+                    await _loadTransactions(
+                        fuelId: controller.selectedFuelTypeId);
                   },
                   child: ListView(
                     padding: AppDimensions.paddingScreen,
                     children: [
                       if (controller.activeFuelTypes.isNotEmpty) ...[
-                        _buildSummaryCard(controller, isSupplier),
+                        _buildSummaryCard(controller),
                         const SizedBox(height: AppDimensions.spaceL),
                       ],
                       _buildSectionHeader(controller),
@@ -203,9 +227,15 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                             top: AppDimensions.space3XL,
                           ),
                           child: EmptyStateWidget(
-                            icon: AppIcons.tabQuota,
-                            title: AppStrings.noTransactionsFound,
-                            actionText: AppStrings.recordFirstOperation,
+                            icon: widget.account.accountType == AccountType.station
+                                ? AppIcons.gasStationOutlined
+                                : AppIcons.tabQuota,
+                            title: widget.account.accountType == AccountType.station
+                                ? AppStrings.noStationTransactionsFound
+                                : AppStrings.noTransactionsFound,
+                            actionText: widget.account.accountType == AccountType.station
+                                ? AppStrings.recordFirstStationOperation
+                                : AppStrings.recordFirstOperation,
                             actionIcon: AppIcons.add,
                             onAction: () => _openAddTransactionDialog(),
                           ),
@@ -221,35 +251,66 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     );
   }
 
-  Widget _buildSummaryCard(TransactionsController controller, bool isSupplier) {
+  Widget _buildSummaryCard(TransactionsController controller) {
+    final isStation = widget.account.accountType == AccountType.station;
+    final isSupplier = widget.account.accountType == AccountType.supplier;
+
     return FuelSummarySlider(
       fuelTypes: controller.activeFuelTypes,
       selectedFuelId: controller.selectedFuelTypeId,
       onFuelChanged: (fuelId) => controller.setSelectedFuelTypeId(fuelId),
       cardBuilder: (fuelId, fuelName) {
-        final quota = controller.getQuotaLitersForFuel(fuelId);
-        final actual = controller.getActualLitersForFuel(fuelId);
-        final balance = controller.getBalanceLitersForFuel(fuelId);
+        if (isStation) {
+          final supply = controller.getStationSupplyForFuel(fuelId);
+          final dispense = controller.getStationDispenseForFuel(fuelId);
+          final aeration = controller.getStationAerationForFuel(fuelId);
+          final balance = controller.getStationBalanceForFuel(fuelId);
 
-        return FuelCardData(
-          title: widget.account.name,
-          fuelName: fuelName,
-          balance: balance,
-          metrics: [
-            FuelCardMetric(
-              value: quota,
-              label: isSupplier
-                  ? AppStrings.supplyQuota
-                  : AppStrings.dispenseQuota,
-            ),
-            FuelCardMetric(
-              value: actual,
-              label: isSupplier
-                  ? AppStrings.supplyActual
-                  : AppStrings.dispenseActual,
-            ),
-          ],
-        );
+          return FuelCardData(
+            title: widget.account.name,
+            fuelName: fuelName,
+            balance: balance,
+            metrics: [
+              FuelCardMetric(
+                value: supply,
+                label: AppStrings.actualSupply,
+              ),
+              FuelCardMetric(
+                value: dispense,
+                label: AppStrings.actualDispense,
+              ),
+              if (aeration > 0)
+                FuelCardMetric(
+                  value: aeration,
+                  label: AppStrings.aerationCommission,
+                ),
+            ],
+          );
+        } else {
+          final quota = controller.getQuotaLitersForFuel(fuelId);
+          final actual = controller.getActualLitersForFuel(fuelId);
+          final balance = controller.getBalanceLitersForFuel(fuelId);
+
+          return FuelCardData(
+            title: widget.account.name,
+            fuelName: fuelName,
+            balance: balance,
+            metrics: [
+              FuelCardMetric(
+                value: quota,
+                label: isSupplier
+                    ? AppStrings.supplyQuota
+                    : AppStrings.dispenseQuota,
+              ),
+              FuelCardMetric(
+                value: actual,
+                label: isSupplier
+                    ? AppStrings.supplyActual
+                    : AppStrings.dispenseActual,
+              ),
+            ],
+          );
+        }
       },
     );
   }

@@ -20,7 +20,9 @@ class AccountsController extends ChangeNotifier {
       // فلترة حسب البحث
       final matchesSearch = _searchQuery.isEmpty ||
           account.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (account.phoneNumber?.contains(_searchQuery) ?? false);
+          (account.phoneNumber?.contains(_searchQuery) ?? false) ||
+          (account.location?.toLowerCase().contains(_searchQuery.toLowerCase()) ??
+              false);
 
       return matchesType && matchesSearch;
     }).toList();
@@ -28,6 +30,15 @@ class AccountsController extends ChangeNotifier {
 
   /// جلب كافة الحسابات النشطة بدون فلتر التبويب (لأجل نوافذ الإدخال والبحث الذكي)
   List<AccountModel> get allAccounts => List.unmodifiable(_allAccounts);
+
+  /// الحسابات مقسمة بحسب النوع
+  List<AccountModel> get stations =>
+      _allAccounts.where((a) => a.accountType == AccountType.station).toList();
+  List<AccountModel> get suppliers =>
+      _allAccounts.where((a) => a.accountType == AccountType.supplier).toList();
+  List<AccountModel> get beneficiaries => _allAccounts
+      .where((a) => a.accountType == AccountType.beneficiary)
+      .toList();
 
   bool get isLoading => _isLoading;
   AccountType? get selectedTypeFilter => _selectedTypeFilter;
@@ -73,6 +84,30 @@ class AccountsController extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('Error adding account: $e');
+      return false;
+    }
+  }
+
+  // إضافة محطة جديدة
+  Future<bool> addStation({
+    required String name,
+    String? location,
+    String? phone,
+    double defaultCommission = 2.0,
+  }) async {
+    try {
+      final newStation = AccountModel(
+        name: name.trim(),
+        accountType: AccountType.station,
+        location: location?.trim().isEmpty == true ? null : location?.trim(),
+        phoneNumber: phone?.trim().isEmpty == true ? null : phone?.trim(),
+        defaultCommissionRate: defaultCommission,
+      );
+      await _repository.insertAccount(newStation);
+      await fetchAccounts();
+      return true;
+    } catch (e) {
+      debugPrint('Error adding station: $e');
       return false;
     }
   }

@@ -37,11 +37,23 @@ class AccountRepository {
         a.*, 
         COUNT(t.id) AS operations_count
       FROM accounts a
-      LEFT JOIN transactions t ON t.account_id = a.id AND t.is_deleted = 0
+      LEFT JOIN transactions t ON (t.account_id = a.id OR t.station_id = a.id OR t.reference_station_id = a.id) AND t.is_deleted = 0
       WHERE a.is_active = 0
       GROUP BY a.id
       ORDER BY a.deleted_at DESC, a.name ASC
     ''');
+    return maps.map((map) => AccountModel.fromMap(map)).toList();
+  }
+
+  /// جلب كافة المحطات النشطة غير المؤرشفة
+  Future<List<AccountModel>> getStations() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'accounts',
+      where: 'account_type = ? AND is_active = ? AND is_archived = ?',
+      whereArgs: ['STATION', 1, 0],
+      orderBy: 'name ASC',
+    );
     return maps.map((map) => AccountModel.fromMap(map)).toList();
   }
 

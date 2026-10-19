@@ -1,7 +1,7 @@
 import '../../models/station_model.dart';
 import '../local/database_helper.dart';
 
-/// مستودع إدارة بيانات المحطات في قاعدة البيانات
+/// مستودع إدارة بيانات المحطات (يعمل مباشرة على جدول الحسابات accounts بنوع STATION)
 class StationRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper.instance;
 
@@ -22,8 +22,8 @@ class StationRepository {
            WHERE t.is_deleted = 0 AND ((t.type_id IN (2, 3) AND t.station_id = s.id)
               OR (t.type_id = 5 AND COALESCE(t.reference_station_id, t.station_id) = s.id))
           ), 0.0) AS balance
-      FROM stations s
-      WHERE s.is_active = 1 AND s.is_archived = 0
+      FROM accounts s
+      WHERE s.account_type = 'STATION' AND s.is_active = 1 AND s.is_archived = 0
       ORDER BY s.name ASC
     ''');
     return maps.map((map) => StationModel.fromMap(map)).toList();
@@ -34,8 +34,8 @@ class StationRepository {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT s.*
-      FROM stations s
-      WHERE s.is_active = 1 AND s.is_archived = 1
+      FROM accounts s
+      WHERE s.account_type = 'STATION' AND s.is_active = 1 AND s.is_archived = 1
       ORDER BY s.name ASC
     ''');
     return maps.map((map) => StationModel.fromMap(map)).toList();
@@ -45,9 +45,8 @@ class StationRepository {
   Future<List<StationModel>> getDeletedStations() async {
     final db = await _dbHelper.database;
     final List<Map<String, dynamic>> maps = await db.query(
-      'stations',
-      where: 'is_active = ?',
-      whereArgs: [0],
+      'accounts',
+      where: "account_type = 'STATION' AND is_active = 0",
       orderBy: 'deleted_at DESC, name ASC',
     );
     return maps.map((map) => StationModel.fromMap(map)).toList();
@@ -56,14 +55,14 @@ class StationRepository {
   /// إضافة محطة جديدة
   Future<int> insertStation(StationModel station) async {
     final db = await _dbHelper.database;
-    return await db.insert('stations', station.toMap());
+    return await db.insert('accounts', station.toMap());
   }
 
   /// تعديل بيانات محطة
   Future<int> updateStation(StationModel station) async {
     final db = await _dbHelper.database;
     return await db.update(
-      'stations',
+      'accounts',
       station.toMap(),
       where: 'id = ?',
       whereArgs: [station.id],
@@ -74,7 +73,7 @@ class StationRepository {
   Future<int> archiveStation(int id) async {
     final db = await _dbHelper.database;
     return await db.update(
-      'stations',
+      'accounts',
       {'is_archived': 1},
       where: 'id = ?',
       whereArgs: [id],
@@ -85,7 +84,7 @@ class StationRepository {
   Future<int> unarchiveStation(int id) async {
     final db = await _dbHelper.database;
     return await db.update(
-      'stations',
+      'accounts',
       {'is_archived': 0, 'is_active': 1},
       where: 'id = ?',
       whereArgs: [id],
@@ -104,7 +103,7 @@ class StationRepository {
     }
 
     return await db.update(
-      'stations',
+      'accounts',
       {
         'is_active': 0,
         'deleted_at': DateTime.now().toIso8601String(),
@@ -118,7 +117,7 @@ class StationRepository {
   Future<int> restoreStation(int id) async {
     final db = await _dbHelper.database;
     return await db.update(
-      'stations',
+      'accounts',
       {'is_active': 1, 'is_archived': 0, 'deleted_at': null},
       where: 'id = ?',
       whereArgs: [id],
@@ -129,7 +128,7 @@ class StationRepository {
   Future<int> permanentlyDeleteStation(int id) async {
     final db = await _dbHelper.database;
     return await db.delete(
-      'stations',
+      'accounts',
       where: 'id = ?',
       whereArgs: [id],
     );

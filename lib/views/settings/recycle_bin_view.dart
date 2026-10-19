@@ -567,7 +567,18 @@ class _RecycleBinViewState extends State<RecycleBinView> {
       itemCount: deleted.length,
       itemBuilder: (ctx, index) {
         final account = deleted[index];
+        final isStation = account.accountType == AccountType.station;
         final isSupplier = account.accountType == AccountType.supplier;
+
+        final badgeText = isStation
+            ? AppStrings.typeStation
+            : (isSupplier ? AppStrings.typeSupplier : AppStrings.typeBeneficiary);
+
+        final badgeColor = isStation
+            ? AppColors.warning
+            : (isSupplier ? AppColors.primary : AppColors.supplyGreen);
+
+        final iconData = isStation ? AppIcons.gasStation : AppIcons.account;
 
         return Card(
           margin: const EdgeInsets.only(bottom: AppDimensions.spaceM),
@@ -585,17 +596,13 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: isSupplier
-                        ? AppColors.primary.withOpacity(0.1)
-                        : AppColors.supplyGreen.withOpacity(0.1),
+                    color: badgeColor.withOpacity(0.1),
                     borderRadius:
                         BorderRadius.circular(AppDimensions.radiusM),
                   ),
                   child: Icon(
-                    AppIcons.account,
-                    color: isSupplier
-                        ? AppColors.primary
-                        : AppColors.supplyGreen,
+                    iconData,
+                    color: badgeColor,
                     size: AppDimensions.iconMedium,
                   ),
                 ),
@@ -606,12 +613,15 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            account.name,
-                            style: const TextStyle(
-                              fontSize: AppTypography.sizeH2,
-                              fontWeight: AppTypography.weightBold,
-                              color: AppColors.textPrimary,
+                          Flexible(
+                            child: Text(
+                              account.name,
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeH2,
+                                fontWeight: AppTypography.weightBold,
+                                color: AppColors.textPrimary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: AppDimensions.spaceS),
@@ -621,22 +631,16 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: isSupplier
-                                  ? AppColors.primary.withOpacity(0.1)
-                                  : AppColors.supplyGreen.withOpacity(0.1),
+                              color: badgeColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(
                                   AppDimensions.radiusS),
                             ),
                             child: Text(
-                              isSupplier
-                                  ? AppStrings.typeSupplier
-                                  : AppStrings.typeBeneficiary,
+                              badgeText,
                               style: TextStyle(
                                 fontSize: AppTypography.sizeCaption - 1,
                                 fontWeight: AppTypography.weightBold,
-                                color: isSupplier
-                                    ? AppColors.primary
-                                    : AppColors.supplyGreen,
+                                color: badgeColor,
                               ),
                             ),
                           ),
@@ -645,7 +649,18 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                       const SizedBox(height: 3),
                       Row(
                         children: [
-                          if (account.phoneNumber != null &&
+                          if (isStation &&
+                              account.location != null &&
+                              account.location!.isNotEmpty) ...[
+                            Text(
+                              account.location!,
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeBodySecondary,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(width: AppDimensions.spaceM),
+                          ] else if (account.phoneNumber != null &&
                               account.phoneNumber!.isNotEmpty) ...[
                             Text(
                               account.phoneNumber!,

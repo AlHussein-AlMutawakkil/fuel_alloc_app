@@ -1,3 +1,5 @@
+import 'account_model.dart';
+
 /// نموذج المحطة (محطة الوقود / نقطة الصرف والتوريد)
 class StationModel {
   final int? id;
@@ -28,6 +30,7 @@ class StationModel {
     return {
       if (id != null) 'id': id,
       'name': name,
+      'account_type': 'STATION',
       'location': location,
       'phone_number': phoneNumber,
       'default_commission_rate': defaultCommissionRate,
@@ -36,6 +39,37 @@ class StationModel {
       if (deletedAt != null) 'deleted_at': deletedAt,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),
     };
+  }
+
+  AccountModel toAccountModel() {
+    return AccountModel(
+      id: id,
+      name: name,
+      accountType: AccountType.station,
+      location: location,
+      phoneNumber: phoneNumber,
+      defaultCommissionRate: defaultCommissionRate,
+      isActive: isActive,
+      isArchived: isArchived,
+      createdAt: createdAt,
+      deletedAt: deletedAt,
+      currentBalance: currentBalance,
+    );
+  }
+
+  factory StationModel.fromAccountModel(AccountModel acc) {
+    return StationModel(
+      id: acc.id,
+      name: acc.name,
+      location: acc.location,
+      phoneNumber: acc.phoneNumber,
+      defaultCommissionRate: acc.defaultCommissionRate,
+      isActive: acc.isActive,
+      isArchived: acc.isArchived,
+      createdAt: acc.createdAt,
+      deletedAt: acc.deletedAt,
+      currentBalance: acc.currentBalance,
+    );
   }
 
   factory StationModel.fromMap(Map<String, dynamic> map) {

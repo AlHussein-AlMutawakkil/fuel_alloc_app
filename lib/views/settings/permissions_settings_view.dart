@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_icons.dart';
@@ -17,33 +17,38 @@ class PermissionsSettingsView extends StatefulWidget {
       _PermissionsSettingsViewState();
 }
 
-class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
+class _PermissionsSettingsViewState extends State<PermissionsSettingsView>
+    with WidgetsBindingObserver {
   bool _contactsEnabled = false;
 
   @override
   void initState() {
     super.initState();
-    _checkPermissionSilently();
+    WidgetsBinding.instance.addObserver(this);
+    _checkPermission();
   }
 
-  /// التحقق الصامت من حالة الإذن دون إظهار نافذة منبثقة للمستخدم
-  Future<void> _checkPermissionSilently() async {
-    try {
-      // محاولة قراءة خفيفة، إذا كان الإذن ممنوحاً مسبقاً في النظام سيعيد جهات الاتصال بنجاح
-      // وإذا لم يكن ممنوحاً سينتقل إلى catch دون إظهار أي نافذة مطالبة للمستخدم
-      await FlutterContacts.getContacts(
-        withProperties: false,
-        withThumbnail: false,
-        withPhoto: false,
-      );
-      if (mounted) {
-        setState(() => _contactsEnabled = true);
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _contactsEnabled = false);
-      }
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkPermission();
     }
+  }
+
+  /// التحقق الصامت والمباشر من النظام لحالة الإذن دون إظهار أي نافذة مطالبة
+  Future<void> _checkPermission() async {
+    try {
+      final status = await Permission.contacts.status;
+      if (mounted) {
+        setState(() => _contactsEnabled = status.isGranted);
+      }
+    } catch (_) {}
   }
 
   Widget _buildPermissionRow({
@@ -95,11 +100,20 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
 
   Future<void> _handlePermissionRequest() async {
     try {
-      final granted = await FlutterContacts.requestPermission(readonly: true);
+      final status = await Permission.contacts.status;
+      if (status.isGranted) {
+        // إذا كان مفعل مسبقاً، فتح إعدادات التطبيق في الهاتف لإدارته
+        await openAppSettings();
+        return;
+      }
+
+      final res = await Permission.contacts.request();
       if (!mounted) return;
-      setState(() => _contactsEnabled = granted);
-      if (granted) {
+      setState(() => _contactsEnabled = res.isGranted);
+      if (res.isGranted) {
         AppSnackBar.showSuccess(context, AppStrings.operationSuccess);
+      } else if (res.isPermanentlyDenied) {
+        await openAppSettings();
       } else {
         AppSnackBar.showError(context, AppStrings.contactsPermissionDenied);
       }

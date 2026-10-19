@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/accounts_controller.dart';
-import '../../controllers/stations_controller.dart';
 import '../../controllers/transactions_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
@@ -18,9 +17,7 @@ import '../../core/widgets/custom_modal_sheet.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../../models/account_model.dart';
-import '../../models/station_model.dart';
 import 'account_transactions_view.dart';
-import 'station_transactions_view.dart';
 import 'widgets/slidable_account_tile.dart';
 
 enum AccountFilterTab { beneficiaries, suppliers, stations }
@@ -45,7 +42,6 @@ class _AccountsViewState extends State<AccountsView> {
       final accCtrl = context.read<AccountsController>();
       accCtrl.fetchAccounts();
       accCtrl.setTypeFilter(AccountType.beneficiary);
-      context.read<StationsController>().fetchStations();
       context.read<TransactionsController>().fetchAllBalancesSummary();
     });
   }
@@ -62,18 +58,36 @@ class _AccountsViewState extends State<AccountsView> {
     final nameController = TextEditingController(text: account?.name ?? '');
     final phoneController =
         TextEditingController(text: account?.phoneNumber ?? '');
+    final locationController =
+        TextEditingController(text: account?.location ?? '');
+    final commissionController = TextEditingController(
+      text: account != null
+          ? account.defaultCommissionRate.toString()
+          : '2.0',
+    );
     AccountType selectedType =
         account?.accountType ?? defaultType ?? AccountType.beneficiary;
 
     CustomModalSheet.show(
       context: context,
-      title: account == null ? AppStrings.addAccount : AppStrings.editAccount,
+      title: account == null
+          ? (selectedType == AccountType.station
+              ? AppStrings.addStation
+              : (selectedType == AccountType.supplier
+                  ? AppStrings.addSupplier
+                  : AppStrings.addBeneficiary))
+          : (account.accountType == AccountType.station
+              ? AppStrings.editStation
+              : AppStrings.editAccount),
       contentBuilder: (ctx, setModalState) {
+        final isStation = selectedType == AccountType.station;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             CustomModalSheet.buildTextField(
-              label: AppStrings.accountName,
+              label: isStation
+                  ? AppStrings.stationNameLabel
+                  : AppStrings.accountName,
               controller: nameController,
             ),
             const SizedBox(height: AppDimensions.spaceL),
@@ -91,6 +105,10 @@ class _AccountsViewState extends State<AccountsView> {
                   value: AccountType.supplier,
                   label: AppStrings.typeSupplier,
                 ),
+                CustomDropdownItem(
+                  value: AccountType.station,
+                  label: AppStrings.typeStation,
+                ),
               ],
               onChanged: (val) {
                 setModalState(() {
@@ -98,6 +116,20 @@ class _AccountsViewState extends State<AccountsView> {
                 });
               },
             ),
+            if (isStation) ...[
+              const SizedBox(height: AppDimensions.spaceL),
+              CustomModalSheet.buildTextField(
+                label: AppStrings.locationCityLabel,
+                controller: locationController,
+              ),
+              const SizedBox(height: AppDimensions.spaceL),
+              CustomModalSheet.buildTextField(
+                label: AppStrings.commissionRatePercentLabel,
+                controller: commissionController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+              ),
+            ],
             const SizedBox(height: AppDimensions.spaceL),
             CustomModalSheet.buildTextField(
               label: AppStrings.phoneNumber,
@@ -134,13 +166,39 @@ class _AccountsViewState extends State<AccountsView> {
 
         final navigator = Navigator.of(ctx);
         final controller = context.read<AccountsController>();
+        final commRate =
+            double.tryParse(commissionController.text.trim()) ?? 2.0;
+
         if (account == null) {
-          await controller.addAccount(name, selectedType, phoneController.text);
+          if (selectedType == AccountType.station) {
+            await controller.addStation(
+              name: name,
+              location: locationController.text.trim().isEmpty
+                  ? null
+                  : locationController.text.trim(),
+              phone: phoneController.text.trim().isEmpty
+                  ? null
+                  : phoneController.text.trim(),
+              defaultCommission: commRate,
+            );
+          } else {
+            await controller.addAccount(
+              name,
+              selectedType,
+              phoneController.text.trim().isEmpty
+                  ? null
+                  : phoneController.text.trim(),
+            );
+          }
         } else {
           await controller.updateAccount(
             account.copyWith(
               name: name,
               accountType: selectedType,
+              location: locationController.text.trim().isEmpty
+                  ? null
+                  : locationController.text.trim(),
+              defaultCommissionRate: commRate,
               phoneNumber: phoneController.text.trim().isEmpty
                   ? null
                   : phoneController.text.trim(),
@@ -153,10 +211,13 @@ class _AccountsViewState extends State<AccountsView> {
   }
 
   void _deleteAccount(AccountModel account) async {
+    final isStation = account.accountType == AccountType.station;
     final confirm = await CustomDialog.showConfirmation(
       context: context,
       title: AppStrings.confirmExclamation,
-      message: AppStrings.confirmDeleteAccountMsg,
+      message: isStation
+          ? AppStrings.confirmDeleteStationMsg
+          : AppStrings.confirmDeleteAccountMsg,
       confirmText: AppStrings.ok,
       cancelText: AppStrings.cancel,
       isDanger: true,
@@ -171,162 +232,35 @@ class _AccountsViewState extends State<AccountsView> {
   }
 
   void _archiveAccount(AccountModel account) async {
+    final isStation = account.accountType == AccountType.station;
     final confirm = await CustomDialog.showConfirmation(
       context: context,
-      title: AppStrings.archiveAccountTitle,
-      message: AppStrings.confirmArchiveAccountMsg,
+      title: isStation
+          ? AppStrings.archiveStationTitle
+          : AppStrings.archiveAccountTitle,
+      message: isStation
+          ? 'هل تريد أرشفة محطة "${account.name}"؟ سيتم نقلها للأرشيف مع حفظ كافة كشوفاتها وسجلاتها.'
+          : AppStrings.confirmArchiveAccountMsg,
       confirmText: AppStrings.archive,
       cancelText: AppStrings.cancel,
       isDanger: false,
     );
 
     if (confirm && account.id != null && mounted) {
-      await context.read<AccountsController>().archiveAccount(account.id!);
-      if (mounted) {
-        AppSnackBar.showSuccess(context, AppStrings.accountArchivedSuccess);
-        context.read<TransactionsController>().fetchAllBalancesSummary();
-      }
-    }
-  }
-
-  // --- نوافذ المحطات ---
-
-  void _showAddEditStationDialog({StationModel? station}) {
-    final nameController = TextEditingController(text: station?.name ?? '');
-    final locationController =
-        TextEditingController(text: station?.location ?? '');
-    final phoneController =
-        TextEditingController(text: station?.phoneNumber ?? '');
-    final commissionController = TextEditingController(
-      text: station != null ? station.defaultCommissionRate.toString() : '2.0',
-    );
-
-    CustomModalSheet.show(
-      context: context,
-      title: station == null ? AppStrings.addStation : AppStrings.editStation,
-      contentBuilder: (ctx, setModalState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            CustomModalSheet.buildTextField(
-              label: AppStrings.stationNameLabel,
-              controller: nameController,
-            ),
-            const SizedBox(height: AppDimensions.spaceL),
-            CustomModalSheet.buildTextField(
-              label: AppStrings.locationCityLabel,
-              controller: locationController,
-            ),
-            const SizedBox(height: AppDimensions.spaceL),
-            CustomModalSheet.buildTextField(
-              label: AppStrings.phoneNumber,
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              suffixIcon: IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                icon: const Icon(
-                  AppIcons.contacts,
-                  color: AppColors.primary,
-                  size: 20,
-                ),
-                tooltip: AppStrings.pickFromContacts,
-                onPressed: () async {
-                  final contact = await ContactPickerSheet.show(context);
-                  if (contact != null) {
-                    setModalState(() {
-                      phoneController.text = contact.phone;
-                      if (nameController.text.trim().isEmpty) {
-                        nameController.text = contact.name;
-                      }
-                    });
-                  }
-                },
-              ),
-            ),
-            const SizedBox(height: AppDimensions.spaceL),
-            CustomModalSheet.buildTextField(
-              label: AppStrings.commissionRatePercentLabel,
-              controller: commissionController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
-          ],
-        );
-      },
-      onSave: (ctx) async {
-        final name = nameController.text.trim();
-        if (name.isEmpty) return;
-
-        final navigator = Navigator.of(ctx);
-        final commRate =
-            double.tryParse(commissionController.text.trim()) ?? 2.0;
-        final stationsController = context.read<StationsController>();
-
-        if (station == null) {
-          await stationsController.addStation(
-            name: name,
-            location: locationController.text.trim(),
-            phone: phoneController.text.trim(),
-            defaultCommission: commRate,
-          );
-        } else {
-          await stationsController.updateStation(
-            station.copyWith(
-              name: name,
-              location: locationController.text.trim().isEmpty
-                  ? null
-                  : locationController.text.trim(),
-              phoneNumber: phoneController.text.trim().isEmpty
-                  ? null
-                  : phoneController.text.trim(),
-              defaultCommissionRate: commRate,
-            ),
-          );
-        }
-        navigator.pop();
-      },
-    );
-  }
-
-  void _deleteStation(StationModel station) async {
-    final confirm = await CustomDialog.showConfirmation(
-      context: context,
-      title: AppStrings.confirmExclamation,
-      message: AppStrings.confirmDeleteStationMsg,
-      confirmText: AppStrings.ok,
-      cancelText: AppStrings.cancel,
-      isDanger: true,
-    );
-
-    if (confirm && station.id != null && mounted) {
-      await context.read<StationsController>().deleteStation(station.id!);
-      if (mounted) {
-        context.read<TransactionsController>().fetchAllBalancesSummary();
-      }
-    }
-  }
-
-  void _archiveStation(StationModel station) async {
-    final confirm = await CustomDialog.showConfirmation(
-      context: context,
-      title: AppStrings.archiveStationTitle,
-      message:
-          'هل تريد أرشفة محطة "${station.name}"؟ سيتم نقلها للأرشيف مع حفظ كافة كشوفاتها وسجلاتها.',
-      confirmText: AppStrings.archive,
-      cancelText: AppStrings.cancel,
-      isDanger: false,
-    );
-
-    if (confirm && station.id != null && mounted) {
       final success =
-          await context.read<StationsController>().archiveStation(station.id!);
+          await context.read<AccountsController>().archiveAccount(account.id!);
       if (success && mounted) {
-        AppSnackBar.showSuccess(context, AppStrings.stationArchivedSuccess);
+        AppSnackBar.showSuccess(
+          context,
+          isStation
+              ? AppStrings.stationArchivedSuccess
+              : AppStrings.accountArchivedSuccess,
+        );
         context.read<TransactionsController>().fetchAllBalancesSummary();
       }
     }
   }
+
 
   void _navigateToTransactions(AccountModel account) {
     Navigator.of(context)
@@ -342,25 +276,10 @@ class _AccountsViewState extends State<AccountsView> {
     });
   }
 
-  void _navigateToStationTransactions(StationModel station) {
-    Navigator.of(context)
-        .push(
-      MaterialPageRoute(
-        builder: (_) => StationTransactionsView(station: station),
-      ),
-    )
-        .then((_) {
-      if (mounted) {
-        context.read<StationsController>().fetchStations();
-        context.read<TransactionsController>().fetchAllBalancesSummary();
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Consumer2<AccountsController, StationsController>(
-      builder: (context, accController, stationsController, child) {
+    return Consumer<AccountsController>(
+      builder: (context, accController, child) {
         final isStationTab = _activeTab == AccountFilterTab.stations;
 
         return Scaffold(
@@ -388,11 +307,7 @@ class _AccountsViewState extends State<AccountsView> {
                       border: InputBorder.none,
                     ),
                     onChanged: (val) {
-                      if (isStationTab) {
-                        stationsController.setSearchQuery(val);
-                      } else {
-                        accController.setSearchQuery(val);
-                      }
+                      accController.setSearchQuery(val);
                     },
                   )
                 : Text(
@@ -414,7 +329,6 @@ class _AccountsViewState extends State<AccountsView> {
                     if (!_isSearching) {
                       _searchController.clear();
                       accController.setSearchQuery('');
-                      stationsController.setSearchQuery('');
                     }
                   });
                 },
@@ -427,15 +341,13 @@ class _AccountsViewState extends State<AccountsView> {
                         ? AppStrings.addSupplier
                         : AppStrings.addBeneficiary),
                 onPressed: () {
-                  if (isStationTab) {
-                    _showAddEditStationDialog();
-                  } else {
-                    _showAddEditDialog(
-                      defaultType: _activeTab == AccountFilterTab.suppliers
-                          ? AccountType.supplier
-                          : AccountType.beneficiary,
-                    );
-                  }
+                  _showAddEditDialog(
+                    defaultType: isStationTab
+                        ? AccountType.station
+                        : (_activeTab == AccountFilterTab.suppliers
+                            ? AccountType.supplier
+                            : AccountType.beneficiary),
+                  );
                 },
               ),
             ],
@@ -443,12 +355,10 @@ class _AccountsViewState extends State<AccountsView> {
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildSegmentControl(accController, stationsController),
+              _buildSegmentControl(accController),
               Expanded(
                 child: OneUiListContainer(
-                  child: isStationTab
-                      ? _buildStationsList(stationsController)
-                      : _buildAccountsList(accController),
+                  child: _buildAccountsList(accController),
                 ),
               ),
             ],
@@ -458,10 +368,7 @@ class _AccountsViewState extends State<AccountsView> {
     );
   }
 
-  Widget _buildSegmentControl(
-    AccountsController accController,
-    StationsController stationsController,
-  ) {
+  Widget _buildSegmentControl(AccountsController accController) {
     return Container(
       margin: AppDimensions.paddingSegment,
       padding: AppDimensions.paddingAllXS,
@@ -492,7 +399,7 @@ class _AccountsViewState extends State<AccountsView> {
             isSelected: _activeTab == AccountFilterTab.stations,
             onTap: () {
               setState(() => _activeTab = AccountFilterTab.stations);
-              stationsController.fetchStations();
+              accController.setTypeFilter(AccountType.station);
             },
           ),
         ],
@@ -547,11 +454,15 @@ class _AccountsViewState extends State<AccountsView> {
       return const AppLoadingIndicator();
     }
     if (controller.accounts.isEmpty) {
+      final isStation = _activeTab == AccountFilterTab.stations;
+      final isSupplier = _activeTab == AccountFilterTab.suppliers;
       return EmptyStateWidget(
-        icon: AppIcons.accountOutline,
-        title: _activeTab == AccountFilterTab.suppliers
-            ? AppStrings.noSuppliersFound
-            : AppStrings.noBeneficiariesFound,
+        icon: isStation ? AppIcons.gasStationOutlined : AppIcons.accountOutline,
+        title: isStation
+            ? AppStrings.noStationsRecordedYet
+            : (isSupplier
+                ? AppStrings.noSuppliersFound
+                : AppStrings.noBeneficiariesFound),
       );
     }
     return ListView.builder(
@@ -595,10 +506,11 @@ class _AccountsViewState extends State<AccountsView> {
   }
 
   Widget _buildAccountRow(AccountModel account) {
-    final hasPhone =
-        account.phoneNumber != null && account.phoneNumber!.trim().isNotEmpty;
+    final isStation = account.accountType == AccountType.station;
     final txCtrl = context.watch<TransactionsController>();
-    final balances = txCtrl.allAccountBalances[account.id] ?? {};
+    final balances = isStation
+        ? (txCtrl.allStationBalances[account.id] ?? {})
+        : (txCtrl.allAccountBalances[account.id] ?? {});
     final petrolBalance = balances[1] ?? 0.0;
     final dieselBalance = balances[2] ?? 0.0;
 
@@ -614,6 +526,21 @@ class _AccountsViewState extends State<AccountsView> {
         fuelName: AppStrings.fuelDiesel,
         amount: dieselBalance,
       ));
+    }
+
+    String subText = '';
+    if (isStation) {
+      if (account.location != null && account.location!.trim().isNotEmpty) {
+        subText = account.location!;
+      } else if (account.phoneNumber != null &&
+          account.phoneNumber!.trim().isNotEmpty) {
+        subText = account.phoneNumber!;
+      } else {
+        subText =
+            '${AppStrings.commissionRatePrefix}${account.defaultCommissionRate}%';
+      }
+    } else {
+      subText = account.phoneNumber ?? '';
     }
 
     return SlidableAccountTile(
@@ -638,123 +565,16 @@ class _AccountsViewState extends State<AccountsView> {
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  if (hasPhone) ...[
+                  if (subText.isNotEmpty) ...[
                     const SizedBox(height: AppDimensions.spaceXS),
                     Text(
-                      account.phoneNumber!,
+                      subText,
                       style: const TextStyle(
                         fontSize: AppTypography.sizeBodySecondary,
                         color: AppColors.textTertiary,
                       ),
                     ),
                   ],
-                ],
-              ),
-            ),
-            if (balanceLines.isNotEmpty) ...[
-              const SizedBox(width: AppDimensions.spaceM),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: balanceLines,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStationsList(StationsController controller) {
-    if (controller.isLoading) {
-      return const AppLoadingIndicator();
-    }
-    if (controller.stations.isEmpty) {
-      return const EmptyStateWidget(
-        icon: AppIcons.gasStationOutlined,
-        title: AppStrings.noStationsRecordedYet,
-      );
-    }
-    return ListView.builder(
-      padding: EdgeInsets.zero,
-      itemCount: controller.stations.length,
-      itemBuilder: (context, index) {
-        final station = controller.stations[index];
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildStationRow(station),
-            const OneUiDivider(
-              indent: AppDimensions.dividerIndentCompact,
-              endIndent: AppDimensions.dividerIndentCompact,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildStationRow(StationModel station) {
-    String subText = '';
-    if (station.location != null && station.location!.trim().isNotEmpty) {
-      subText = station.location!;
-    } else if (station.phoneNumber != null &&
-        station.phoneNumber!.trim().isNotEmpty) {
-      subText = station.phoneNumber!;
-    } else {
-      subText =
-          '${AppStrings.commissionRatePrefix}${station.defaultCommissionRate}%';
-    }
-
-    final txCtrl = context.watch<TransactionsController>();
-    final balances = txCtrl.allStationBalances[station.id] ?? {};
-    final petrolBalance = balances[1] ?? 0.0;
-    final dieselBalance = balances[2] ?? 0.0;
-
-    final List<Widget> balanceLines = [];
-    if (petrolBalance != 0.0) {
-      balanceLines.add(_buildBalanceLine(
-        fuelName: AppStrings.fuelPetrol,
-        amount: petrolBalance,
-      ));
-    }
-    if (dieselBalance != 0.0) {
-      balanceLines.add(_buildBalanceLine(
-        fuelName: AppStrings.fuelDiesel,
-        amount: dieselBalance,
-      ));
-    }
-
-    return SlidableAccountTile(
-      key: ValueKey('station_${station.id}'),
-      onTap: () => _navigateToStationTransactions(station),
-      onDelete: () => _deleteStation(station),
-      onEdit: () => _showAddEditStationDialog(station: station),
-      onArchive: () => _archiveStation(station),
-      child: Padding(
-        padding: AppDimensions.paddingTile,
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    station.name,
-                    style: const TextStyle(
-                      fontSize: AppTypography.sizeH2,
-                      fontWeight: AppTypography.weightSemiBold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.spaceXS),
-                  Text(
-                    subText,
-                    style: const TextStyle(
-                      fontSize: AppTypography.sizeBodySecondary,
-                      color: AppColors.textTertiary,
-                    ),
-                  ),
                 ],
               ),
             ),

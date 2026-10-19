@@ -23,8 +23,8 @@ class TransactionRepository {
         a.phone_number AS account_phone
       FROM transactions t
       LEFT JOIN transaction_types tt ON t.type_id = tt.id
-      LEFT JOIN stations s ON t.station_id = s.id
-      LEFT JOIN stations rs ON t.reference_station_id = rs.id
+      LEFT JOIN accounts s ON t.station_id = s.id
+      LEFT JOIN accounts rs ON t.reference_station_id = rs.id
       LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
       LEFT JOIN units u ON t.unit_id = u.id
       LEFT JOIN accounts a ON t.account_id = a.id
@@ -53,8 +53,8 @@ class TransactionRepository {
         a.phone_number AS account_phone
       FROM transactions t
       LEFT JOIN transaction_types tt ON t.type_id = tt.id
-      LEFT JOIN stations s ON t.station_id = s.id
-      LEFT JOIN stations rs ON t.reference_station_id = rs.id
+      LEFT JOIN accounts s ON t.station_id = s.id
+      LEFT JOIN accounts rs ON t.reference_station_id = rs.id
       LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
       LEFT JOIN units u ON t.unit_id = u.id
       LEFT JOIN accounts a ON t.account_id = a.id
@@ -220,8 +220,8 @@ class TransactionRepository {
         a.phone_number AS account_phone
       FROM transactions t
       LEFT JOIN transaction_types tt ON t.type_id = tt.id
-      LEFT JOIN stations s ON t.station_id = s.id
-      LEFT JOIN stations rs ON t.reference_station_id = rs.id
+      LEFT JOIN accounts s ON t.station_id = s.id
+      LEFT JOIN accounts rs ON t.reference_station_id = rs.id
       LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
       LEFT JOIN units u ON t.unit_id = u.id
       LEFT JOIN accounts a ON t.account_id = a.id
@@ -287,7 +287,7 @@ class TransactionRepository {
     // إذا كانت العملية توريد فعلي إلى محطة (type_id = 2)، يتم إنشاء قيد عمولة التهوية آلياً للمحطة فقط (account_id = null)
     if (transaction.typeId == 2 && transaction.stationId != null) {
       final stationList = await db.query(
-        'stations',
+        'accounts',
         columns: ['default_commission_rate'],
         where: 'id = ?',
         whereArgs: [transaction.stationId],
@@ -354,13 +354,13 @@ class TransactionRepository {
     );
   }
 
-  /// جلب المحطات المعتمدة
+  /// جلب المحطات المعتمدة من جدول الحسابات
   Future<List<Map<String, dynamic>>> getStations() async {
     final db = await _dbHelper.database;
     return await db.query(
-      'stations',
-      where: 'is_active = ?',
-      whereArgs: [1],
+      'accounts',
+      where: 'account_type = ? AND is_active = ? AND is_archived = ?',
+      whereArgs: ['STATION', 1, 0],
       orderBy: 'name ASC',
     );
   }

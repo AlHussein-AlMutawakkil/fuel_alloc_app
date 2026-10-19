@@ -60,6 +60,7 @@ class AppStrings {
       'لا توجد عمليات مسجلة لهذه المحطة حتى الآن';
   static const String typeBeneficiary = 'مستفيد';
   static const String typeSupplier = 'مورد';
+  static const String typeStation = 'محطة';
   static const String addBeneficiary = 'إضافة مستفيد';
   static const String addSupplier = 'إضافة مورد';
   static const String addStation = 'إضافة محطة';
