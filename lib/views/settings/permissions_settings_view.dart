@@ -20,6 +20,32 @@ class PermissionsSettingsView extends StatefulWidget {
 class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
   bool _contactsEnabled = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _checkPermissionSilently();
+  }
+
+  /// التحقق الصامت من حالة الإذن دون إظهار نافذة منبثقة للمستخدم
+  Future<void> _checkPermissionSilently() async {
+    try {
+      // محاولة قراءة خفيفة، إذا كان الإذن ممنوحاً مسبقاً في النظام سيعيد جهات الاتصال بنجاح
+      // وإذا لم يكن ممنوحاً سينتقل إلى catch دون إظهار أي نافذة مطالبة للمستخدم
+      await FlutterContacts.getContacts(
+        withProperties: false,
+        withThumbnail: false,
+        withPhoto: false,
+      );
+      if (mounted) {
+        setState(() => _contactsEnabled = true);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _contactsEnabled = false);
+      }
+    }
+  }
+
   Widget _buildPermissionRow({
     required IconData icon,
     required String title,
