@@ -41,6 +41,7 @@ class OneUiCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final double borderRadius;
   final bool showDividers;
+  final VoidCallback? onTap;
 
   const OneUiCard({
     super.key,
@@ -52,10 +53,31 @@ class OneUiCard extends StatelessWidget {
     this.padding,
     this.borderRadius = AppDimensions.radiusCard,
     this.showDividers = true,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    Widget content = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: showDividers ? _buildSeparatedChildren() : children,
+    );
+
+    if (padding != null) {
+      content = Padding(padding: padding!, child: content);
+    }
+
+    if (onTap != null) {
+      content = Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: content,
+        ),
+      );
+    }
+
     return Container(
       margin: margin,
       decoration: BoxDecoration(
@@ -63,10 +85,7 @@ class OneUiCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: showDividers ? _buildSeparatedChildren() : children,
-      ),
+      child: content,
     );
   }
 

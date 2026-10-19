@@ -169,13 +169,17 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       final txController = context.read<TransactionsController>();
       final accController = context.read<AccountsController>();
 
-      if (accController.accounts.isEmpty) {
+      if (accController.allAccounts.isEmpty) {
         await accController.fetchAccounts();
       }
 
+      final sourceAccounts = accController.allAccounts.isNotEmpty
+          ? accController.allAccounts
+          : accController.accounts;
+
       if (_selectedAccount == null &&
           widget.editTransaction?.accountId != null) {
-        final matches = accController.accounts.where(
+        final matches = sourceAccounts.where(
           (a) => a.id == widget.editTransaction!.accountId,
         );
         if (matches.isNotEmpty) {
@@ -184,9 +188,11 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       }
 
       if (_selectedAccount == null) {
-        final validAccounts = _getFilteredAccounts(accController.accounts);
+        final validAccounts = _getFilteredAccounts(sourceAccounts);
         if (validAccounts.isNotEmpty) {
           _selectedAccount = validAccounts.first;
+        } else if (sourceAccounts.isNotEmpty) {
+          _selectedAccount = sourceAccounts.first;
         }
       }
 
@@ -223,18 +229,21 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
   }
 
   List<AccountModel> _getFilteredAccounts(List<AccountModel> accounts) {
+    if (accounts.isEmpty) return const [];
     if (_selectedTab == 2) {
       return accounts;
     }
-    if (_selectedDirection == 0) {
-      return accounts
-          .where((a) => a.accountType == AccountType.supplier)
-          .toList();
-    } else {
-      return accounts
-          .where((a) => a.accountType == AccountType.beneficiary)
-          .toList();
+    final filtered = _selectedDirection == 0
+        ? accounts
+            .where((a) => a.accountType == AccountType.supplier)
+            .toList()
+        : accounts
+            .where((a) => a.accountType == AccountType.beneficiary)
+            .toList();
+    if (filtered.isEmpty) {
+      return accounts;
     }
+    return filtered;
   }
 
   Future<void> _updateLiveBalances() async {
@@ -476,8 +485,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                   // 4. حقل الحساب مع الرصيد المباشر
                   _buildFieldLabel(AppStrings.account),
                   InkWell(
-                    onTap: () => _openAccountPicker(
-                        _getFilteredAccounts(accController.accounts)),
+                    onTap: () {
+                      final allAccs = accController.allAccounts.isNotEmpty
+                          ? accController.allAccounts
+                          : accController.accounts;
+                      _openAccountPicker(allAccs);
+                    },
                     borderRadius: AppDimensions.borderRadiusL,
                     child: Container(
                       height: AppDimensions.inputHeight,
@@ -1277,7 +1290,8 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       context: context,
       title: AppStrings.account,
       items: accounts,
-      itemLabel: (acc) => acc.name,
+      itemLabel: (acc) =>
+          '${acc.name} (${acc.accountType == AccountType.supplier ? AppStrings.typeSupplier : AppStrings.typeBeneficiary})',
       searchHint: AppStrings.searchHere,
       emptyText: AppStrings.noAccountsFound,
       selectedItem: _selectedAccount,
@@ -1387,11 +1401,17 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         setState(() {
           _selectedTab = index;
           final accController = context.read<AccountsController>();
-          final validAccounts = _getFilteredAccounts(accController.accounts);
+          final allAccs = accController.allAccounts.isNotEmpty
+              ? accController.allAccounts
+              : accController.accounts;
+          final validAccounts = _getFilteredAccounts(allAccs);
           if (_selectedAccount == null ||
               !validAccounts.contains(_selectedAccount)) {
-            _selectedAccount =
-                validAccounts.isNotEmpty ? validAccounts.first : null;
+            if (validAccounts.isNotEmpty) {
+              _selectedAccount = validAccounts.first;
+            } else if (allAccs.isNotEmpty) {
+              _selectedAccount = allAccs.first;
+            }
           }
         });
         _updateLiveBalances();
@@ -1454,11 +1474,17 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       onTap: () {
         setState(() {
           _selectedDirection = direction;
-          final validAccounts = _getFilteredAccounts(accController.accounts);
+          final allAccs = accController.allAccounts.isNotEmpty
+              ? accController.allAccounts
+              : accController.accounts;
+          final validAccounts = _getFilteredAccounts(allAccs);
           if (_selectedAccount == null ||
               !validAccounts.contains(_selectedAccount)) {
-            _selectedAccount =
-                validAccounts.isNotEmpty ? validAccounts.first : null;
+            if (validAccounts.isNotEmpty) {
+              _selectedAccount = validAccounts.first;
+            } else if (allAccs.isNotEmpty) {
+              _selectedAccount = allAccs.first;
+            }
           }
         });
         _updateLiveBalances();

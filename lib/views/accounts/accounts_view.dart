@@ -319,9 +319,10 @@ class _AccountsViewState extends State<AccountsView> {
     );
 
     if (confirm && station.id != null && mounted) {
-      await context.read<StationsController>().deleteStation(station.id!);
-      if (mounted) {
-        AppSnackBar.showWarning(context, 'تمت أرشفة ${station.name} بنجاح');
+      final success =
+          await context.read<StationsController>().archiveStation(station.id!);
+      if (success && mounted) {
+        AppSnackBar.showSuccess(context, AppStrings.stationArchivedSuccess);
         context.read<TransactionsController>().fetchAllBalancesSummary();
       }
     }

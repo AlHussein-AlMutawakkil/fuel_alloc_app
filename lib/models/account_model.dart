@@ -12,6 +12,8 @@ class AccountModel {
   final bool isActive;
   final bool isArchived;
   final String? createdAt;
+  final String? deletedAt;
+  final int operationsCount;
 
   AccountModel({
     this.id,
@@ -21,6 +23,8 @@ class AccountModel {
     this.isActive = true,
     this.isArchived = false,
     this.createdAt,
+    this.deletedAt,
+    this.operationsCount = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -32,6 +36,7 @@ class AccountModel {
       'phone_number': phoneNumber,
       'is_active': isActive ? 1 : 0,
       'is_archived': isArchived ? 1 : 0,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),
     };
   }
@@ -47,6 +52,8 @@ class AccountModel {
       isActive: (map['is_active'] as int? ?? 1) == 1,
       isArchived: (map['is_archived'] as int? ?? 0) == 1,
       createdAt: map['created_at'] as String?,
+      deletedAt: map['deleted_at'] as String?,
+      operationsCount: (map['operations_count'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -58,6 +65,8 @@ class AccountModel {
     bool? isActive,
     bool? isArchived,
     String? createdAt,
+    String? deletedAt,
+    int? operationsCount,
   }) {
     return AccountModel(
       id: id ?? this.id,
@@ -67,6 +76,8 @@ class AccountModel {
       isActive: isActive ?? this.isActive,
       isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      operationsCount: operationsCount ?? this.operationsCount,
     );
   }
 }

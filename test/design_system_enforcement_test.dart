@@ -8,6 +8,7 @@ import 'package:fuel_alloc_app/core/constants/app_strings.dart';
 import 'package:fuel_alloc_app/core/constants/app_typography.dart';
 import 'package:fuel_alloc_app/core/utils/formatters.dart';
 import 'package:fuel_alloc_app/core/widgets/widgets.dart';
+import 'package:fuel_alloc_app/models/transaction_model.dart';
 
 void main() {
   group('Design System Automated Enforcement Tests', () {
@@ -161,6 +162,7 @@ void main() {
         'lib/core/widgets/filter_chip_widget.dart',
         'lib/core/widgets/app_snackbar.dart',
         'lib/core/widgets/contact_picker_sheet.dart',
+        'lib/core/widgets/transaction_details_dialog.dart',
         'lib/views/settings/recycle_bin_view.dart',
         'lib/views/settings/archived_accounts_view.dart',
         '.agents/rules/design.md',
@@ -251,6 +253,93 @@ void main() {
         AppFormatters.formatTafqeetQuantity(0),
         equals(''),
       );
+    });
+
+    test('7. AppFormatters.formatTransactionDateTime formats date and time properly',
+        () {
+      expect(
+        AppFormatters.formatTransactionDateTime(
+            '2026-10-16', '2026-10-16T17:27:00'),
+        equals('16/10/2026 (17:27)'),
+      );
+      expect(
+        AppFormatters.formatTransactionDateTime('2026-10-16T17:27:00'),
+        equals('16/10/2026 (17:27)'),
+      );
+      expect(
+        AppFormatters.formatTransactionDateTime('2026-10-16'),
+        equals('16/10/2026'),
+      );
+    });
+
+    testWidgets(
+        '8. TransactionDetailsDialog renders transaction fields accurately',
+        (tester) async {
+      final tx = TransactionModel(
+        id: 1,
+        transactionDate: '2026-10-16',
+        createdAt: '2026-10-16T17:27:00',
+        typeId: 2,
+        typeName: 'توريد فعلي',
+        accountId: 10,
+        accountName: 'زيد عبدالغفار',
+        accountPhone: '770093691',
+        enteredQuantity: 10,
+        baseQuantityLiters: 10,
+        unitId: 1,
+        unitName: 'لتر',
+        fuelTypeName: 'بترول',
+        notes: 'بيان الرصيد السابق',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (ctx) => ElevatedButton(
+                onPressed: () {
+                  TransactionDetailsDialog.show(
+                    context: ctx,
+                    transaction: tx,
+                  );
+                },
+                child: const Text('Show Dialog'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Show Dialog'));
+      await tester.pumpAndSettle();
+
+      // Check header title
+      expect(find.text(AppStrings.operationData), findsOneWidget);
+
+      // Check highlight quantity container: "10 لتر بترول" (number in green, unit in textPrimary)
+      expect(
+        find.byWidgetPredicate((widget) =>
+            widget is RichText &&
+            widget.text.toPlainText().contains('10 لتر بترول')),
+        findsOneWidget,
+      );
+
+      // Check operation type
+      expect(find.text(AppStrings.operationLabel), findsOneWidget);
+      expect(find.text('توريد فعلي'), findsOneWidget);
+
+      // Check date and time
+      expect(find.text(AppStrings.transactionDate), findsOneWidget);
+      expect(find.text('16/10/2026 (17:27)'), findsOneWidget);
+
+      // Check account and phone
+      expect(find.text(AppStrings.account), findsOneWidget);
+      expect(find.text('زيد عبدالغفار'), findsOneWidget);
+      expect(find.text('770093691'), findsOneWidget);
+
+      // Check statement / notes
+      expect(find.text(AppStrings.statement), findsOneWidget);
+      expect(find.text('بيان الرصيد السابق'), findsOneWidget);
     });
   });
 }

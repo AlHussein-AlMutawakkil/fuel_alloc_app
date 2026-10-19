@@ -19,7 +19,8 @@ class TransactionRepository {
         ft.name AS fuel_type_name,
         u.name AS unit_name,
         u.conversion_factor AS unit_factor,
-        a.name AS account_name
+        a.name AS account_name,
+        a.phone_number AS account_phone
       FROM transactions t
       LEFT JOIN transaction_types tt ON t.type_id = tt.id
       LEFT JOIN stations s ON t.station_id = s.id
@@ -27,7 +28,7 @@ class TransactionRepository {
       LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
       LEFT JOIN units u ON t.unit_id = u.id
       LEFT JOIN accounts a ON t.account_id = a.id
-      WHERE t.account_id = ? AND t.is_deleted = 0
+      WHERE t.account_id = ? AND t.is_deleted = 0 AND t.type_id != 3
       ORDER BY t.transaction_date DESC, t.id DESC
     ''', [accountId]);
 
@@ -48,7 +49,8 @@ class TransactionRepository {
         ft.name AS fuel_type_name,
         u.name AS unit_name,
         u.conversion_factor AS unit_factor,
-        a.name AS account_name
+        a.name AS account_name,
+        a.phone_number AS account_phone
       FROM transactions t
       LEFT JOIN transaction_types tt ON t.type_id = tt.id
       LEFT JOIN stations s ON t.station_id = s.id
@@ -214,7 +216,8 @@ class TransactionRepository {
         ft.name AS fuel_type_name,
         u.name AS unit_name,
         u.conversion_factor AS unit_factor,
-        a.name AS account_name
+        a.name AS account_name,
+        a.phone_number AS account_phone
       FROM transactions t
       LEFT JOIN transaction_types tt ON t.type_id = tt.id
       LEFT JOIN stations s ON t.station_id = s.id
@@ -223,7 +226,7 @@ class TransactionRepository {
       LEFT JOIN units u ON t.unit_id = u.id
       LEFT JOIN accounts a ON t.account_id = a.id
       WHERE t.is_deleted = 1
-      ORDER BY t.transaction_date DESC, t.id DESC
+      ORDER BY t.deleted_at DESC, t.transaction_date DESC, t.id DESC
     ''');
 
     return maps.map((m) => TransactionModel.fromMap(m)).toList();
@@ -234,7 +237,7 @@ class TransactionRepository {
     final db = await _dbHelper.database;
     return await db.update(
       'transactions',
-      {'is_deleted': 0},
+      {'is_deleted': 0, 'deleted_at': null},
       where: 'id = ? OR parent_transaction_id = ?',
       whereArgs: [id, id],
     );
@@ -281,7 +284,7 @@ class TransactionRepository {
 
     final txId = await db.insert('transactions', data);
 
-    // إذا كانت العملية توريد فعلي إلى محطة (type_id = 2)، يتم إنشاء قيد عمولة التهوية آلياً
+    // إذا كانت العملية توريد فعلي إلى محطة (type_id = 2)، يتم إنشاء قيد عمولة التهوية آلياً للمحطة فقط (account_id = null)
     if (transaction.typeId == 2 && transaction.stationId != null) {
       final stationList = await db.query(
         'stations',
@@ -301,7 +304,7 @@ class TransactionRepository {
           'transaction_number': 'COM-$txNumber',
           'transaction_date': transaction.transactionDate,
           'type_id': 3, // عمولة تهوية
-          'account_id': transaction.accountId,
+          'account_id': null, // عمولة التهوية تخص المحطة حصراً ولا تظهر للموردين
           'station_id': transaction.stationId,
           'fuel_type_id': transaction.fuelTypeId,
           'unit_id': 1, // لتر
@@ -329,12 +332,23 @@ class TransactionRepository {
     );
   }
 
-  /// حذف عملية مع أي قيود تابعة لها (نقل لسلة المحذوفات)
-  Future<int> deleteTransaction(int id) async {
+  /// حذف عملية مع أي قيود تابعة لها (نقل لسلة المحذوفات أو حذف نهائي)
+  Future<int> deleteTransaction(int id, {bool? forcePermanent}) async {
     final db = await _dbHelper.database;
+    final isRecycle = forcePermanent == true
+        ? false
+        : await _dbHelper.isRecycleBinEnabled();
+
+    if (!isRecycle) {
+      return await permanentlyDeleteTransaction(id);
+    }
+
     return await db.update(
       'transactions',
-      {'is_deleted': 1},
+      {
+        'is_deleted': 1,
+        'deleted_at': DateTime.now().toIso8601String(),
+      },
       where: 'id = ? OR parent_transaction_id = ?',
       whereArgs: [id, id],
     );

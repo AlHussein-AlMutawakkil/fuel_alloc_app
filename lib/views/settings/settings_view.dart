@@ -3,13 +3,12 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/constants/app_typography.dart';
 import '../../core/widgets/app_snackbar.dart';
-import '../../core/widgets/custom_button.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../data/fuel_types_view.dart';
 import '../data/units_view.dart';
+import 'about_app_view.dart';
 import 'archived_accounts_view.dart';
 import 'language_settings_view.dart';
 import 'permissions_settings_view.dart';
@@ -27,64 +26,6 @@ class SettingsView extends StatefulWidget {
 class _SettingsViewState extends State<SettingsView> {
   void _showUnderDevelopmentSnackBar(String title) {
     AppSnackBar.showInfo(context, '$title (${AppStrings.underDevelopment})');
-  }
-
-  void _showAboutDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: AppDimensions.borderRadiusCard,
-        ),
-        title: const Row(
-          children: [
-            Icon(
-              AppIcons.gasStation,
-              color: AppColors.primary,
-              size: AppDimensions.iconExtraLarge,
-            ),
-            SizedBox(width: AppDimensions.spaceM + 2),
-            Text(
-              AppStrings.appTitle,
-              style: TextStyle(
-                fontSize: AppTypography.sizeH1 - 2,
-                fontWeight: AppTypography.weightBold,
-              ),
-            ),
-          ],
-        ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AppStrings.appVersionOfficial,
-              style: TextStyle(
-                fontSize: AppTypography.sizeBody,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            SizedBox(height: AppDimensions.spaceM),
-            Text(
-              AppStrings.aboutAppDescription,
-              style: TextStyle(
-                fontSize: AppTypography.sizeBodySecondary,
-                height: 1.5,
-                color: AppColors.textDarkSlate,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          CustomButton(
-            text: AppStrings.close,
-            variant: ButtonVariant.secondary,
-            onPressed: () => Navigator.pop(ctx),
-          ),
-        ],
-      ),
-    );
   }
 
   void _confirmLogout() async {
@@ -287,7 +228,14 @@ class _SettingsViewState extends State<SettingsView> {
                   size: AppDimensions.iconMedium + 2,
                 ),
                 title: AppStrings.aboutApp,
-                onTap: _showAboutDialog,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AboutAppView(),
+                    ),
+                  );
+                },
               ),
             ],
           ),

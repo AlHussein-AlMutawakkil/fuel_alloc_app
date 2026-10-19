@@ -72,4 +72,5 @@ class AppIcons {
   static const IconData recycleBin = Icons.delete_sweep_outlined;
   static const IconData phone = Icons.phone_outlined;
   static const IconData unarchive = Icons.unarchive_outlined;
+  static const IconData reference = Icons.tag;
 }

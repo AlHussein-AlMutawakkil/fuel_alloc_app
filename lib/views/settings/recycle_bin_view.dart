@@ -13,12 +13,14 @@ import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../core/widgets/one_ui_card.dart';
+import '../../data/local/database_helper.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
+import '../accounts/account_transactions_view.dart';
 
 enum RecycleBinTab { operations, accounts }
 
-/// واجهة سلة المحذوفات بنمط One UI (تبويبان: العمليات المحذوفة / الحسابات المحذوفة)
+/// واجهة سلة المحذوفات بنمط One UI (العمليات والحسابات المحذوفة مع إمكانية التعطيل والحذف النهائي)
 class RecycleBinView extends StatefulWidget {
   const RecycleBinView({super.key});
 
@@ -28,14 +30,61 @@ class RecycleBinView extends StatefulWidget {
 
 class _RecycleBinViewState extends State<RecycleBinView> {
   RecycleBinTab _activeTab = RecycleBinTab.operations;
+  bool _isRecycleBinEnabled = true;
 
   @override
   void initState() {
     super.initState();
+    _loadRecycleSetting();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TransactionsController>().fetchDeletedTransactions();
       context.read<AccountsController>().fetchDeletedAccounts();
     });
+  }
+
+  Future<void> _loadRecycleSetting() async {
+    final enabled = await DatabaseHelper.instance.isRecycleBinEnabled();
+    if (mounted) {
+      setState(() => _isRecycleBinEnabled = enabled);
+    }
+  }
+
+  Future<void> _toggleRecycleBinSetting(bool val) async {
+    await DatabaseHelper.instance.setRecycleBinEnabled(val);
+    if (mounted) {
+      setState(() => _isRecycleBinEnabled = val);
+      AppSnackBar.showSuccess(
+        context,
+        val
+            ? 'تم تفعيل سلة المحذوفات'
+            : 'تم إيقاف سلة المحذوفات (الحذف سيكون نهائياً)',
+      );
+    }
+  }
+
+  Widget _buildSettingTile() {
+    return OneUiCard(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.spaceL,
+        vertical: AppDimensions.spaceS,
+      ),
+      children: [
+        OneUiTile(
+          leading: const Icon(
+            AppIcons.recycleBin,
+            color: AppColors.primary,
+            size: AppDimensions.iconMedium + 2,
+          ),
+          title: AppStrings.enableRecycleBin,
+          subtitle: AppStrings.recycleBinSettingDesc,
+          trailing: Switch.adaptive(
+            value: _isRecycleBinEnabled,
+            activeColor: AppColors.primary,
+            onChanged: _toggleRecycleBinSetting,
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildSegmentControl() {
@@ -151,6 +200,16 @@ class _RecycleBinViewState extends State<RecycleBinView> {
     }
   }
 
+  void _showTransactionDetails(TransactionModel tx) {
+    CustomDialog.showTransactionDetails(
+      context: context,
+      transaction: tx,
+      isRecycleBin: true,
+      onRestore: () => _restoreTransaction(tx),
+      onPermanentDelete: () => _permanentlyDeleteTransaction(tx),
+    );
+  }
+
   // --- عمليات الاستعادة والحذف للحسابات ---
 
   Future<void> _restoreAccount(AccountModel account) async {
@@ -190,6 +249,15 @@ class _RecycleBinViewState extends State<RecycleBinView> {
     }
   }
 
+  void _openAccountStatement(AccountModel account) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AccountTransactionsView(account: account),
+      ),
+    );
+  }
+
   Widget _buildOperationsList(TransactionsController txCtrl) {
     if (txCtrl.isLoading) {
       return const Center(child: AppLoadingIndicator());
@@ -221,99 +289,211 @@ class _RecycleBinViewState extends State<RecycleBinView> {
             borderRadius: BorderRadius.circular(AppDimensions.radiusL),
             side: const BorderSide(color: AppColors.borderLight),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.spaceL),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // رأس البطاقة: التاريخ والنوع
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.spaceM,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSupply
-                            ? AppColors.supplyGreen.withOpacity(0.12)
-                            : AppColors.dispenseRed.withOpacity(0.12),
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusS),
-                      ),
-                      child: Text(
-                        tx.typeName ?? AppStrings.operation,
-                        style: TextStyle(
-                          fontSize: AppTypography.sizeCaption,
-                          fontWeight: AppTypography.weightBold,
-                          color: isSupply
-                              ? AppColors.supplyGreen
-                              : AppColors.dispenseRed,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppDimensions.spaceS),
-                    if (tx.fuelTypeName != null)
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+            onTap: () => _showTransactionDetails(tx),
+            child: Padding(
+              padding: const EdgeInsets.all(AppDimensions.spaceL),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // رأس البطاقة: التاريخ والنوع وزر الثلاث نقاط
+                  Row(
+                    children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppDimensions.spaceM,
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: isSupply
+                              ? AppColors.supplyGreen.withOpacity(0.12)
+                              : AppColors.dispenseRed.withOpacity(0.12),
                           borderRadius:
                               BorderRadius.circular(AppDimensions.radiusS),
                         ),
                         child: Text(
-                          tx.fuelTypeName!,
-                          style: const TextStyle(
+                          tx.typeName ?? AppStrings.operation,
+                          style: TextStyle(
                             fontSize: AppTypography.sizeCaption,
-                            fontWeight: AppTypography.weightMedium,
-                            color: AppColors.primary,
+                            fontWeight: AppTypography.weightBold,
+                            color: isSupply
+                                ? AppColors.supplyGreen
+                                : AppColors.dispenseRed,
                           ),
                         ),
                       ),
-                    const Spacer(),
-                    Text(
-                      AppFormatters.formatDate(tx.transactionDate),
-                      style: const TextStyle(
-                        fontSize: AppTypography.sizeCaption,
-                        color: AppColors.textTertiary,
+                      const SizedBox(width: AppDimensions.spaceS),
+                      if (tx.fuelTypeName != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.spaceM,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius:
+                                BorderRadius.circular(AppDimensions.radiusS),
+                          ),
+                          child: Text(
+                            tx.fuelTypeName!,
+                            style: const TextStyle(
+                              fontSize: AppTypography.sizeCaption,
+                              fontWeight: AppTypography.weightMedium,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      const Spacer(),
+                      PopupMenuButton<String>(
+                        icon: const Icon(
+                          AppIcons.moreVert,
+                          size: 20,
+                          color: AppColors.textSecondary,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusM),
+                        ),
+                        onSelected: (val) {
+                          if (val == 'details') {
+                            _showTransactionDetails(tx);
+                          } else if (val == 'restore') {
+                            _restoreTransaction(tx);
+                          } else if (val == 'delete') {
+                            _permanentlyDeleteTransaction(tx);
+                          }
+                        },
+                        itemBuilder: (ctx) => [
+                          const PopupMenuItem(
+                            value: 'details',
+                            child: Row(
+                              children: [
+                                Icon(AppIcons.info,
+                                    size: 18, color: AppColors.textPrimary),
+                                SizedBox(width: AppDimensions.spaceM),
+                                Text(AppStrings.viewDetails),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'restore',
+                            child: Row(
+                              children: [
+                                Icon(AppIcons.restore,
+                                    size: 18, color: AppColors.supplyGreen),
+                                SizedBox(width: AppDimensions.spaceM),
+                                Text(AppStrings.restore),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(AppIcons.delete,
+                                    size: 18, color: AppColors.dispenseRed),
+                                SizedBox(width: AppDimensions.spaceM),
+                                Text(AppStrings.permanentDelete),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppDimensions.spaceM),
+                    ],
+                  ),
+                  const SizedBox(height: AppDimensions.spaceM),
 
-                // تفاصيل العملية: الكمية والحساب والمحطة
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  // تفاصيل العملية: الكمية والحساب والمحطة
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (tx.accountName != null)
+                              Text(
+                                '${AppStrings.account}: ${tx.accountName}',
+                                style: const TextStyle(
+                                  fontSize: AppTypography.sizeBodySecondary,
+                                  fontWeight: AppTypography.weightSemiBold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            if (tx.stationName != null)
+                              Text(
+                                '${AppStrings.station}: ${tx.stationName}',
+                                style: const TextStyle(
+                                  fontSize: AppTypography.sizeCaption,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            // المستلم مع الأيقونة فقط وإضافة المرجع بجانبه
+                            if ((tx.recipientName != null &&
+                                    tx.recipientName!.trim().isNotEmpty) ||
+                                (tx.referenceNumber != null &&
+                                    tx.referenceNumber!.trim().isNotEmpty)) ...[
+                              const SizedBox(height: AppDimensions.spaceXS),
+                              Row(
+                                children: [
+                                  if (tx.recipientName != null &&
+                                      tx.recipientName!.trim().isNotEmpty) ...[
+                                    const Icon(
+                                      AppIcons.accountOutline,
+                                      size: 14,
+                                      color: AppColors.textMuted,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      tx.recipientName!.trim(),
+                                      style: const TextStyle(
+                                        fontSize: AppTypography.sizeCaption,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                  if (tx.referenceNumber != null &&
+                                      tx.referenceNumber!
+                                          .trim()
+                                          .isNotEmpty) ...[
+                                    const SizedBox(width: AppDimensions.spaceM),
+                                    const Icon(
+                                      AppIcons.reference,
+                                      size: 14,
+                                      color: AppColors.textMuted,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      tx.referenceNumber!.trim(),
+                                      style: const TextStyle(
+                                        fontSize: AppTypography.sizeCaption,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          if (tx.accountName != null)
-                            Text(
-                              '${AppStrings.account}: ${tx.accountName}',
-                              style: const TextStyle(
-                                fontSize: AppTypography.sizeBodySecondary,
-                                fontWeight: AppTypography.weightSemiBold,
-                                color: AppColors.textPrimary,
-                              ),
+                          Text(
+                            '${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? AppStrings.unitLiter}',
+                            style: TextStyle(
+                              fontSize: AppTypography.sizeH2,
+                              fontWeight: AppTypography.weightBold,
+                              color: isSupply
+                                  ? AppColors.supplyGreen
+                                  : AppColors.dispenseRed,
                             ),
-                          if (tx.stationName != null)
+                          ),
+                          if (tx.baseQuantityLiters != tx.enteredQuantity)
                             Text(
-                              '${AppStrings.station}: ${tx.stationName}',
-                              style: const TextStyle(
-                                fontSize: AppTypography.sizeCaption,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          if (tx.recipientName != null &&
-                              tx.recipientName!.isNotEmpty)
-                            Text(
-                              '${AppStrings.recipientPrefix}${tx.recipientName}',
+                              '${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter}',
                               style: const TextStyle(
                                 fontSize: AppTypography.sizeCaption,
                                 color: AppColors.textTertiary,
@@ -321,100 +501,44 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                             ),
                         ],
                       ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? AppStrings.unitLiter}',
-                          style: TextStyle(
-                            fontSize: AppTypography.sizeH2,
-                            fontWeight: AppTypography.weightBold,
-                            color: isSupply
-                                ? AppColors.supplyGreen
-                                : AppColors.dispenseRed,
-                          ),
-                        ),
-                        if (tx.baseQuantityLiters != tx.enteredQuantity)
-                          Text(
-                            '${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter}',
-                            style: const TextStyle(
-                              fontSize: AppTypography.sizeCaption,
-                              color: AppColors.textTertiary,
-                            ),
-                          ),
-                      ],
+                    ],
+                  ),
+
+                  if (tx.notes != null && tx.notes!.isNotEmpty) ...[
+                    const SizedBox(height: AppDimensions.spaceS),
+                    Text(
+                      tx.notes!,
+                      style: const TextStyle(
+                        fontSize: AppTypography.sizeCaption,
+                        color: AppColors.textMuted,
+                      ),
                     ),
                   ],
-                ),
 
-                if (tx.notes != null && tx.notes!.isNotEmpty) ...[
+                  const SizedBox(height: AppDimensions.spaceM),
+                  const Divider(height: 1, color: AppColors.borderLight),
                   const SizedBox(height: AppDimensions.spaceS),
-                  Text(
-                    tx.notes!,
-                    style: const TextStyle(
-                      fontSize: AppTypography.sizeCaption,
-                      color: AppColors.textMuted,
-                    ),
+
+                  // تاريخ الحذف في الأسفل
+                  Row(
+                    children: [
+                      const Icon(
+                        AppIcons.calendar,
+                        size: 13,
+                        color: AppColors.textMuted,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${AppStrings.deletedAtPrefix}${AppFormatters.formatDate(tx.deletedAt ?? tx.transactionDate)}',
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeCaption - 1,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-
-                const SizedBox(height: AppDimensions.spaceM),
-                const Divider(height: 1, color: AppColors.borderLight),
-                const SizedBox(height: AppDimensions.spaceS),
-
-                // أزرار الإجراءات: استعادة وحذف نهائي
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      icon: const Icon(
-                        AppIcons.delete,
-                        size: 16,
-                        color: AppColors.dispenseRed,
-                      ),
-                      label: const Text(
-                        AppStrings.permanentDelete,
-                        style: TextStyle(
-                          color: AppColors.dispenseRed,
-                          fontSize: AppTypography.sizeCaption,
-                          fontWeight: AppTypography.weightSemiBold,
-                        ),
-                      ),
-                      onPressed: () => _permanentlyDeleteTransaction(tx),
-                    ),
-                    const SizedBox(width: AppDimensions.spaceM),
-                    ElevatedButton.icon(
-                      icon: const Icon(
-                        AppIcons.restore,
-                        size: 16,
-                        color: AppColors.textWhite,
-                      ),
-                      label: const Text(
-                        AppStrings.restore,
-                        style: TextStyle(
-                          color: AppColors.textWhite,
-                          fontSize: AppTypography.sizeCaption,
-                          fontWeight: AppTypography.weightBold,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.supplyGreen,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusM),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppDimensions.spaceL,
-                          vertical: 6,
-                        ),
-                      ),
-                      onPressed: () => _restoreTransaction(tx),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -455,76 +579,74 @@ class _RecycleBinViewState extends State<RecycleBinView> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppDimensions.spaceL),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: isSupplier
-                            ? AppColors.primary.withOpacity(0.1)
-                            : AppColors.supplyGreen.withOpacity(0.1),
-                        borderRadius:
-                            BorderRadius.circular(AppDimensions.radiusM),
-                      ),
-                      child: Icon(
-                        AppIcons.account,
-                        color: isSupplier
-                            ? AppColors.primary
-                            : AppColors.supplyGreen,
-                        size: AppDimensions.iconMedium,
-                      ),
-                    ),
-                    const SizedBox(width: AppDimensions.spaceL),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: isSupplier
+                        ? AppColors.primary.withOpacity(0.1)
+                        : AppColors.supplyGreen.withOpacity(0.1),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusM),
+                  ),
+                  child: Icon(
+                    AppIcons.account,
+                    color: isSupplier
+                        ? AppColors.primary
+                        : AppColors.supplyGreen,
+                    size: AppDimensions.iconMedium,
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.spaceL),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          Row(
-                            children: [
-                              Text(
-                                account.name,
-                                style: const TextStyle(
-                                  fontSize: AppTypography.sizeH2,
-                                  fontWeight: AppTypography.weightBold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(width: AppDimensions.spaceS),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppDimensions.spaceS + 2,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isSupplier
-                                      ? AppColors.primary.withOpacity(0.1)
-                                      : AppColors.supplyGreen
-                                          .withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(
-                                      AppDimensions.radiusS),
-                                ),
-                                child: Text(
-                                  isSupplier
-                                      ? AppStrings.typeSupplier
-                                      : AppStrings.typeBeneficiary,
-                                  style: TextStyle(
-                                    fontSize: AppTypography.sizeCaption - 1,
-                                    fontWeight: AppTypography.weightBold,
-                                    color: isSupplier
-                                        ? AppColors.primary
-                                        : AppColors.supplyGreen,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          Text(
+                            account.name,
+                            style: const TextStyle(
+                              fontSize: AppTypography.sizeH2,
+                              fontWeight: AppTypography.weightBold,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
+                          const SizedBox(width: AppDimensions.spaceS),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppDimensions.spaceS + 2,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSupplier
+                                  ? AppColors.primary.withOpacity(0.1)
+                                  : AppColors.supplyGreen.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(
+                                  AppDimensions.radiusS),
+                            ),
+                            child: Text(
+                              isSupplier
+                                  ? AppStrings.typeSupplier
+                                  : AppStrings.typeBeneficiary,
+                              style: TextStyle(
+                                fontSize: AppTypography.sizeCaption - 1,
+                                fontWeight: AppTypography.weightBold,
+                                color: isSupplier
+                                    ? AppColors.primary
+                                    : AppColors.supplyGreen,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
                           if (account.phoneNumber != null &&
                               account.phoneNumber!.isNotEmpty) ...[
-                            const SizedBox(height: 4),
                             Text(
                               account.phoneNumber!,
                               style: const TextStyle(
@@ -532,62 +654,90 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                                 color: AppColors.textSecondary,
                               ),
                             ),
+                            const SizedBox(width: AppDimensions.spaceM),
                           ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.borderLight.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '${AppStrings.operationsCountPrefix}${account.operationsCount}',
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeCaption - 1,
+                                fontWeight: AppTypography.weightSemiBold,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${AppStrings.deletedAtPrefix}${AppFormatters.formatDate(account.deletedAt ?? account.createdAt ?? '')}',
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeCaption - 1,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(
+                    AppIcons.moreVert,
+                    size: 20,
+                    color: AppColors.textSecondary,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusM),
+                  ),
+                  onSelected: (val) {
+                    if (val == 'statement') {
+                      _openAccountStatement(account);
+                    } else if (val == 'restore') {
+                      _restoreAccount(account);
+                    } else if (val == 'delete') {
+                      _permanentlyDeleteAccount(account);
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    const PopupMenuItem(
+                      value: 'statement',
+                      child: Row(
+                        children: [
+                          Icon(AppIcons.statement,
+                              size: 18, color: AppColors.textPrimary),
+                          SizedBox(width: AppDimensions.spaceM),
+                          Text(AppStrings.viewAccountStatement),
                         ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: AppDimensions.spaceM),
-                const Divider(height: 1, color: AppColors.borderLight),
-                const SizedBox(height: AppDimensions.spaceS),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      icon: const Icon(
-                        AppIcons.delete,
-                        size: 16,
-                        color: AppColors.dispenseRed,
+                    const PopupMenuItem(
+                      value: 'restore',
+                      child: Row(
+                        children: [
+                          Icon(AppIcons.restore,
+                              size: 18, color: AppColors.supplyGreen),
+                          SizedBox(width: AppDimensions.spaceM),
+                          Text(AppStrings.restore),
+                        ],
                       ),
-                      label: const Text(
-                        AppStrings.permanentDelete,
-                        style: TextStyle(
-                          color: AppColors.dispenseRed,
-                          fontSize: AppTypography.sizeCaption,
-                          fontWeight: AppTypography.weightSemiBold,
-                        ),
-                      ),
-                      onPressed: () => _permanentlyDeleteAccount(account),
                     ),
-                    const SizedBox(width: AppDimensions.spaceM),
-                    ElevatedButton.icon(
-                      icon: const Icon(
-                        AppIcons.restore,
-                        size: 16,
-                        color: AppColors.textWhite,
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(AppIcons.delete,
+                              size: 18, color: AppColors.dispenseRed),
+                          SizedBox(width: AppDimensions.spaceM),
+                          Text(AppStrings.permanentDelete),
+                        ],
                       ),
-                      label: const Text(
-                        AppStrings.restore,
-                        style: TextStyle(
-                          color: AppColors.textWhite,
-                          fontSize: AppTypography.sizeCaption,
-                          fontWeight: AppTypography.weightBold,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.supplyGreen,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusM),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppDimensions.spaceL,
-                          vertical: 6,
-                        ),
-                      ),
-                      onPressed: () => _restoreAccount(account),
                     ),
                   ],
                 ),
@@ -611,6 +761,7 @@ class _RecycleBinViewState extends State<RecycleBinView> {
       ),
       body: Column(
         children: [
+          _buildSettingTile(),
           _buildSegmentControl(),
           Expanded(
             child: _activeTab == RecycleBinTab.operations

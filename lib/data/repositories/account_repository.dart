@@ -29,15 +29,19 @@ class AccountRepository {
     return maps.map((map) => AccountModel.fromMap(map)).toList();
   }
 
-  /// جلب الحسابات المحذوفة (سلة المحذوفات)
+  /// جلب الحسابات المحذوفة (سلة المحذوفات) مع عدد العمليات وتاريخ الحذف
   Future<List<AccountModel>> getDeletedAccounts() async {
     final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'accounts',
-      where: 'is_active = ?',
-      whereArgs: [0],
-      orderBy: 'name ASC',
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        a.*, 
+        COUNT(t.id) AS operations_count
+      FROM accounts a
+      LEFT JOIN transactions t ON t.account_id = a.id AND t.is_deleted = 0
+      WHERE a.is_active = 0
+      GROUP BY a.id
+      ORDER BY a.deleted_at DESC, a.name ASC
+    ''');
     return maps.map((map) => AccountModel.fromMap(map)).toList();
   }
 
@@ -56,12 +60,23 @@ class AccountRepository {
     );
   }
 
-  /// نقل الحساب لسلة المحذوفات (حذف منطقي)
-  Future<int> deleteAccount(int id) async {
+  /// نقل الحساب لسلة المحذوفات (أو حذف نهائي إذا كانت السلة معطلة)
+  Future<int> deleteAccount(int id, {bool? forcePermanent}) async {
     final db = await _dbHelper.database;
+    final isRecycleEnabled = forcePermanent == true
+        ? false
+        : await _dbHelper.isRecycleBinEnabled();
+
+    if (!isRecycleEnabled) {
+      return await permanentlyDeleteAccount(id);
+    }
+
     return await db.update(
       'accounts',
-      {'is_active': 0},
+      {
+        'is_active': 0,
+        'deleted_at': DateTime.now().toIso8601String(),
+      },
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -94,7 +109,7 @@ class AccountRepository {
     final db = await _dbHelper.database;
     return await db.update(
       'accounts',
-      {'is_active': 1, 'is_archived': 0},
+      {'is_active': 1, 'is_archived': 0, 'deleted_at': null},
       where: 'id = ?',
       whereArgs: [id],
     );

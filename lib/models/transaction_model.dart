@@ -8,6 +8,7 @@ class TransactionModel {
   final String? typeCode;
   final int? accountId;
   final String? accountName;
+  final String? accountPhone;
   final int? stationId;
   final String? stationName;
   final int? referenceStationId;
@@ -24,6 +25,7 @@ class TransactionModel {
   final int? parentTransactionId;
   final String? notes;
   final String? createdAt;
+  final String? deletedAt;
   final bool isDeleted;
 
   TransactionModel({
@@ -35,6 +37,7 @@ class TransactionModel {
     this.typeCode,
     this.accountId,
     this.accountName,
+    this.accountPhone,
     this.stationId,
     this.stationName,
     this.referenceStationId,
@@ -51,6 +54,7 @@ class TransactionModel {
     this.parentTransactionId,
     this.notes,
     this.createdAt,
+    this.deletedAt,
     this.isDeleted = false,
   });
 
@@ -71,6 +75,7 @@ class TransactionModel {
       'recipient_name': recipientName,
       'parent_transaction_id': parentTransactionId,
       'notes': notes,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),
       'is_deleted': isDeleted ? 1 : 0,
     };
@@ -86,6 +91,8 @@ class TransactionModel {
       typeCode: map['type_code'] as String?,
       accountId: map['account_id'] as int?,
       accountName: map['account_name'] as String?,
+      accountPhone: map['account_phone'] as String? ??
+          map['phone_number'] as String?,
       stationId: map['station_id'] as int?,
       stationName: map['station_name'] as String?,
       referenceStationId: map['reference_station_id'] as int?,
@@ -102,6 +109,7 @@ class TransactionModel {
       parentTransactionId: map['parent_transaction_id'] as int?,
       notes: map['notes'] as String?,
       createdAt: map['created_at'] as String?,
+      deletedAt: map['deleted_at'] as String?,
       isDeleted: (map['is_deleted'] as int? ?? 0) == 1,
     );
   }

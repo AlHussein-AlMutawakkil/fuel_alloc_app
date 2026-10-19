@@ -102,11 +102,11 @@ class CustomDropdown<T> extends StatelessWidget {
     final selected = await showMenu<T>(
       context: context,
       position: position,
-      elevation: 6,
+      elevation: 0,
       shadowColor: AppColors.shadowSubtle,
       color: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: AppDimensions.borderRadius3XL,
+        borderRadius: AppDimensions.borderRadiusL,
         side: BorderSide(
           color: AppColors.borderSubtle,
           width: AppDimensions.borderWidthThin,

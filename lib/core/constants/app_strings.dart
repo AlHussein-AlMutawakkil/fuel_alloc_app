@@ -110,7 +110,10 @@ class AppStrings {
   static const String balanceQuota = 'الرصيد المتبقي';
   static const String totalOperations = 'عدد العمليات';
   static const String operationDetails = 'تفاصيل العملية';
+  static const String operationData = 'بيانات العملية';
+  static const String operationLabel = 'العملية';
   static const String transactionNumber = 'رقم السند';
+  static const String transactionNumberLabel = 'رقم العملية';
   static const String transactionDate = 'تاريخ العملية';
   static const String station = 'المحطة';
   static const String executingStation = 'المحطة المنفذة';
@@ -273,6 +276,20 @@ class AppStrings {
   static const String itemDeletedPermanentSuccess = 'تم الحذف النهائي بنجاح';
   static const String accountArchivedSuccess = 'تمت أرشفة الحساب بنجاح';
   static const String accountUnarchivedSuccess = 'تمت استعادة الحساب من الأرشيف بنجاح';
+  static const String stationArchivedSuccess = 'تمت أرشفة المحطة بنجاح';
+  static const String stationUnarchivedSuccess = 'تمت استعادة المحطة من الأرشيف بنجاح';
+  static const String confirmUnarchiveStationTitle = 'تأكيد إلغاء أرشفة المحطة';
+  static const String confirmUnarchiveStationMsg = 'هل تريد إعادة تنشيط هذه المحطة وإخراجها من الأرشيف؟';
+  static const String noArchivedStations = 'لا توجد محطات مؤرشفة';
+  static const String archivedStationsTab = 'المحطات';
+  static const String archivedAccountsTab = 'الحسابات';
+  static const String deletedAtPrefix = 'تاريخ الحذف: ';
+  static const String operationsCountPrefix = 'العمليات: ';
+  static const String viewAccountStatement = 'كشف الحساب';
+  static const String viewDetails = 'عرض التفاصيل';
+  static const String recycleBinSetting = 'سلة المحذوفات';
+  static const String recycleBinSettingDesc = 'الاحتفاظ بالعناصر المحذوفة في السلة بدلاً من الحذف المباشر';
+  static const String enableRecycleBin = 'تفعيل سلة المحذوفات';
 
   // جهات الاتصال والأذونات
   static const String permissionsManagement = 'إدارة الأذونات';
@@ -289,7 +306,15 @@ class AppStrings {
   static const String selectContact = 'اختر جهة اتصال';
   static const String contactHasNoPhone = 'جهة الاتصال المحددة لا تحتوي على رقم هاتف';
 
+  // حول التطبيق
   static const String aboutApp = 'حول التطبيق';
+  static const String aboutAppHeader = 'حول Fuel Alloc';
+  static const String appVersionLabel = 'إصدار التطبيق';
+  static const String appVersionNumber = '1.0.0';
+  static const String termsOfUse = 'شروط الاستخدام';
+  static const String usagePolicy = 'سياسة الاستخدام';
+  static const String privacyPolicy = 'اتفاقية الخصوصية';
+
   static const String logout = 'تسجيل الخروج';
   static const String underDevelopment = 'تحت التطوير';
 }

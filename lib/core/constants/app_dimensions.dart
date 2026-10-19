@@ -55,6 +55,7 @@ class AppDimensions {
   static const double radius2XL = 14.0;
   static const double radius3XL = 16.0;
   static const double radiusCard = 20.0;
+  static const double radiusDialog = 16;
   static const double radiusFull = 999.0;
 
   // --- كائنات BorderRadius الموحدة ---
@@ -75,6 +76,8 @@ class AppDimensions {
       BorderRadius.all(Radius.circular(radius3XL));
   static const BorderRadius borderRadiusCard =
       BorderRadius.all(Radius.circular(radiusCard));
+  static const BorderRadius borderRadiusDialog =
+      BorderRadius.all(Radius.circular(radiusDialog));
   static const BorderRadius borderRadiusFull =
       BorderRadius.all(Radius.circular(radiusFull));
 

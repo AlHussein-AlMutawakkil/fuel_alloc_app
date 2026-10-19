@@ -81,14 +81,99 @@ class StationsController extends ChangeNotifier {
     }
   }
 
-  /// حذف محطة
-  Future<bool> deleteStation(int id) async {
+  List<StationModel> _archivedStations = [];
+  List<StationModel> get archivedStations => _archivedStations;
+
+  List<StationModel> _deletedStations = [];
+  List<StationModel> get deletedStations => _deletedStations;
+
+  /// جلب المحطات المؤرشفة
+  Future<void> fetchArchivedStations() async {
+    _isLoading = true;
+    notifyListeners();
     try {
-      await _repository.deleteStation(id);
+      _archivedStations = await _repository.getArchivedStations();
+    } catch (e) {
+      debugPrint('Error fetching archived stations: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// جلب المحطات المحذوفة
+  Future<void> fetchDeletedStations() async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _deletedStations = await _repository.getDeletedStations();
+    } catch (e) {
+      debugPrint('Error fetching deleted stations: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// أرشفة محطة
+  Future<bool> archiveStation(int id) async {
+    try {
+      await _repository.archiveStation(id);
+      await fetchStations();
+      await fetchArchivedStations();
+      return true;
+    } catch (e) {
+      debugPrint('Error archiving station: $e');
+      return false;
+    }
+  }
+
+  /// إلغاء أرشفة محطة
+  Future<bool> unarchiveStation(int id) async {
+    try {
+      await _repository.unarchiveStation(id);
+      await fetchStations();
+      await fetchArchivedStations();
+      return true;
+    } catch (e) {
+      debugPrint('Error unarchiving station: $e');
+      return false;
+    }
+  }
+
+  /// حذف محطة (نقل لسلة المحذوفات أو نهائياً)
+  Future<bool> deleteStation(int id, {bool? forcePermanent}) async {
+    try {
+      await _repository.deleteStation(id, forcePermanent: forcePermanent);
       await fetchStations();
       return true;
     } catch (e) {
       debugPrint('Error deleting station: $e');
+      return false;
+    }
+  }
+
+  /// استعادة محطة من سلة المحذوفات
+  Future<bool> restoreStation(int id) async {
+    try {
+      await _repository.restoreStation(id);
+      await fetchStations();
+      await fetchDeletedStations();
+      return true;
+    } catch (e) {
+      debugPrint('Error restoring station: $e');
+      return false;
+    }
+  }
+
+  /// حذف محطة نهائياً من قاعدة البيانات
+  Future<bool> permanentlyDeleteStation(int id) async {
+    try {
+      await _repository.permanentlyDeleteStation(id);
+      await fetchDeletedStations();
+      return true;
+    } catch (e) {
+      debugPrint('Error permanently deleting station: $e');
       return false;
     }
   }

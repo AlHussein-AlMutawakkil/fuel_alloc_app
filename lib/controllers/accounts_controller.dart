@@ -26,6 +26,9 @@ class AccountsController extends ChangeNotifier {
     }).toList();
   }
 
+  /// جلب كافة الحسابات النشطة بدون فلتر التبويب (لأجل نوافذ الإدخال والبحث الذكي)
+  List<AccountModel> get allAccounts => List.unmodifiable(_allAccounts);
+
   bool get isLoading => _isLoading;
   AccountType? get selectedTypeFilter => _selectedTypeFilter;
   String get searchQuery => _searchQuery;
@@ -86,10 +89,10 @@ class AccountsController extends ChangeNotifier {
     }
   }
 
-  // حذف حساب (نقل لسلة المحذوفات)
-  Future<bool> deleteAccount(int id) async {
+  // حذف حساب (نقل لسلة المحذوفات أو حذف نهائي)
+  Future<bool> deleteAccount(int id, {bool? forcePermanent}) async {
     try {
-      await _repository.deleteAccount(id);
+      await _repository.deleteAccount(id, forcePermanent: forcePermanent);
       await fetchAccounts();
       return true;
     } catch (e) {

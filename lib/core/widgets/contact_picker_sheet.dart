@@ -53,8 +53,7 @@ class _ContactPickerSheetState extends State<ContactPickerSheet> {
   Future<void> _loadContacts() async {
     setState(() => _isLoading = true);
     try {
-      final contacts =
-          await FlutterContacts.getContacts(withProperties: true);
+      final contacts = await FlutterContacts.getContacts(withProperties: true);
       if (mounted) {
         setState(() {
           _allContacts = contacts.where((c) => c.phones.isNotEmpty).toList();
@@ -93,7 +92,6 @@ class _ContactPickerSheetState extends State<ContactPickerSheet> {
       ),
       child: Column(
         children: [
-          // مقبض السحب العلوي
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 10, bottom: 8),

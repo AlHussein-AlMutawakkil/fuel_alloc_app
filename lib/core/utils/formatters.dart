@@ -23,6 +23,41 @@ class AppFormatters {
     }
   }
 
+  /// تنسيق تاريخ ووقت العملية للعرض بنمط: dd/MM/yyyy (HH:mm)
+  static String formatTransactionDateTime(String? dateStr, [String? createdAtStr]) {
+    if (dateStr == null || dateStr.trim().isEmpty) return '-';
+
+    DateTime? txDate;
+    try {
+      txDate = DateTime.parse(dateStr.trim().replaceAll('/', '-'));
+    } catch (_) {}
+
+    DateTime? createdDate;
+    if (createdAtStr != null && createdAtStr.trim().isNotEmpty) {
+      try {
+        createdDate = DateTime.parse(createdAtStr.trim());
+      } catch (_) {}
+    }
+
+    if (txDate == null && createdDate == null) {
+      return dateStr;
+    }
+
+    final dateToFormat = txDate ?? createdDate!;
+    final formattedDate = DateFormat('dd/MM/yyyy').format(dateToFormat);
+
+    final timeSource = createdDate ??
+        (txDate != null && (txDate.hour != 0 || txDate.minute != 0)
+            ? txDate
+            : null);
+    if (timeSource != null) {
+      final formattedTime = DateFormat('HH:mm').format(timeSource);
+      return '$formattedDate ($formattedTime)';
+    }
+
+    return formattedDate;
+  }
+
   /// تحويل اللترات إلى دباب وبراميل للعرض الإحصائي
   /// الدبة = 20 لتر، البرميل = 200 لتر
   static String formatEquivalents(double liters) {

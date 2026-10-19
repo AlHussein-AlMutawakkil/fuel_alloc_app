@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../models/transaction_model.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_dimensions.dart';
 import '../constants/app_icons.dart';
 import '../constants/app_strings.dart';
 import '../constants/app_typography.dart';
 import 'custom_button.dart';
+import 'transaction_details_dialog.dart';
 
 /// عنصر صف في نافذة التفاصيل
 class DialogDetailRow {
@@ -35,7 +37,7 @@ class CustomDialog {
       barrierDismissible: false,
       builder: (ctx) => Dialog(
         backgroundColor: AppColors.surface,
-        elevation: 8,
+        elevation: 0,
         shape: const RoundedRectangleBorder(
           borderRadius: AppDimensions.borderRadius3XL,
         ),
@@ -213,6 +215,29 @@ class CustomDialog {
           ),
         ],
       ),
+    );
+  }
+
+  /// نافذة عرض بيانات العملية الموحدة
+  static Future<void> showTransactionDetails({
+    required BuildContext context,
+    required TransactionModel transaction,
+    String? accountPhone,
+    VoidCallback? onEdit,
+    VoidCallback? onDelete,
+    VoidCallback? onRestore,
+    VoidCallback? onPermanentDelete,
+    bool isRecycleBin = false,
+  }) async {
+    await TransactionDetailsDialog.show(
+      context: context,
+      transaction: transaction,
+      accountPhone: accountPhone,
+      onEdit: onEdit,
+      onDelete: onDelete,
+      onRestore: onRestore,
+      onPermanentDelete: onPermanentDelete,
+      isRecycleBin: isRecycleBin,
     );
   }
 }

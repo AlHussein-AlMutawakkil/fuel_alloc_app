@@ -96,59 +96,27 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
   }
 
   void _showTransactionDetails(TransactionModel tx) {
-    CustomDialog.showDetails(
+    CustomDialog.showTransactionDetails(
       context: context,
-      title: AppStrings.operationDetails,
-      rows: [
-        DialogDetailRow(
-          label: AppStrings.labelOperationType,
-          value: tx.typeName ?? AppStrings.operation,
-        ),
-        DialogDetailRow(
-          label: AppStrings.labelDate,
-          value: AppFormatters.formatDate(tx.transactionDate),
-        ),
-        if (tx.stationName != null)
-          DialogDetailRow(
-            label: AppStrings.labelStation,
-            value: tx.stationName!,
-          ),
-        if (tx.referenceStationName != null &&
-            tx.referenceStationName != tx.stationName)
-          DialogDetailRow(
-            label: AppStrings.labelReferenceStation,
-            value: tx.referenceStationName!,
-          ),
-        DialogDetailRow(
-          label: AppStrings.labelFuelType,
-          value: tx.fuelTypeName ?? '-',
-        ),
-        DialogDetailRow(
-          label: AppStrings.labelEnteredQuantity,
-          value:
-              '${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? ''}',
-        ),
-        DialogDetailRow(
-          label: AppStrings.labelEquivalentLiters,
-          value:
-              '${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter}',
-        ),
-        if (tx.referenceNumber != null && tx.referenceNumber!.isNotEmpty)
-          DialogDetailRow(
-            label: AppStrings.referenceNumberLabel,
-            value: tx.referenceNumber!,
-          ),
-        if (tx.recipientName != null && tx.recipientName!.isNotEmpty)
-          DialogDetailRow(
-            label: AppStrings.recipientLabel,
-            value: tx.recipientName!,
-          ),
-        if (tx.notes != null && tx.notes!.isNotEmpty)
-          DialogDetailRow(
-            label: AppStrings.labelStatement,
-            value: tx.notes!,
-          ),
-      ],
+      transaction: tx,
+      accountPhone: widget.account.phoneNumber,
+      onEdit: () {
+        OperationEntrySheet.show(
+          context: context,
+          account: widget.account,
+          editTransaction: tx,
+        ).then((_) {
+          if (widget.account.id != null && mounted) {
+            context.read<TransactionsController>().fetchAccountTransactions(
+                  widget.account.id!,
+                  defaultFuelTypeId: context
+                      .read<TransactionsController>()
+                      .selectedFuelTypeId,
+                );
+          }
+        });
+      },
+      onDelete: () => _deleteTransaction(tx),
     );
   }
 
@@ -340,7 +308,7 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _showTransactionOptions(tx),
+        onTap: () => _showTransactionDetails(tx),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.spaceL,
@@ -449,26 +417,51 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                 ],
               ),
 
-              // 2. سطر اسم المستلم (أسفل التاريخ وقبل البيان)
-              if (tx.recipientName != null &&
-                  tx.recipientName!.trim().isNotEmpty) ...[
+              // 2. سطر اسم المستلم والمرجع (أيقونات فقط وبجانب بعضهما)
+              if ((tx.recipientName != null &&
+                      tx.recipientName!.trim().isNotEmpty) ||
+                  (tx.referenceNumber != null &&
+                      tx.referenceNumber!.trim().isNotEmpty)) ...[
                 const SizedBox(height: AppDimensions.spaceXS),
                 Row(
                   children: [
-                    const Icon(
-                      AppIcons.accountOutline,
-                      size: AppDimensions.iconMicro,
-                      color: AppColors.textMuted,
-                    ),
-                    const SizedBox(width: AppDimensions.spaceXS),
-                    Text(
-                      '${AppStrings.recipientPrefix}${tx.recipientName!.trim()}',
-                      style: const TextStyle(
-                        fontSize: AppTypography.sizeCaption,
-                        fontWeight: AppTypography.weightMedium,
-                        color: AppColors.textSecondary,
+                    if (tx.recipientName != null &&
+                        tx.recipientName!.trim().isNotEmpty) ...[
+                      const Icon(
+                        AppIcons.accountOutline,
+                        size: AppDimensions.iconMicro,
+                        color: AppColors.textMuted,
                       ),
-                    ),
+                      const SizedBox(width: AppDimensions.spaceXS),
+                      Text(
+                        tx.recipientName!.trim(),
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeCaption,
+                          fontWeight: AppTypography.weightMedium,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                    if (tx.referenceNumber != null &&
+                        tx.referenceNumber!.trim().isNotEmpty) ...[
+                      if (tx.recipientName != null &&
+                          tx.recipientName!.trim().isNotEmpty)
+                        const SizedBox(width: AppDimensions.spaceM),
+                      const Icon(
+                        AppIcons.reference,
+                        size: AppDimensions.iconMicro,
+                        color: AppColors.textMuted,
+                      ),
+                      const SizedBox(width: AppDimensions.spaceXS),
+                      Text(
+                        tx.referenceNumber!.trim(),
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeCaption,
+                          fontWeight: AppTypography.weightMedium,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -485,156 +478,6 @@ class _AccountTransactionsViewState extends State<AccountTransactionsView> {
                 ),
               ],
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showTransactionOptions(TransactionModel tx) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      barrierColor: AppColors.overlay,
-      builder: (ctx) => Center(
-        child: Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.spaceXL,
-            vertical: AppDimensions.space2XL,
-          ),
-          constraints: const BoxConstraints(
-            maxWidth: AppDimensions.modalMaxWidth,
-          ),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppDimensions.borderRadius3XL,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.overlayLight,
-                blurRadius: 20,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: AppDimensions.borderRadius3XL,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(AppDimensions.spaceL),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              tx.typeName ?? AppStrings.operation,
-                              style: const TextStyle(
-                                fontSize: AppTypography.sizeH2,
-                                fontWeight: AppTypography.weightBold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: AppDimensions.spaceXXS),
-                            Text(
-                              '${AppFormatters.formatDate(tx.transactionDate)} • ${AppFormatters.formatQuantity(tx.enteredQuantity)} ${tx.unitName ?? AppStrings.unitLiter} ${tx.fuelTypeName ?? ''}'
-                                  .trim(),
-                              style: const TextStyle(
-                                fontSize: AppTypography.sizeCaption,
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(
-                          AppIcons.closeRounded,
-                          color: AppColors.textTertiary,
-                        ),
-                        onPressed: () => Navigator.of(ctx).pop(),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(
-                  height: AppDimensions.dividerHeight,
-                  thickness: AppDimensions.borderWidthHairline,
-                  color: AppColors.borderSubtle,
-                ),
-                ListTile(
-                  leading: const Icon(
-                    AppIcons.info,
-                    color: AppColors.textSecondary,
-                  ),
-                  title: const Text(
-                    AppStrings.details,
-                    style: TextStyle(
-                      fontSize: AppTypography.sizeBody,
-                      fontWeight: AppTypography.weightMedium,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _showTransactionDetails(tx);
-                  },
-                ),
-                const Divider(
-                  height: AppDimensions.dividerHeight,
-                  thickness: AppDimensions.borderWidthHairline,
-                  color: AppColors.borderSubtle,
-                ),
-                ListTile(
-                  leading: const Icon(
-                    AppIcons.edit,
-                    color: AppColors.textSecondary,
-                  ),
-                  title: const Text(
-                    AppStrings.edit,
-                    style: TextStyle(
-                      fontSize: AppTypography.sizeBody,
-                      fontWeight: AppTypography.weightMedium,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    OperationEntrySheet.show(
-                      context: context,
-                      account: widget.account,
-                      editTransaction: tx,
-                    );
-                  },
-                ),
-                const Divider(
-                  height: AppDimensions.dividerHeight,
-                  thickness: AppDimensions.borderWidthHairline,
-                  color: AppColors.borderSubtle,
-                ),
-                ListTile(
-                  leading: const Icon(
-                    AppIcons.delete,
-                    color: AppColors.dispenseRed,
-                  ),
-                  title: const Text(
-                    AppStrings.delete,
-                    style: TextStyle(
-                      fontSize: AppTypography.sizeBody,
-                      fontWeight: AppTypography.weightMedium,
-                      color: AppColors.dispenseRed,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.of(ctx).pop();
-                    _deleteTransaction(tx);
-                  },
-                ),
-                const SizedBox(height: AppDimensions.spaceS),
-              ],
-            ),
           ),
         ),
       ),

@@ -39,6 +39,11 @@ class DatabaseHelper {
           await db.execute(
               'ALTER TABLE transactions ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0;');
         }
+        final hasTxDeletedAt = columns.any((c) => c['name'] == 'deleted_at');
+        if (!hasTxDeletedAt) {
+          await db.execute(
+              'ALTER TABLE transactions ADD COLUMN deleted_at TEXT;');
+        }
 
         final accCols = await db.rawQuery('PRAGMA table_info(accounts)');
         final hasArchived = accCols.any((c) => c['name'] == 'is_archived');
@@ -46,6 +51,31 @@ class DatabaseHelper {
           await db.execute(
               'ALTER TABLE accounts ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0;');
         }
+        final hasAccDeletedAt = accCols.any((c) => c['name'] == 'deleted_at');
+        if (!hasAccDeletedAt) {
+          await db.execute(
+              'ALTER TABLE accounts ADD COLUMN deleted_at TEXT;');
+        }
+
+        final stCols = await db.rawQuery('PRAGMA table_info(stations)');
+        final hasStArchived = stCols.any((c) => c['name'] == 'is_archived');
+        if (!hasStArchived) {
+          await db.execute(
+              'ALTER TABLE stations ADD COLUMN is_archived INTEGER NOT NULL DEFAULT 0;');
+        }
+        final hasStDeletedAt = stCols.any((c) => c['name'] == 'deleted_at');
+        if (!hasStDeletedAt) {
+          await db.execute(
+              'ALTER TABLE stations ADD COLUMN deleted_at TEXT;');
+        }
+
+        // جدول الإعدادات العامة (Settings)
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS app_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+          );
+        ''');
       },
     );
   }
@@ -60,6 +90,7 @@ class DatabaseHelper {
         phone_number TEXT,
         is_active INTEGER NOT NULL DEFAULT 1,
         is_archived INTEGER NOT NULL DEFAULT 0,
+        deleted_at TEXT,
         created_at TEXT NOT NULL
       )
     ''');
@@ -73,6 +104,8 @@ class DatabaseHelper {
         phone_number TEXT,
         default_commission_rate REAL NOT NULL DEFAULT 2.0, -- عمولة التهوية
         is_active INTEGER NOT NULL DEFAULT 1,
+        is_archived INTEGER NOT NULL DEFAULT 0,
+        deleted_at TEXT,
         created_at TEXT NOT NULL
       )
     ''');
@@ -125,6 +158,7 @@ class DatabaseHelper {
         notes TEXT,
         created_at TEXT NOT NULL,
         is_deleted INTEGER NOT NULL DEFAULT 0,
+        deleted_at TEXT,
         FOREIGN KEY (account_id) REFERENCES accounts (id),
         FOREIGN KEY (station_id) REFERENCES stations (id),
         FOREIGN KEY (reference_station_id) REFERENCES stations (id),
@@ -133,11 +167,25 @@ class DatabaseHelper {
       )
     ''');
 
+    // جدول الإعدادات العامة (Settings)
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    ''');
+
     // تهيئة البيانات الافتراضية
     await _insertInitialData(db);
   }
 
   Future<void> _insertInitialData(Database db) async {
+    // إدراج إعداد سلة المحذوفات الافتراضي (مفعلة)
+    await db.insert('app_settings', {
+      'key': 'recycle_bin_enabled',
+      'value': 'true',
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+
     // إدراج الوحدات الافتراضية
     await db.insert(
         'units', {'name': 'لتر', 'conversion_factor': 1.0, 'is_base_unit': 1});
@@ -161,5 +209,27 @@ class DatabaseHelper {
         {'id': 4, 'name': 'صرف اعتماد', 'code': 'DISPENSE_QUOTA'});
     await db.insert('transaction_types',
         {'id': 5, 'name': 'صرف فعلي', 'code': 'DISPENSE_ACTUAL'});
+  }
+
+  /// فحص هل سلة المحذوفات مفعلة
+  Future<bool> isRecycleBinEnabled() async {
+    final db = await database;
+    final res = await db.query(
+      'app_settings',
+      where: 'key = ?',
+      whereArgs: ['recycle_bin_enabled'],
+    );
+    if (res.isEmpty) return true;
+    return res.first['value'] == 'true';
+  }
+
+  /// تغيير إعداد سلة المحذوفات
+  Future<void> setRecycleBinEnabled(bool enabled) async {
+    final db = await database;
+    await db.insert(
+      'app_settings',
+      {'key': 'recycle_bin_enabled', 'value': enabled ? 'true' : 'false'},
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 }

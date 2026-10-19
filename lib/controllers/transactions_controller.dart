@@ -436,10 +436,11 @@ class TransactionsController extends ChangeNotifier {
     }
   }
 
-  /// حذف عملية لحساب
-  Future<bool> deleteTransaction(int id, int accountId) async {
+  /// حذف عملية لحساب (سلة المحذوفات أو حذف نهائي)
+  Future<bool> deleteTransaction(int id, int accountId,
+      {bool? forcePermanent}) async {
     try {
-      await _repository.deleteTransaction(id);
+      await _repository.deleteTransaction(id, forcePermanent: forcePermanent);
       _allTransactions =
           await _repository.getTransactionsByAccountId(accountId);
       await fetchAllBalancesSummary();
@@ -451,10 +452,11 @@ class TransactionsController extends ChangeNotifier {
     }
   }
 
-  /// حذف عملية لمحطة
-  Future<bool> deleteStationTransaction(int id, int stationId) async {
+  /// حذف عملية لمحطة (سلة المحذوفات أو حذف نهائي)
+  Future<bool> deleteStationTransaction(int id, int stationId,
+      {bool? forcePermanent}) async {
     try {
-      await _repository.deleteTransaction(id);
+      await _repository.deleteTransaction(id, forcePermanent: forcePermanent);
       _allTransactions =
           await _repository.getTransactionsByStationId(stationId);
       await fetchAllBalancesSummary();

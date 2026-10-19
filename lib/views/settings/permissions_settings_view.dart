@@ -18,38 +18,18 @@ class PermissionsSettingsView extends StatefulWidget {
 }
 
 class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
-  bool _micEnabled = false;
-  bool _cameraEnabled = true;
-  bool _photosEnabled = true;
   bool _contactsEnabled = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkContactsPermission();
-  }
-
-  Future<void> _checkContactsPermission() async {
-    try {
-      final granted = await FlutterContacts.requestPermission(readonly: true);
-      if (mounted) {
-        setState(() => _contactsEnabled = granted);
-      }
-    } catch (_) {}
-  }
 
   Widget _buildPermissionRow({
     required IconData icon,
     required String title,
     required bool isEnabled,
-    required ValueChanged<bool> onChanged,
+    required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          onChanged(!isEnabled);
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.space2XL,
@@ -87,6 +67,22 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
     );
   }
 
+  Future<void> _handlePermissionRequest() async {
+    try {
+      final granted = await FlutterContacts.requestPermission(readonly: true);
+      if (!mounted) return;
+      setState(() => _contactsEnabled = granted);
+      if (granted) {
+        AppSnackBar.showSuccess(context, AppStrings.operationSuccess);
+      } else {
+        AppSnackBar.showError(context, AppStrings.contactsPermissionDenied);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackBar.showError(context, AppStrings.operationFailed);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,46 +98,10 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView> {
           OneUiCard(
             children: [
               _buildPermissionRow(
-                icon: AppIcons.mic,
-                title: AppStrings.micPermission,
-                isEnabled: _micEnabled,
-                onChanged: (val) => setState(() => _micEnabled = val),
-              ),
-              _buildPermissionRow(
-                icon: AppIcons.camera,
-                title: AppStrings.cameraPermission,
-                isEnabled: _cameraEnabled,
-                onChanged: (val) => setState(() => _cameraEnabled = val),
-              ),
-              _buildPermissionRow(
-                icon: AppIcons.photos,
-                title: AppStrings.photosPermission,
-                isEnabled: _photosEnabled,
-                onChanged: (val) => setState(() => _photosEnabled = val),
-              ),
-              _buildPermissionRow(
                 icon: AppIcons.contacts,
                 title: AppStrings.contactsPermission,
                 isEnabled: _contactsEnabled,
-                onChanged: (val) async {
-                  try {
-                    final granted = await FlutterContacts.requestPermission(
-                        readonly: true);
-                    if (!mounted || !context.mounted) return;
-                    setState(() => _contactsEnabled = granted);
-                    if (granted) {
-                      AppSnackBar.showSuccess(
-                          context, AppStrings.operationSuccess);
-                    } else {
-                      AppSnackBar.showError(
-                          context, AppStrings.contactsPermissionDenied);
-                    }
-                  } catch (e) {
-                    if (!mounted || !context.mounted) return;
-                    AppSnackBar.showError(
-                        context, AppStrings.operationFailed);
-                  }
-                },
+                onTap: _handlePermissionRequest,
               ),
             ],
           ),
