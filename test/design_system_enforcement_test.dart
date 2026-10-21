@@ -174,6 +174,8 @@ void main() {
         'lib/views/settings/backups_list_view.dart',
         'lib/controllers/auth_controller.dart',
         'lib/controllers/backup_controller.dart',
+        'lib/services/google_drive_service.dart',
+        'lib/models/backup_model.dart',
         '.agents/rules/design.md',
       ];
 

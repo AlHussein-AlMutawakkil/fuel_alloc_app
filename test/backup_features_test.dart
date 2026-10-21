@@ -26,8 +26,8 @@ void main() {
       expect(controller.formattedDailyTime, contains('12:00'));
       expect(controller.scheduleStatusSummary, contains(AppStrings.scheduleEnabledDaily));
       expect(controller.autoBackupEnabled, isFalse);
-      expect(controller.localBackups.isNotEmpty, isTrue);
-      expect(controller.cloudBackups.isNotEmpty, isTrue);
+      expect(controller.localBackups.isEmpty, isTrue);
+      expect(controller.cloudBackups.isEmpty, isTrue);
     });
 
     test('Creating a local backup adds a new backup to localBackups', () {
@@ -66,6 +66,39 @@ void main() {
       expect(item.formattedSize, contains('2.0'));
       expect(item.formattedDate, contains('2026/10/21'));
       expect(item.typeBadge, equals(AppStrings.backupFullBadge));
+    });
+
+    test('Incremental backup promotes to full backup when forced or cycle expires', () {
+      final controller = BackupController();
+      controller.setBackupType(BackupType.incremental);
+      controller.setIncrementalOptions(forceNext: true);
+
+      expect(controller.forceFullBackupNextRun, isTrue);
+
+      final b1 = controller.createLocalBackup();
+      expect(b1.type, equals(BackupType.full));
+      expect(b1.fileName, contains('_full.db'));
+      expect(controller.forceFullBackupNextRun, isFalse);
+      expect(controller.lastFullBackupDate, isNotNull);
+
+      final b2 = controller.createLocalBackup();
+      expect(b2.type, equals(BackupType.incremental));
+      expect(b2.fileName, contains('_incr.db'));
+    });
+
+    test('Archive mode creates or updates fuel_alloc_archive_main.db', () {
+      final controller = BackupController();
+      controller.setBackupType(BackupType.archive);
+
+      final b = controller.createLocalBackup();
+      expect(b.type, equals(BackupType.archive));
+      expect(b.fileName, equals('fuel_alloc_archive_main.db'));
+    });
+
+    test('Google Drive sync getters provide correct localized strings', () {
+      final controller = BackupController();
+      expect(controller.lastCloudSyncFormatted, equals(AppStrings.noSyncYet));
+      expect(controller.isSyncing, isFalse);
     });
   });
 
@@ -134,7 +167,10 @@ void main() {
 
     testWidgets('Tapping viewBackups opens BackupsListView with local and cloud segments',
         (tester) async {
-      await tester.pumpWidget(buildTestApp());
+      final controller = BackupController();
+      controller.createLocalBackup();
+
+      await tester.pumpWidget(buildTestApp(controller: controller));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text(AppStrings.viewBackups));
@@ -146,6 +182,17 @@ void main() {
       expect(find.text(AppStrings.restore), findsWidgets);
       expect(find.text(AppStrings.share), findsWidgets);
       expect(find.text(AppStrings.delete), findsWidgets);
+    });
+
+    testWidgets('BackupSettingsView has zero chevron/arrow icons in setting tiles', (tester) async {
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      // Ensure no chevron or forward arrow icons are present in the settings screen
+      expect(find.byIcon(Icons.chevron_left), findsNothing);
+      expect(find.byIcon(Icons.chevron_right), findsNothing);
+      expect(find.byIcon(Icons.arrow_forward_ios), findsNothing);
+      expect(find.byIcon(Icons.arrow_back_ios), findsNothing);
     });
   });
 

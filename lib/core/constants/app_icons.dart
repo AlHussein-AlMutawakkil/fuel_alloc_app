@@ -90,4 +90,7 @@ class AppIcons {
   static const IconData checkboxUnchecked = Icons.check_box_outline_blank;
   static const IconData expandMore = Icons.keyboard_arrow_down;
   static const IconData expandLess = Icons.keyboard_arrow_up;
+  static const IconData cloudDone = Icons.cloud_done_outlined;
+  static const IconData sync = Icons.sync;
+  static const IconData switchAccount = Icons.switch_account_outlined;
 }

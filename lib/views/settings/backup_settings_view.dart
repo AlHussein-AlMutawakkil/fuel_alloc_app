@@ -23,7 +23,6 @@ class BackupSettingsView extends StatefulWidget {
 }
 
 class _BackupSettingsViewState extends State<BackupSettingsView> {
-  // كائن احتياطي في حال تم استدعاء الشاشة خارج مزود الـ MultiProvider في الاختبارات الفردية
   BackupController? _localFallbackController;
 
   BackupController _resolveController(BuildContext context) {
@@ -58,8 +57,22 @@ class _BackupSettingsViewState extends State<BackupSettingsView> {
     }
   }
 
-  void _showUnderDevelopment(String feature) {
-    AppSnackBar.showInfo(context, '$feature (${AppStrings.underDevelopment})');
+  void _handleConnectGoogleDrive(BackupController controller) async {
+    final connected = await controller.connectGoogleDrive();
+    if (connected && mounted) {
+      AppSnackBar.showSuccess(context, AppStrings.googleDriveConnected);
+    }
+  }
+
+  void _handleSyncNow(BackupController controller) async {
+    final success = await controller.syncCurrentBackupToCloud();
+    if (mounted) {
+      if (success) {
+        AppSnackBar.showSuccess(context, AppStrings.cloudSyncSuccess);
+      } else {
+        AppSnackBar.showError(context, AppStrings.cloudSyncError);
+      }
+    }
   }
 
   @override
@@ -105,7 +118,7 @@ class _BackupSettingsViewState extends State<BackupSettingsView> {
                 ],
               ),
 
-              // 2. بطاقة الإعدادات والجدولة (الإعدادات الجديدة المطلوبة)
+              // 2. بطاقة الإعدادات والجدولة (خالية تماماً من الأسهم بناءً على طلب المستخدم)
               OneUiCard(
                 children: [
                   OneUiTile(
@@ -175,7 +188,7 @@ class _BackupSettingsViewState extends State<BackupSettingsView> {
                 ],
               ),
 
-              // 4. بطاقة المزامنة والنسخ التلقائي
+              // 4. بطاقة المزامنة والنسخ التلقائي مع السحابة
               OneUiCard(
                 children: [
                   OneUiTile(
@@ -185,10 +198,47 @@ class _BackupSettingsViewState extends State<BackupSettingsView> {
                       size: AppDimensions.iconMedium + 2,
                     ),
                     title: AppStrings.cloudBackup,
-                    subtitle: AppStrings.cloudBackupDesc,
-                    valueText: AppStrings.underDevelopment,
-                    onTap: () => _showUnderDevelopment(AppStrings.cloudBackup),
+                    subtitle: controller.isGoogleDriveConnected
+                        ? controller.lastCloudSyncFormatted
+                        : AppStrings.cloudBackupDesc,
+                    valueText: controller.isGoogleDriveConnected
+                        ? AppStrings.googleDriveConnected
+                        : AppStrings.googleDriveNotConnected,
+                    trailing: controller.isSyncing
+                        ? const Padding(
+                            padding: EdgeInsets.all(AppDimensions.spaceM),
+                            child: SizedBox(
+                              width: AppDimensions.iconRegular,
+                              height: AppDimensions.iconRegular,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          )
+                        : (controller.isGoogleDriveConnected
+                            ? IconButton(
+                                icon: const Icon(
+                                  AppIcons.sync,
+                                  color: AppColors.primary,
+                                  size: AppDimensions.iconMedium + 2,
+                                ),
+                                tooltip: AppStrings.syncNow,
+                                onPressed: () => _handleSyncNow(controller),
+                              )
+                            : null),
+                    onTap: () {
+                      if (!controller.isGoogleDriveConnected) {
+                        _handleConnectGoogleDrive(controller);
+                      } else {
+                        _handleSyncNow(controller);
+                      }
+                    },
                   ),
+
+                  // صف النسخ الاحتياطي التلقائي
                   Material(
                     color: Colors.transparent,
                     child: Padding(

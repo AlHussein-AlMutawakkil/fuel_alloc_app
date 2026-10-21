@@ -45,7 +45,19 @@ class _BackupsListViewState extends State<BackupsListView> {
       isDanger: true,
     );
     if (confirm && mounted) {
-      AppSnackBar.showSuccess(context, AppStrings.restoreSuccessMsg);
+      if (backup.isCloud) {
+        final ok =
+            await context.read<BackupController>().restoreCloudBackup(backup.id);
+        if (mounted) {
+          if (ok) {
+            AppSnackBar.showSuccess(context, AppStrings.cloudRestoreSuccess);
+          } else {
+            AppSnackBar.showError(context, AppStrings.cloudSyncError);
+          }
+        }
+      } else {
+        AppSnackBar.showSuccess(context, AppStrings.restoreSuccessMsg);
+      }
     }
   }
 
@@ -76,7 +88,6 @@ class _BackupsListViewState extends State<BackupsListView> {
   Widget build(BuildContext context) {
     final controller = context.watch<BackupController>();
     final localBackups = controller.localBackups;
-    final cloudBackups = controller.cloudBackups;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -103,7 +114,7 @@ class _BackupsListViewState extends State<BackupsListView> {
           Expanded(
             child: _activeTab == BackupsTab.local
                 ? _buildLocalBackupsList(localBackups)
-                : _buildCloudBackupsList(cloudBackups),
+                : _buildCloudBackupsList(controller),
           ),
         ],
       ),
@@ -200,12 +211,35 @@ class _BackupsListViewState extends State<BackupsListView> {
     );
   }
 
-  Widget _buildCloudBackupsList(List<BackupModel> backups) {
+  Widget _buildCloudBackupsList(BackupController controller) {
+    if (!controller.isGoogleDriveConnected) {
+      return EmptyStateWidget(
+        icon: AppIcons.cloudQueue,
+        title: AppStrings.googleDriveNotConnected,
+        subtitle: AppStrings.cloudBackupEmptyDesc,
+        actionText: AppStrings.connectGoogleDrive,
+        onAction: () async {
+          final ok = await controller.connectGoogleDrive();
+          if (ok && mounted) {
+            AppSnackBar.showSuccess(context, AppStrings.googleDriveConnected);
+          }
+        },
+      );
+    }
+
+    final backups = controller.cloudBackups;
     if (backups.isEmpty) {
-      return const EmptyStateWidget(
+      return EmptyStateWidget(
         icon: AppIcons.cloudQueue,
         title: AppStrings.noCloudBackups,
-        subtitle: AppStrings.cloudBackupEmptyDesc,
+        subtitle: AppStrings.noSyncYet,
+        actionText: AppStrings.syncNow,
+        onAction: () async {
+          final ok = await controller.syncCurrentBackupToCloud();
+          if (ok && mounted) {
+            AppSnackBar.showSuccess(context, AppStrings.cloudSyncSuccess);
+          }
+        },
       );
     }
 

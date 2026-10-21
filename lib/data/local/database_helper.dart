@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -299,5 +300,38 @@ class DatabaseHelper {
       {'key': 'recycle_bin_enabled', 'value': enabled ? 'true' : 'false'},
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  /// الحصول على المسار الفعلي لملف قاعدة البيانات المحلي
+  Future<String> getDatabaseFilePath() async {
+    final dbPath = await getDatabasesPath();
+    return join(dbPath, 'fuel_allocation.db');
+  }
+
+  /// إغلاق اتصال قاعدة البيانات الحالي بأمان
+  Future<void> closeDatabase() async {
+    if (_database != null && _database!.isOpen) {
+      await _database!.close();
+      _database = null;
+    }
+  }
+
+  /// استبدال واستعادة ملف قاعدة البيانات من مسار محدد
+  Future<bool> restoreDatabaseFromFile(String sourceFilePath) async {
+    final sourceFile = File(sourceFilePath);
+    if (!await sourceFile.exists()) return false;
+
+    // التحقق من صحة الملف (ترويسة SQLite)
+    final bytes = await sourceFile.openRead(0, 16).first;
+    final header = String.fromCharCodes(bytes);
+    if (!header.startsWith('SQLite format 3')) {
+      return false; // ملف غير صالح أو تالف
+    }
+
+    final targetPath = await getDatabaseFilePath();
+    await closeDatabase();
+    await sourceFile.copy(targetPath);
+    await database; // إعادة فتح وتهيئة الاتصال
+    return true;
   }
 }

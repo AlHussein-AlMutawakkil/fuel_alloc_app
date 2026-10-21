@@ -265,6 +265,21 @@ class AppStrings {
   static const String autoBackupDesc = 'أخذ نسخة احتياطية دورياً لحماية بياناتك';
   static const String backupSuccessMsg = 'تم إنشاء النسخة الاحتياطية بنجاح';
   static const String restoreSuccessMsg = 'تمت استعادة البيانات بنجاح';
+  static const String googleDriveConnected = 'متصل بـ Google Drive';
+  static const String googleDriveNotConnected = 'غير متصل';
+  static const String connectGoogleDrive = 'ربط حساب Google';
+  static const String disconnectGoogleDrive = 'تسجيل الخروج';
+  static const String switchGoogleAccount = 'تبديل الحساب';
+  static const String lastCloudSyncPrefix = 'آخر مزامنة: ';
+  static const String noSyncYet = 'لم تتم المزامنة السحابية بعد';
+  static const String syncNow = 'مزامنة الآن';
+  static const String syncing = 'جاري المزامنة...';
+  static const String cloudSyncSuccess = 'تمت المزامنة والرفع إلى Google Drive بنجاح';
+  static const String cloudRestoreSuccess = 'تمت استعادة البيانات من النسخة السحابية بنجاح';
+  static const String cloudSyncError = 'حدث خطأ أثناء الاتصال بـ Google Drive';
+  static const String confirmDisconnectGoogleTitle = 'فصل حساب Google';
+  static const String confirmDisconnectGoogleMsg = 'هل تريد حقاً تسجيل الخروج وفصل الربط مع Google Drive؟';
+  static const String googleAccount = 'حساب Google';
 
   // نوع النسخة الاحتياطية
   static const String backupType = 'نوع النسخة الاحتياطية';

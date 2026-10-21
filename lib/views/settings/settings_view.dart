@@ -29,10 +29,6 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
-  void _showUnderDevelopmentSnackBar(String title) {
-    AppSnackBar.showInfo(context, '$title (${AppStrings.underDevelopment})');
-  }
-
   void _showAccountDialog(AuthController auth) {
     if (!auth.isLoggedIn) {
       showModalBottomSheet(
@@ -82,12 +78,15 @@ class _SettingsViewState extends State<SettingsView> {
               ),
               const SizedBox(height: AppDimensions.spaceXL),
               CustomButton(
-                text: AppStrings.loginOrLinkAccount,
+                text: AppStrings.connectGoogleDrive,
                 icon: AppIcons.profile,
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  auth.simulateDemoLogin();
-                  AppSnackBar.showSuccess(context, AppStrings.operationSuccess);
+                  final ok = await auth.signInWithGoogle();
+                  if (ok && mounted) {
+                    AppSnackBar.showSuccess(
+                        context, AppStrings.googleDriveConnected);
+                  }
                 },
               ),
               const SizedBox(height: AppDimensions.spaceS),
@@ -101,7 +100,119 @@ class _SettingsViewState extends State<SettingsView> {
         ),
       );
     } else {
-      _showUnderDevelopmentSnackBar(AppStrings.account);
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppDimensions.radiusCard),
+            ),
+          ),
+          padding: const EdgeInsets.all(AppDimensions.spaceXL),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: AppDimensions.handleWidth,
+                  height: AppDimensions.handleHeight,
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusFull),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.spaceL),
+              Row(
+                children: [
+                  Container(
+                    width: AppDimensions.avatarSize,
+                    height: AppDimensions.avatarSize,
+                    decoration: const BoxDecoration(
+                      color: AppColors.textDarkSlate,
+                      shape: BoxShape.circle,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: auth.photoUrl != null
+                        ? Image.network(
+                            auth.photoUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              AppIcons.profile,
+                              color: AppColors.textWhite,
+                              size: AppDimensions.iconExtraLarge - 2,
+                            ),
+                          )
+                        : const Icon(
+                            AppIcons.profile,
+                            color: AppColors.textWhite,
+                            size: AppDimensions.iconExtraLarge - 2,
+                          ),
+                  ),
+                  const SizedBox(width: AppDimensions.spaceM),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          auth.displayName,
+                          style: const TextStyle(
+                            fontSize: AppTypography.sizeH2,
+                            fontWeight: AppTypography.weightBold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (auth.email != null)
+                          Text(
+                            auth.email!,
+                            style: const TextStyle(
+                              fontSize: AppTypography.sizeBodySecondary,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.spaceXL),
+              CustomButton(
+                text: AppStrings.switchGoogleAccount,
+                icon: AppIcons.switchAccount,
+                variant: ButtonVariant.secondary,
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final ok = await auth.switchAccount();
+                  if (ok && mounted) {
+                    AppSnackBar.showSuccess(
+                        context, AppStrings.googleDriveConnected);
+                  }
+                },
+              ),
+              const SizedBox(height: AppDimensions.spaceS),
+              CustomButton(
+                text: AppStrings.logout,
+                icon: AppIcons.delete,
+                variant: ButtonVariant.danger,
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _confirmLogout();
+                },
+              ),
+              const SizedBox(height: AppDimensions.spaceS),
+              CustomButton(
+                text: AppStrings.close,
+                variant: ButtonVariant.secondary,
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ],
+          ),
+        ),
+      );
     }
   }
 
@@ -120,8 +231,10 @@ class _SettingsViewState extends State<SettingsView> {
       isDanger: true,
     );
     if (confirm && mounted) {
-      auth.logout();
-      AppSnackBar.showSuccess(context, AppStrings.logoutSuccessMsg);
+      await auth.logout();
+      if (mounted) {
+        AppSnackBar.showSuccess(context, AppStrings.logoutSuccessMsg);
+      }
     }
   }
 
@@ -151,11 +264,22 @@ class _SettingsViewState extends State<SettingsView> {
                         color: AppColors.textDarkSlate,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        AppIcons.profile,
-                        color: AppColors.textWhite,
-                        size: AppDimensions.iconExtraLarge - 2,
-                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: auth.isLoggedIn && auth.photoUrl != null
+                          ? Image.network(
+                              auth.photoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => const Icon(
+                                AppIcons.profile,
+                                color: AppColors.textWhite,
+                                size: AppDimensions.iconExtraLarge - 2,
+                              ),
+                            )
+                          : const Icon(
+                              AppIcons.profile,
+                              color: AppColors.textWhite,
+                              size: AppDimensions.iconExtraLarge - 2,
+                            ),
                     ),
                     title: auth.displayName,
                     subtitle: auth.displaySubtitle,

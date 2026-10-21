@@ -30,12 +30,12 @@ void main() {
       expect(auth.accountStatusText, equals('almutawakkil@example.com'));
     });
 
-    test('Logout clears user information and reverts to unregistered state', () {
+    test('Logout clears user information and reverts to unregistered state', () async {
       final auth = AuthController();
-      auth.simulateDemoLogin();
+      auth.login(name: 'مستخدم', email: 'user@test.org');
       expect(auth.isLoggedIn, isTrue);
 
-      auth.logout();
+      await auth.logout();
       expect(auth.isLoggedIn, isFalse);
       expect(auth.displayName, equals(AppStrings.unregisteredUser));
       expect(auth.displaySubtitle, equals(AppStrings.loginOrLinkAccount));
