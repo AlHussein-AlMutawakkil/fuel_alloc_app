@@ -252,6 +252,99 @@ class AppStrings {
   static const String profileTitle = 'الحسين علي المتوكل';
   static const String editProfile = 'تعديل الملف الشخصي';
   static const String account = 'الحساب';
+  static const String backup = 'النسخ الاحتياطي';
+  static const String backupTitle = 'النسخ الاحتياطي';
+  static const String backupSubtitle = 'إنشاء واستعادة النسخ الاحتياطية لقاعدة البيانات';
+  static const String createLocalBackup = 'إنشاء نسخة احتياطية محلية';
+  static const String createLocalBackupDesc = 'تصدير نسخة كاملة من البيانات إلى التخزين الداخلي';
+  static const String restoreLocalBackup = 'استعادة نسخة احتياطية';
+  static const String restoreLocalBackupDesc = 'استرجاع البيانات من نسخة سابقة محفوظة';
+  static const String cloudBackup = 'النسخ الاحتياطي السحابي';
+  static const String cloudBackupDesc = 'المزامنة السحابية مع Google Drive';
+  static const String autoBackup = 'النسخ الاحتياطي التلقائي';
+  static const String autoBackupDesc = 'أخذ نسخة احتياطية دورياً لحماية بياناتك';
+  static const String backupSuccessMsg = 'تم إنشاء النسخة الاحتياطية بنجاح';
+  static const String restoreSuccessMsg = 'تمت استعادة البيانات بنجاح';
+
+  // نوع النسخة الاحتياطية
+  static const String backupType = 'نوع النسخة الاحتياطية';
+  static const String backupTypeSubtitle = 'حدد آلية حفظ وأرشفة بيانات العمليات والحسابات';
+  static const String backupFullTitle = 'النسخ الاحتياطية الكاملة';
+  static const String backupFullDesc =
+      'أنشئ دائماً نسخاً احتياطية جديدة بجميع بيانات وسجلات العمليات والحسابات المتاحة.';
+  static const String backupArchiveTitle = 'وضع الأرشيف';
+  static const String backupArchiveDesc =
+      'أضف العمليات وسجلات الحسابات الجديدة إلى ملف النسخة الاحتياطية نفسه.';
+  static const String backupIncrementalTitle = 'النسخ الاحتياطية التزايدية';
+  static const String backupIncrementalDesc =
+      'أنشئ ملفات جديدة لكل نسخة احتياطية لكن احفظ فقط العمليات وسجلات الحسابات الجديدة منذ آخر نسخة احتياطية.';
+  static const String createFullBackupNew = 'إنشاء نسخة احتياطية كاملة جديدة';
+  static const String every7Days = 'بعد كل 7 أيام';
+  static const String everyMonth = 'كل شهر';
+  static const String chooseDays = 'اختر الأيام';
+  static const String forceFullBackupNextRun =
+      'فرض نسخة احتياطية كاملة في تشغيل النسخ الاحتياطي التالي';
+
+  // إعدادات النسخ الاحتياطي المجدول
+  static const String scheduledBackupTitle = 'إعدادات النسخ الاحتياطي المجدول';
+  static const String scheduleRecurringBackups = 'جدولة نسخ احتياطية متكررة';
+  static const String keepDataProtectedDesc = 'حافظ على بياناتك محمية باستمرار';
+  static const String daily = 'يوميًا';
+  static const String atTimePrefix = 'في ';
+  static const String change = 'تغيير';
+  static const String repeatDaily = 'كرّر كل يوم';
+  static const String weekly = 'أسبوعيًا';
+  static const String hourly = 'كل ساعة';
+  static const String hideAdvancedOptions = 'إخفاء الخيارات المتقدمة';
+  static const String showAdvancedOptions = 'عرض الخيارات المتقدمة';
+  static const String disableNotifications = 'تعطيل الإشعارات';
+  static const String disableNotificationsDesc =
+      'بعد اكتمال نسخة احتياطية مجدولة بنجاح';
+
+  // عرض النسخ الاحتياطية
+  static const String backupsListTitle = 'النسخ الاحتياطية';
+  static const String viewBackups = 'عرض النسخ الاحتياطية';
+  static const String viewBackupsDesc = 'استعراض وإدارة ملفات النسخ السابقة محلياً وسحابياً';
+  static const String tabLocal = 'محلي';
+  static const String tabCloud = 'سحابي';
+  static const String noLocalBackups = 'لا توجد نسخ احتياطية محلية';
+  static const String noCloudBackups = 'لا توجد نسخ احتياطية سحابية';
+  static const String localBackupEmptyDesc = 'يمكنك إنشاء نسخة جديدة لحفظ بياناتك في أي وقت.';
+  static const String cloudBackupEmptyDesc = 'قم بربط حساب سحابي للمزامنة والوصول للنسخ السحابية.';
+  static const String backupDate = 'التاريخ';
+  static const String backupSize = 'الحجم';
+  static const String backupTypeIntro = 'كيف ترغب في إدارة وحفظ النسخ الاحتياطية لقاعدة البيانات والعمليات؟';
+  static const String share = 'مشاركة';
+  static const String repeatDaysPrefix = 'كرّر كل ';
+  static const String days = 'أيام';
+  static const String customDaysTitle = 'تخصيص عدد الأيام';
+  static const String daysCount = 'عدد الأيام';
+  static const String enterDaysCount = 'أدخل عدد الأيام';
+  static const String scheduleDisabled = 'معطل';
+  static const String scheduleEnabledDaily = 'مفعل - يوميًا';
+  static const String scheduleEnabledWeekly = 'مفعل - أسبوعيًا';
+  static const String scheduleEnabledHourly = 'مفعل - كل ساعة';
+  static const String backupFullBadge = 'كاملة';
+  static const String backupArchiveBadge = 'أرشيف';
+  static const String backupIncrementalBadge = 'تزايدية';
+  static const String backupShareSuccess = 'تمت مشاركة النسخة الاحتياطية بنجاح';
+  static const String backupDeleteSuccess = 'تم حذف النسخة الاحتياطية بنجاح';
+  static const String confirmDeleteBackupTitle = 'تأكيد حذف النسخة';
+  static const String confirmDeleteBackupMsg = 'هل تريد حذف ملف النسخة الاحتياطية هذا نهائياً؟';
+  static const String settingsSavedSuccess = 'تم حفظ الإعدادات بنجاح';
+  static const String amSuffix = 'ص';
+  static const String pmSuffix = 'م';
+  static const String timePrefixAt = 'في ';
+  static const String customDaysDialogTitle = 'تحديد دورية الأيام';
+  static const String customDaysSuffix = ' يوم';
+
+  static const String unregisteredUser = 'غير مسجل';
+  static const String loginOrLinkAccount = 'تسجيل الدخول / ربط بحساب';
+  static const String unlinkedAccount = 'غير مسجل';
+  static const String linkAccount = 'ربط الحساب';
+  static const String accountLinkDialogTitle = 'تسجيل الدخول / ربط الحساب';
+  static const String accountLinkDialogMsg = 'يمكنك تسجيل الدخول لربط بياناتك وحفظها سحابياً.';
+  static const String alreadyLoggedOutMsg = 'أنت بالفعل غير مسجل الدخول';
   static const String theme = 'المظهر';
   static const String themeSystem = 'النظام';
   static const String themeLight = 'فاتح';

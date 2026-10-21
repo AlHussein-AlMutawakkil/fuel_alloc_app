@@ -226,12 +226,18 @@ class OneUiTile extends StatelessWidget {
   }
 }
 
-/// عنصر خيار اختيار مركزي بنمط One UI (مع أيقونة Icons.check_circle الجاهزة)
+enum SelectionTileType { checkmark, radio }
+
+/// عنصر خيار اختيار مركزي بنمط One UI (مع دعم علامة الاختيار والراديو)
 class OneUiSelectionTile extends StatelessWidget {
   final String title;
   final String? subtitle;
   final bool isSelected;
   final VoidCallback? onTap;
+  final SelectionTileType selectionType;
+  final Widget? leading;
+  final Widget? trailing;
+  final EdgeInsetsGeometry? padding;
 
   const OneUiSelectionTile({
     super.key,
@@ -239,21 +245,57 @@ class OneUiSelectionTile extends StatelessWidget {
     this.subtitle,
     required this.isSelected,
     this.onTap,
+    this.selectionType = SelectionTileType.checkmark,
+    this.leading,
+    this.trailing,
+    this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
+    Widget indicator;
+    if (trailing != null) {
+      indicator = trailing!;
+    } else if (selectionType == SelectionTileType.radio) {
+      indicator = Icon(
+        isSelected ? AppIcons.radioChecked : AppIcons.radioUnchecked,
+        color: isSelected ? AppColors.charcoal : AppColors.border,
+        size: AppDimensions.iconMedium + 2,
+      );
+    } else {
+      indicator = isSelected
+          ? Container(
+              width: 20,
+              height: 20,
+              decoration: const BoxDecoration(
+                color: AppColors.charcoal,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                AppIcons.check,
+                color: AppColors.textWhite,
+                size: 13,
+              ),
+            )
+          : const SizedBox(width: 20, height: 20);
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.space2XL,
-            vertical: AppDimensions.spaceXL,
-          ),
+          padding: padding ??
+              const EdgeInsets.symmetric(
+                horizontal: AppDimensions.space2XL,
+                vertical: AppDimensions.spaceXL,
+              ),
           child: Row(
             children: [
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: AppDimensions.spaceL),
+              ],
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,12 +322,7 @@ class OneUiSelectionTile extends StatelessWidget {
                   ],
                 ),
               ),
-              if (isSelected)
-                const Icon(
-                  AppIcons.checkCircle,
-                  color: AppColors.textDarkSlate,
-                  size: 15,
-                ),
+              indicator,
             ],
           ),
         ),

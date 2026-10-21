@@ -75,4 +75,19 @@ class AppIcons {
   static const IconData phone = Icons.phone_outlined;
   static const IconData unarchive = Icons.unarchive_outlined;
   static const IconData reference = Icons.tag;
+  static const IconData backup = Icons.cloud_sync_outlined;
+  static const IconData backupExport = Icons.upload_file_outlined;
+  static const IconData backupImport = Icons.file_download_outlined;
+  static const IconData cloudQueue = Icons.cloud_queue_outlined;
+  static const IconData backupSchedule = Icons.schedule_outlined;
+  static const IconData backupType = Icons.layers_outlined;
+  static const IconData backupList = Icons.folder_outlined;
+  static const IconData backupDatabase = Icons.storage_outlined;
+  static const IconData share = Icons.share_outlined;
+  static const IconData radioChecked = Icons.radio_button_checked;
+  static const IconData radioUnchecked = Icons.radio_button_unchecked;
+  static const IconData checkboxChecked = Icons.check_box;
+  static const IconData checkboxUnchecked = Icons.check_box_outline_blank;
+  static const IconData expandMore = Icons.keyboard_arrow_down;
+  static const IconData expandLess = Icons.keyboard_arrow_up;
 }

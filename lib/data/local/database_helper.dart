@@ -41,8 +41,8 @@ class DatabaseHelper {
         }
         final hasTxDeletedAt = columns.any((c) => c['name'] == 'deleted_at');
         if (!hasTxDeletedAt) {
-          await db.execute(
-              'ALTER TABLE transactions ADD COLUMN deleted_at TEXT;');
+          await db
+              .execute('ALTER TABLE transactions ADD COLUMN deleted_at TEXT;');
         }
 
         final accCols = await db.rawQuery('PRAGMA table_info(accounts)');
@@ -53,8 +53,7 @@ class DatabaseHelper {
         }
         final hasAccDeletedAt = accCols.any((c) => c['name'] == 'deleted_at');
         if (!hasAccDeletedAt) {
-          await db.execute(
-              'ALTER TABLE accounts ADD COLUMN deleted_at TEXT;');
+          await db.execute('ALTER TABLE accounts ADD COLUMN deleted_at TEXT;');
         }
         final hasAccLocation = accCols.any((c) => c['name'] == 'location');
         if (!hasAccLocation) {
@@ -75,8 +74,7 @@ class DatabaseHelper {
         }
         final hasStDeletedAt = stCols.any((c) => c['name'] == 'deleted_at');
         if (!hasStDeletedAt) {
-          await db.execute(
-              'ALTER TABLE stations ADD COLUMN deleted_at TEXT;');
+          await db.execute('ALTER TABLE stations ADD COLUMN deleted_at TEXT;');
         }
 
         // جدول الإعدادات العامة (Settings)
@@ -244,10 +242,13 @@ class DatabaseHelper {
 
   Future<void> _insertInitialData(Database db) async {
     // إدراج إعداد سلة المحذوفات الافتراضي (مفعلة)
-    await db.insert('app_settings', {
-      'key': 'recycle_bin_enabled',
-      'value': 'true',
-    }, conflictAlgorithm: ConflictAlgorithm.ignore);
+    await db.insert(
+        'app_settings',
+        {
+          'key': 'recycle_bin_enabled',
+          'value': 'true',
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore);
 
     // إدراج الوحدات الافتراضية
     await db.insert(
@@ -274,8 +275,8 @@ class DatabaseHelper {
         {'id': 5, 'name': 'صرف فعلي', 'code': 'DISPENSE_ACTUAL'});
     await db.insert('transaction_types',
         {'id': 6, 'name': 'تحويل', 'code': 'TRANSFER_OUT'});
-    await db.insert('transaction_types',
-        {'id': 7, 'name': 'تحويل', 'code': 'TRANSFER_IN'});
+    await db.insert(
+        'transaction_types', {'id': 7, 'name': 'تحويل', 'code': 'TRANSFER_IN'});
   }
 
   /// فحص هل سلة المحذوفات مفعلة

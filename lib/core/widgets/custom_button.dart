@@ -3,7 +3,7 @@ import '../constants/app_colors.dart';
 import '../constants/app_dimensions.dart';
 import '../constants/app_typography.dart';
 
-enum ButtonVariant { primary, secondary, danger, success, dark }
+enum ButtonVariant { primary, secondary, danger, success, dark, neutral }
 
 /// الزر الموحد لجميع شاشات التطبيق
 class CustomButton extends StatelessWidget {
@@ -60,6 +60,10 @@ class CustomButton extends StatelessWidget {
       case ButtonVariant.dark:
         bgColor = AppColors.charcoal;
         fgColor = AppColors.textWhite;
+        break;
+      case ButtonVariant.neutral:
+        bgColor = AppColors.searchBackground;
+        fgColor = AppColors.textPrimary;
         break;
     }
 

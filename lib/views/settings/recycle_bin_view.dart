@@ -13,6 +13,7 @@ import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../core/widgets/one_ui_card.dart';
+import '../../core/widgets/app_switch.dart';
 import '../../data/local/database_helper.dart';
 import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
@@ -77,9 +78,8 @@ class _RecycleBinViewState extends State<RecycleBinView> {
           ),
           title: AppStrings.enableRecycleBin,
           subtitle: AppStrings.recycleBinSettingDesc,
-          trailing: Switch.adaptive(
+          trailing: AppSwitch(
             value: _isRecycleBinEnabled,
-            activeColor: AppColors.primary,
             onChanged: _toggleRecycleBinSetting,
           ),
         ),
@@ -173,9 +173,8 @@ class _RecycleBinViewState extends State<RecycleBinView> {
     );
     if (!confirm || !mounted) return;
 
-    final success = await context
-        .read<TransactionsController>()
-        .restoreTransaction(tx.id!);
+    final success =
+        await context.read<TransactionsController>().restoreTransaction(tx.id!);
     if (success && mounted) {
       AppSnackBar.showSuccess(context, AppStrings.itemRestoredSuccess);
     }
@@ -279,8 +278,7 @@ class _RecycleBinViewState extends State<RecycleBinView> {
       itemCount: deleted.length,
       itemBuilder: (ctx, index) {
         final tx = deleted[index];
-        final isSupply =
-            tx.typeId == 1 || tx.typeId == 2 || tx.typeId == 7;
+        final isSupply = tx.typeId == 1 || tx.typeId == 2 || tx.typeId == 7;
 
         return Card(
           margin: const EdgeInsets.only(bottom: AppDimensions.spaceM),
@@ -593,7 +591,9 @@ class _RecycleBinViewState extends State<RecycleBinView> {
 
         final badgeText = isStation
             ? AppStrings.typeStation
-            : (isSupplier ? AppStrings.typeSupplier : AppStrings.typeBeneficiary);
+            : (isSupplier
+                ? AppStrings.typeSupplier
+                : AppStrings.typeBeneficiary);
 
         final badgeColor = isStation
             ? AppColors.warning
@@ -618,8 +618,7 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: badgeColor.withOpacity(0.1),
-                    borderRadius:
-                        BorderRadius.circular(AppDimensions.radiusM),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusM),
                   ),
                   child: Icon(
                     iconData,
@@ -653,8 +652,8 @@ class _RecycleBinViewState extends State<RecycleBinView> {
                             ),
                             decoration: BoxDecoration(
                               color: badgeColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusS),
+                              borderRadius:
+                                  BorderRadius.circular(AppDimensions.radiusS),
                             ),
                             child: Text(
                               badgeText,

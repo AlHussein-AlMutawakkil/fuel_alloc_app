@@ -56,6 +56,7 @@ void main() {
       expect(AppIcons.restore, isNotNull);
       expect(AppIcons.contacts, isNotNull);
       expect(AppIcons.unarchive, isNotNull);
+      expect(AppIcons.backup, isNotNull);
 
       // AppStrings
       expect(AppStrings.appTitle.isNotEmpty, isTrue);
@@ -70,6 +71,8 @@ void main() {
       expect(AppStrings.recycleBinTitle.isNotEmpty, isTrue);
       expect(AppStrings.archiveTitle.isNotEmpty, isTrue);
       expect(AppStrings.contactsPermission.isNotEmpty, isTrue);
+      expect(AppStrings.backup.isNotEmpty, isTrue);
+      expect(AppStrings.unregisteredUser.isNotEmpty, isTrue);
 
       // AppTypography
       expect(AppTypography.fontFamily, equals('Cairo'));
@@ -165,6 +168,12 @@ void main() {
         'lib/core/widgets/transaction_details_dialog.dart',
         'lib/views/settings/recycle_bin_view.dart',
         'lib/views/settings/archived_accounts_view.dart',
+        'lib/views/settings/backup_settings_view.dart',
+        'lib/views/settings/backup_type_settings_view.dart',
+        'lib/views/settings/scheduled_backup_settings_view.dart',
+        'lib/views/settings/backups_list_view.dart',
+        'lib/controllers/auth_controller.dart',
+        'lib/controllers/backup_controller.dart',
         '.agents/rules/design.md',
       ];
 

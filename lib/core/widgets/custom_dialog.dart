@@ -240,4 +240,112 @@ class CustomDialog {
       isRecycleBin: isRecycleBin,
     );
   }
+
+  /// نافذة حوار مخصصة بمحتوى تفاعلي وأزرار بنمط One UI
+  static Future<bool> showCustomContent({
+    required BuildContext context,
+    required String title,
+    required Widget content,
+    String confirmText = AppStrings.confirm,
+    String cancelText = AppStrings.cancel,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppDimensions.borderRadius3XL,
+        ),
+        child: SizedBox(
+          width: AppDimensions.dialogMaxWidth,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppDimensions.space3XL),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: AppTypography.sizeH1,
+                  fontWeight: AppTypography.weightBold,
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppDimensions.spaceL),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space2XL,
+                ),
+                child: content,
+              ),
+              const SizedBox(height: AppDimensions.space3XL),
+              const Divider(
+                height: AppDimensions.dividerHeight,
+                color: AppColors.borderSubtle,
+                thickness: AppDimensions.dividerThickness,
+              ),
+              IntrinsicHeight(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.of(ctx).pop(true),
+                        borderRadius: const BorderRadius.only(
+                          bottomRight: Radius.circular(AppDimensions.radius3XL),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppDimensions.spaceL + 2,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            confirmText,
+                            style: const TextStyle(
+                              fontSize: AppTypography.sizeBody + 1,
+                              fontWeight: AppTypography.weightBold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const VerticalDivider(
+                      width: AppDimensions.dividerHeight,
+                      color: AppColors.borderSubtle,
+                      thickness: AppDimensions.dividerThickness,
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.of(ctx).pop(false),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(AppDimensions.radius3XL),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppDimensions.spaceL + 2,
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            cancelText,
+                            style: const TextStyle(
+                              fontSize: AppTypography.sizeBody + 1,
+                              color: AppColors.textTertiary,
+                              fontWeight: AppTypography.weightMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    return result ?? false;
+  }
 }
