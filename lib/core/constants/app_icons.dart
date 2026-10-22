@@ -93,4 +93,9 @@ class AppIcons {
   static const IconData cloudDone = Icons.cloud_done_outlined;
   static const IconData sync = Icons.sync;
   static const IconData switchAccount = Icons.switch_account_outlined;
+  static const IconData autoClean = Icons.auto_delete_outlined;
+  static const IconData security = Icons.lock_outline;
+  static const IconData lock = Icons.lock_outline;
+  static const IconData wifi = Icons.wifi;
+  static const IconData folderOpen = Icons.folder_open_outlined;
 }

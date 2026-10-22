@@ -8,6 +8,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/custom_dialog.dart';
+import '../../core/widgets/custom_text_field.dart';
 import '../../core/widgets/empty_state_widget.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../../models/backup_model.dart';
@@ -34,6 +35,130 @@ class _BackupsListViewState extends State<BackupsListView> {
     );
   }
 
+  Future<String?> _promptPassword(BuildContext context) async {
+    final textController = TextEditingController();
+    bool confirmed = false;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppDimensions.borderRadius3XL,
+        ),
+        child: SizedBox(
+          width: AppDimensions.dialogMaxWidth,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppDimensions.space3XL),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppDimensions.spaceXL),
+                child: Text(
+                  AppStrings.enterPasswordToRestore,
+                  style: TextStyle(
+                    fontSize: AppTypography.sizeH2,
+                    fontWeight: AppTypography.weightBold,
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: AppDimensions.spaceL),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppDimensions.space2XL,
+                ),
+                child: CustomTextField(
+                  hint: AppStrings.enterPassword,
+                  controller: textController,
+                  obscureText: true,
+                  prefixIcon: const Icon(
+                    AppIcons.lock,
+                    size: AppDimensions.iconSmall,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.space3XL),
+              const Divider(
+                height: AppDimensions.dividerHeight,
+                color: AppColors.borderSubtle,
+                thickness: AppDimensions.dividerThickness,
+              ),
+              IntrinsicHeight(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          confirmed = true;
+                          Navigator.of(ctx).pop();
+                        },
+                        borderRadius: const BorderRadius.only(
+                          bottomRight: Radius.circular(AppDimensions.radius3XL),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppDimensions.spaceL + 2,
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            AppStrings.confirm,
+                            style: TextStyle(
+                              fontSize: AppTypography.sizeBody + 1,
+                              fontWeight: AppTypography.weightBold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const VerticalDivider(
+                      width: AppDimensions.dividerHeight,
+                      color: AppColors.borderSubtle,
+                      thickness: AppDimensions.dividerThickness,
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          confirmed = false;
+                          Navigator.of(ctx).pop();
+                        },
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(AppDimensions.radius3XL),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppDimensions.spaceL + 2,
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            AppStrings.cancel,
+                            style: TextStyle(
+                              fontSize: AppTypography.sizeBody + 1,
+                              color: AppColors.textTertiary,
+                              fontWeight: AppTypography.weightMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (confirmed) {
+      return textController.text.trim();
+    }
+    return null;
+  }
+
   void _restoreBackup(BackupModel backup) async {
     final confirm = await CustomDialog.showConfirmation(
       context: context,
@@ -56,7 +181,21 @@ class _BackupsListViewState extends State<BackupsListView> {
           }
         }
       } else {
-        AppSnackBar.showSuccess(context, AppStrings.restoreSuccessMsg);
+        final controller = context.read<BackupController>();
+        bool ok = await controller.restoreLocalBackup(backup.fileName);
+        if (!ok && backup.fileName.endsWith('.zip') && mounted) {
+          final password = await _promptPassword(context);
+          if (password != null && mounted) {
+            ok = await controller.restoreLocalBackup(backup.fileName, password: password);
+          }
+        }
+        if (mounted) {
+          if (ok) {
+            AppSnackBar.showSuccess(context, AppStrings.restoreSuccessMsg);
+          } else {
+            AppSnackBar.showError(context, AppStrings.restoreFailed);
+          }
+        }
       }
     }
   }

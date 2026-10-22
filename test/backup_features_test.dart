@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -6,9 +7,12 @@ import 'package:fuel_alloc_app/core/constants/app_strings.dart';
 import 'package:fuel_alloc_app/core/widgets/app_switch.dart';
 import 'package:fuel_alloc_app/core/widgets/custom_button.dart';
 import 'package:fuel_alloc_app/models/backup_model.dart';
+import 'package:fuel_alloc_app/services/backup_archive_service.dart';
+import 'package:fuel_alloc_app/views/settings/auto_clean_settings_view.dart';
 import 'package:fuel_alloc_app/views/settings/backup_settings_view.dart';
 import 'package:fuel_alloc_app/views/settings/backup_type_settings_view.dart';
 import 'package:fuel_alloc_app/views/settings/backups_list_view.dart';
+import 'package:fuel_alloc_app/views/settings/compression_encryption_settings_view.dart';
 import 'package:fuel_alloc_app/views/settings/scheduled_backup_settings_view.dart';
 
 void main() {
@@ -28,6 +32,14 @@ void main() {
       expect(controller.autoBackupEnabled, isFalse);
       expect(controller.localBackups.isEmpty, isTrue);
       expect(controller.cloudBackups.isEmpty, isTrue);
+
+      // Default new feature values
+      expect(controller.wifiOnlySync, isFalse);
+      expect(controller.storageLocation, equals(BackupStorageLocation.internal));
+      expect(controller.isCompressionEnabled, isFalse);
+      expect(controller.isEncryptionEnabled, isFalse);
+      expect(controller.deleteBeforeLastFull, isFalse);
+      expect(controller.localRetentionPolicy, equals(RetentionPolicy.none));
     });
 
     test('Creating a local backup adds a new backup to localBackups', () {
@@ -39,6 +51,22 @@ void main() {
       expect(newBackup.isCloud, isFalse);
       expect(newBackup.fileName, startsWith('fuel_alloc_backup_'));
       expect(newBackup.type, equals(BackupType.full));
+      expect(newBackup.fileName, endsWith('.db'));
+    });
+
+    test('Creating backup with compression/encryption creates .zip file', () {
+      final controller = BackupController();
+      controller.setCompressionAndEncryption(
+        isCompressionEnabled: true,
+        isEncryptionEnabled: true,
+        password: 'secure_password_123',
+      );
+      expect(controller.isCompressionEnabled, isTrue);
+      expect(controller.isEncryptionEnabled, isTrue);
+      expect(controller.encryptionPassword, equals('secure_password_123'));
+
+      final newBackup = controller.createLocalBackup();
+      expect(newBackup.fileName, endsWith('.zip'));
     });
 
     test('Updating backup type and schedule reflects in getters', () {
@@ -95,10 +123,86 @@ void main() {
       expect(b.fileName, equals('fuel_alloc_archive_main.db'));
     });
 
+    test('Auto clean settings updates and retention policy application', () async {
+      final controller = BackupController();
+      controller.setAutoCleanSettings(
+        deleteBeforeLastFull: true,
+        localPolicy: RetentionPolicy.count,
+        localDays: 30,
+        localCount: 2,
+        keepLatestLocalCopy: true,
+        deleteUnuploadedBackups: false,
+        cloudPolicy: RetentionPolicy.days,
+        cloudDays: 60,
+        cloudCount: 10,
+        cloudPermanentDelete: false,
+      );
+
+      expect(controller.deleteBeforeLastFull, isTrue);
+      expect(controller.localRetentionPolicy, equals(RetentionPolicy.count));
+      expect(controller.localRetentionCount, equals(2));
+      expect(controller.cloudRetentionPolicy, equals(RetentionPolicy.days));
+      expect(controller.cloudRetentionDays, equals(60));
+
+      // Create 4 backups and check auto clean retains count
+      controller.createLocalBackup();
+      controller.createLocalBackup();
+      controller.createLocalBackup();
+      controller.createLocalBackup();
+
+      await controller.applyAutoClean();
+      expect(controller.localBackups.length, lessThanOrEqualTo(2));
+    });
+
+    test('Wi-Fi only sync and storage location toggling', () {
+      final controller = BackupController();
+
+      controller.toggleWifiOnlySync(true);
+      expect(controller.wifiOnlySync, isTrue);
+
+      controller.setStorageLocation(BackupStorageLocation.external);
+      expect(controller.storageLocation, equals(BackupStorageLocation.external));
+    });
+
     test('Google Drive sync getters provide correct localized strings', () {
       final controller = BackupController();
       expect(controller.lastCloudSyncFormatted, equals(AppStrings.noSyncYet));
       expect(controller.isSyncing, isFalse);
+    });
+
+    test('restoreLocalBackup returns false for non-existent file gracefully', () async {
+      final controller = BackupController();
+      final result = await controller.restoreLocalBackup('non_existent_file.db');
+      expect(result, isFalse);
+    });
+  });
+
+  group('BackupArchiveService ZIP Compression & Encryption Unit Tests', () {
+    test('Compressing to ZIP and extracting validates correctly', () async {
+      final tempDir = Directory.systemTemp.createTempSync('archive_test_');
+      final sourceFile = File('${tempDir.path}/test_db.db');
+      await sourceFile.writeAsString('Test SQLite database content for fuel alloc app');
+
+      final targetZip = File('${tempDir.path}/test_db.zip');
+      await BackupArchiveService.compressDatabaseFile(
+        sourceDbFile: sourceFile,
+        targetZipFile: targetZip,
+      );
+
+      expect(await targetZip.exists(), isTrue);
+      expect(await BackupArchiveService.isZipFile(targetZip), isTrue);
+      expect(await BackupArchiveService.isZipFile(sourceFile), isFalse);
+
+      final extractedFile = File('${tempDir.path}/extracted_db.db');
+      await BackupArchiveService.extractDatabaseFile(
+        sourceZipFile: targetZip,
+        targetDbFile: extractedFile,
+      );
+
+      expect(await extractedFile.exists(), isTrue);
+      expect(await extractedFile.readAsString(), equals(await sourceFile.readAsString()));
+
+      tempDir.deleteSync(recursive: true);
     });
   });
 
@@ -115,7 +219,11 @@ void main() {
       );
     }
 
-    testWidgets('Renders all 4 One UI cards and AppSwitch correctly', (tester) async {
+    testWidgets('Renders all 4 One UI cards and tiles correctly', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
 
@@ -126,6 +234,9 @@ void main() {
       // Card 2
       expect(find.text(AppStrings.backupType), findsOneWidget);
       expect(find.text(AppStrings.scheduledBackupTitle), findsOneWidget);
+      expect(find.text(AppStrings.autoCleanTitle), findsOneWidget);
+      expect(find.text(AppStrings.compressionEncryptionTitle), findsOneWidget);
+      expect(find.text(AppStrings.backupStorageLocation), findsOneWidget);
 
       // Card 3
       expect(find.text(AppStrings.viewBackups), findsOneWidget);
@@ -133,10 +244,15 @@ void main() {
       // Card 4
       expect(find.text(AppStrings.cloudBackup), findsOneWidget);
       expect(find.text(AppStrings.autoBackup), findsOneWidget);
-      expect(find.byType(AppSwitch), findsOneWidget);
+      expect(find.text(AppStrings.wifiOnlyTitle), findsOneWidget);
+      expect(find.byType(AppSwitch), findsNWidgets(2)); // Auto Backup + Wi-Fi Only
     });
 
     testWidgets('Tapping backupType opens BackupTypeSettingsView', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
 
@@ -151,6 +267,10 @@ void main() {
     });
 
     testWidgets('Tapping scheduledBackupTitle opens ScheduledBackupSettingsView', (tester) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
 
@@ -165,8 +285,46 @@ void main() {
       expect(find.text(AppStrings.disableNotifications), findsOneWidget);
     });
 
+    testWidgets('Tapping autoCleanTitle opens AutoCleanSettingsView', (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text(AppStrings.autoCleanTitle));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AutoCleanSettingsView), findsOneWidget);
+      expect(find.text(AppStrings.autoCleanSubtitle), findsOneWidget);
+      expect(find.text(AppStrings.incrementalBackupsHeader), findsOneWidget);
+      expect(find.text(AppStrings.localBackupSection), findsOneWidget);
+    });
+
+    testWidgets('Tapping compressionEncryptionTitle opens CompressionEncryptionSettingsView',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      await tester.pumpWidget(buildTestApp());
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text(AppStrings.compressionEncryptionTitle));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CompressionEncryptionSettingsView), findsOneWidget);
+      expect(find.text(AppStrings.compressBackups), findsOneWidget);
+      expect(find.text(AppStrings.encryptBackups), findsOneWidget);
+    });
+
     testWidgets('Tapping viewBackups opens BackupsListView with local and cloud segments',
         (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       final controller = BackupController();
       controller.createLocalBackup();
 
@@ -185,6 +343,10 @@ void main() {
     });
 
     testWidgets('BackupSettingsView has zero chevron/arrow icons in setting tiles', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(buildTestApp());
       await tester.pumpAndSettle();
 
@@ -225,6 +387,85 @@ void main() {
       expect(find.text(AppStrings.chooseDays), findsOneWidget);
       expect(find.text(AppStrings.everyMonth), findsOneWidget);
       expect(find.text(AppStrings.forceFullBackupNextRun), findsOneWidget);
+    });
+  });
+
+  group('Screenshot UI Specifications Verification Tests', () {
+    testWidgets('AutoCleanSettingsView renders all sections matching Screenshot 1', (tester) async {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final controller = BackupController();
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: controller,
+          child: const MaterialApp(
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: AutoCleanSettingsView(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify header subtitle
+      expect(find.text(AppStrings.autoCleanSubtitle), findsOneWidget);
+
+      // Verify Incremental card & switch
+      expect(find.text(AppStrings.incrementalBackupsHeader), findsOneWidget);
+      expect(find.text(AppStrings.deleteBeforeLastFull), findsOneWidget);
+      expect(find.text(AppStrings.deleteBeforeLastFullDesc), findsOneWidget);
+
+      // Verify Local backup section
+      expect(find.text(AppStrings.localBackupSection), findsOneWidget);
+      expect(find.text(AppStrings.noDeletion), findsWidgets);
+      expect(find.text(AppStrings.keepForDays), findsWidgets);
+      expect(find.text(AppStrings.keepLastCount), findsWidgets);
+      expect(find.text(AppStrings.keepLatestLocalCopy), findsOneWidget);
+      expect(find.text(AppStrings.deleteUnuploadedBackups), findsOneWidget);
+
+      // Verify Cloud sections
+      expect(find.text(AppStrings.googleDriveSection), findsOneWidget);
+      expect(find.text(AppStrings.dropboxSection), findsOneWidget);
+    });
+
+    testWidgets('CompressionEncryptionSettingsView renders components matching Screenshot 2',
+        (tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      final controller = BackupController();
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: controller,
+          child: const MaterialApp(
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: CompressionEncryptionSettingsView(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Compress and Encrypt switches
+      expect(find.text(AppStrings.compressBackups), findsOneWidget);
+      expect(find.text(AppStrings.encryptBackups), findsOneWidget);
+      expect(find.text(AppStrings.compressBackupsDesc), findsOneWidget);
+      expect(find.text(AppStrings.encryptBackupsDesc), findsOneWidget);
+
+      // Toggling encrypt backups reveals red warning and password fields
+      await tester.tap(find.text(AppStrings.encryptBackups));
+      await tester.pumpAndSettle();
+
+      expect(find.text(AppStrings.encryptionPasswordWarning), findsOneWidget);
+      expect(find.text(AppStrings.enterPassword), findsWidgets);
+      expect(find.text(AppStrings.confirmPassword), findsWidgets);
+      expect(find.text(AppStrings.save), findsOneWidget);
+      expect(find.text(AppStrings.cancel), findsOneWidget);
     });
   });
 }

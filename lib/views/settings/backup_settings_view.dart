@@ -10,8 +10,11 @@ import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/app_switch.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/one_ui_card.dart';
+import '../../models/backup_model.dart';
+import 'auto_clean_settings_view.dart';
 import 'backup_type_settings_view.dart';
 import 'backups_list_view.dart';
+import 'compression_encryption_settings_view.dart';
 import 'scheduled_backup_settings_view.dart';
 
 /// واجهة النسخ الاحتياطي بنمط One UI
@@ -43,17 +46,31 @@ class _BackupSettingsViewState extends State<BackupSettingsView> {
     );
   }
 
-  void _handleRestoreBackup() async {
+  void _handleRestoreBackup(BackupController controller) async {
+    final localBackups = controller.localBackups;
+    if (localBackups.isEmpty) {
+      AppSnackBar.showInfo(context, AppStrings.noLocalBackups);
+      return;
+    }
+
+    final latest = localBackups.first;
     final confirm = await CustomDialog.showConfirmation(
       context: context,
       title: AppStrings.restoreLocalBackup,
-      message: AppStrings.restoreLocalBackupDesc,
+      message: '${AppStrings.restoreLocalBackupDesc}\n(${latest.fileName})',
       confirmText: AppStrings.restore,
       cancelText: AppStrings.cancel,
       isDanger: true,
     );
     if (confirm && mounted) {
-      AppSnackBar.showSuccess(context, AppStrings.restoreSuccessMsg);
+      final ok = await controller.restoreLocalBackup(latest.fileName);
+      if (mounted) {
+        if (ok) {
+          AppSnackBar.showSuccess(context, AppStrings.restoreSuccessMsg);
+        } else {
+          AppSnackBar.showError(context, AppStrings.restoreFailed);
+        }
+      }
     }
   }
 
@@ -113,7 +130,7 @@ class _BackupSettingsViewState extends State<BackupSettingsView> {
                     ),
                     title: AppStrings.restoreLocalBackup,
                     subtitle: AppStrings.restoreLocalBackupDesc,
-                    onTap: _handleRestoreBackup,
+                    onTap: () => _handleRestoreBackup(controller),
                   ),
                 ],
               ),
@@ -157,6 +174,72 @@ class _BackupSettingsViewState extends State<BackupSettingsView> {
                             child: const ScheduledBackupSettingsView(),
                           ),
                         ),
+                      );
+                    },
+                  ),
+                  OneUiTile(
+                    leading: const Icon(
+                      AppIcons.autoClean,
+                      color: AppColors.textPrimary,
+                      size: AppDimensions.iconMedium + 2,
+                    ),
+                    title: AppStrings.autoCleanTitle,
+                    subtitle: AppStrings.autoCleanSubtitle,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ChangeNotifierProvider.value(
+                            value: controller,
+                            child: const AutoCleanSettingsView(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  OneUiTile(
+                    leading: const Icon(
+                      AppIcons.security,
+                      color: AppColors.textPrimary,
+                      size: AppDimensions.iconMedium + 2,
+                    ),
+                    title: AppStrings.compressionEncryptionTitle,
+                    subtitle: controller.isEncryptionEnabled
+                        ? AppStrings.encryptBackups
+                        : (controller.isCompressionEnabled
+                            ? AppStrings.compressBackups
+                            : AppStrings.noSyncYet),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ChangeNotifierProvider.value(
+                            value: controller,
+                            child: const CompressionEncryptionSettingsView(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  OneUiTile(
+                    leading: const Icon(
+                      AppIcons.folderOpen,
+                      color: AppColors.textPrimary,
+                      size: AppDimensions.iconMedium + 2,
+                    ),
+                    title: AppStrings.backupStorageLocation,
+                    subtitle: AppStrings.backupStorageLocationDesc,
+                    valueText: controller.storageLocation == BackupStorageLocation.internal
+                        ? AppStrings.backupStorageInternal
+                        : AppStrings.backupStorageExternal,
+                    onTap: () {
+                      final newLoc = controller.storageLocation == BackupStorageLocation.internal
+                          ? BackupStorageLocation.external
+                          : BackupStorageLocation.internal;
+                      controller.setStorageLocation(newLoc);
+                      AppSnackBar.showSuccess(
+                        context,
+                        newLoc == BackupStorageLocation.external
+                            ? AppStrings.backupStorageExternal
+                            : AppStrings.backupStorageInternal,
                       );
                     },
                   ),
@@ -279,6 +362,54 @@ class _BackupSettingsViewState extends State<BackupSettingsView> {
                             value: controller.autoBackupEnabled,
                             onChanged: (val) {
                               controller.toggleAutoBackup(val);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // صف الرفع عبر الواي فاي فقط
+                  Material(
+                    color: Colors.transparent,
+                    child: Padding(
+                      padding: AppDimensions.paddingTile,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            AppIcons.wifi,
+                            color: AppColors.textPrimary,
+                            size: AppDimensions.iconMedium + 2,
+                          ),
+                          const SizedBox(width: AppDimensions.spaceL + 2),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppStrings.wifiOnlyTitle,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.sizeBody + 1,
+                                    fontWeight: AppTypography.weightSemiBold,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                SizedBox(height: AppDimensions.spaceXXS + 1),
+                                Text(
+                                  AppStrings.wifiOnlyDesc,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.sizeCaption,
+                                    color: AppColors.textTertiary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          AppSwitch(
+                            value: controller.wifiOnlySync,
+                            onChanged: (val) {
+                              controller.toggleWifiOnlySync(val);
                             },
                           ),
                         ],

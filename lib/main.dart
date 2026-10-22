@@ -7,10 +7,12 @@ import 'controllers/stations_controller.dart';
 import 'controllers/transactions_controller.dart';
 import 'core/constants/app_strings.dart';
 import 'core/theme/app_theme.dart';
+import 'services/backup_background_service.dart';
 import 'views/main_layout_view.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await BackupBackgroundService.initialize();
   runApp(const FuelAllocApp());
 }
 

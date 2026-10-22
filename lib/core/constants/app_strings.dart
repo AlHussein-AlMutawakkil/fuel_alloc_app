@@ -280,6 +280,10 @@ class AppStrings {
   static const String confirmDisconnectGoogleTitle = 'فصل حساب Google';
   static const String confirmDisconnectGoogleMsg = 'هل تريد حقاً تسجيل الخروج وفصل الربط مع Google Drive؟';
   static const String googleAccount = 'حساب Google';
+  static const String restoreFailed = 'فشلت استعادة البيانات أو أن ملف النسخة غير صالح';
+  static const String restoreLatestBackup = 'استعادة الأحدث';
+  static const String viewAllBackups = 'استعراض الكل';
+  static const String restoreConfirmPrompt = 'هل تريد استعادة أحدث نسخة احتياطية محلية أم استعراض جميع النسخ؟';
 
   // نوع النسخة الاحتياطية
   static const String backupType = 'نوع النسخة الاحتياطية';
@@ -352,6 +356,56 @@ class AppStrings {
   static const String timePrefixAt = 'في ';
   static const String customDaysDialogTitle = 'تحديد دورية الأيام';
   static const String customDaysSuffix = ' يوم';
+
+  // التنظيف التلقائي (Auto Clean)
+  static const String autoCleanTitle = 'التنظيف التلقائي';
+  static const String autoCleanSubtitle = 'اختر كيفية حذف النسخ الاحتياطية القديمة تلقائياً لكل موقع.';
+  static const String incrementalBackupsHeader = 'النسخ الاحتياطية التزايدية';
+  static const String deleteBeforeLastFull = 'حذف النسخ الاحتياطية قبل آخر نسخة احتياطية كاملة';
+  static const String deleteBeforeLastFullDesc =
+      'أنت تستخدم النسخ الاحتياطية التزايدية، لذا لا ينطبق عليها أي من إعدادات التنظيف أدناه. تحتفظ كل نسخة احتياطية تزايدية بالسجلات المضافة منذ النسخة السابقة فقط، وحذف النسخ الأقدم حسب العمر أو العدد قد يؤدي إلى تعذر الاستعادة. لتنظيف النسخ الاحتياطية المحلية، استخدم الخيار أعلاه لحذف النسخ الاحتياطية التي أنشئت قبل آخر نسخة احتياطية كاملة.';
+  static const String localBackupSection = 'نسخة احتياطية محلية';
+  static const String localBackupCleanDesc =
+      'تم إيقاف حد حجم التخزين السابق للنسخ الاحتياطية المحلية. يرجى اختيار أحد الخيارات أدناه.';
+  static const String noDeletion = 'عدم الحذف';
+  static const String keepForDays = 'الاحتفاظ بالنسخ الاحتياطية لعدد من الأيام';
+  static const String keepForDaysCountUnit = 'أيام';
+  static const String keepLastCount = 'الاحتفاظ بعدد من النسخ الاحتياطية الأخيرة';
+  static const String keepLastCountUnit = 'نسخ احتياطية';
+  static const String keepLatestLocalCopy = 'الاحتفاظ بنسخة محلية من أحدث نسخة احتياطية';
+  static const String keepLatestLocalCopyDesc =
+      'الاحتفاظ بنسخة محلية من أحدث نسخة احتياطية سحابية للاستعادة السريعة';
+  static const String deleteUnuploadedBackups = 'حذف النسخ الاحتياطية التي لم تُرْفَع بعد';
+  static const String deleteUnuploadedBackupsDesc =
+      'احذف أيضاً النسخ الاحتياطية المحلية التي لا تزال بانتظار الرفع إلى السحابة.';
+  static const String googleDriveSection = 'GOOGLE DRIVE';
+  static const String dropboxSection = 'DROPBOX';
+
+  // الضغط والتشفير (Compression & Encryption)
+  static const String compressionEncryptionTitle = 'الضغط والتشفير';
+  static const String compressBackups = 'ضغط النسخ الاحتياطية';
+  static const String compressBackupsDesc = 'اضغط النسخ الاحتياطية باستخدام ضغط ZIP.';
+  static const String encryptBackups = 'تشفير النسخ الاحتياطية';
+  static const String encryptBackupsDesc =
+      'شفّر الملف داخل ملف ZIP باستخدام تشفير AES-256.';
+  static const String encryptionPasswordWarning =
+      'ملاحظة: إذا نسيت كلمة المرور، فقد تصبح النسخة الاحتياطية غير قابلة للاستخدام.';
+  static const String enterPassword = 'ادخال كلمة المرور:';
+  static const String confirmPassword = 'تأكيد كلمة المرور:';
+  static const String passwordMismatch = 'كلمتا المرور غير متطابقتين';
+  static const String passwordRequired = 'يرجى إدخال كلمة المرور لتفعيل التشفير';
+  static const String enterPasswordToRestore = 'أدخل كلمة مرور فك التشفير للاستعادة';
+  static const String invalidPassword = 'كلمة المرور غير صحيحة';
+
+  // مسار الحفظ والواي فاي
+  static const String wifiOnlyTitle = 'الرفع عبر Wi-Fi فقط';
+  static const String wifiOnlyDesc = 'تجنب استهلاك بيانات باقة الهاتف عند المزامنة السحابية';
+  static const String wifiRequiredMsg = 'تم تأجيل المزامنة؛ مفعل خيار Wi-Fi فقط والاتصال الحالي عبر بيانات الهاتف';
+  static const String backupStorageLocation = 'مسار حفظ النسخ الاحتياطية';
+  static const String backupStorageLocationDesc = 'حدد مكان تخزين النسخ محلياً لضمان عدم فقدانها عند إزالة التطبيق';
+  static const String backupStorageInternal = 'مجلد التطبيق الداخلي';
+  static const String backupStorageExternal = 'مجلد المستندات المشترك (دائم حتى بعد حذف التطبيق)';
+  static const String storagePermissionDenied = 'تم رفض إذن التخزين؛ سيتم الحفظ في المجلد الداخلي';
 
   static const String unregisteredUser = 'غير مسجل';
   static const String loginOrLinkAccount = 'تسجيل الدخول / ربط بحساب';

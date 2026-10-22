@@ -24,6 +24,7 @@ class CustomTextField extends StatelessWidget {
   final BorderRadius? borderRadius;
   final double? height;
   final TextAlign textAlign;
+  final bool obscureText;
 
   const CustomTextField({
     super.key,
@@ -44,6 +45,7 @@ class CustomTextField extends StatelessWidget {
     this.borderRadius,
     this.height,
     this.textAlign = TextAlign.start,
+    this.obscureText = false,
   });
 
   @override
@@ -71,6 +73,7 @@ class CustomTextField extends StatelessWidget {
           keyboardType: keyboardType,
           validator: validator,
           readOnly: readOnly,
+          obscureText: obscureText,
           onTap: onTap,
           onChanged: onChanged,
           maxLines: maxLines,
@@ -160,6 +163,7 @@ class CustomTextField extends StatelessWidget {
             keyboardType: keyboardType,
             validator: validator,
             readOnly: readOnly,
+            obscureText: obscureText,
             onTap: onTap,
             onChanged: onChanged,
             maxLines: maxLines,

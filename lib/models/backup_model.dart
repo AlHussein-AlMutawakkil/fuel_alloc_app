@@ -10,6 +10,12 @@ enum IncrementalFrequency { days7, monthly }
 /// وتيرة الجدولة
 enum ScheduleFrequency { daily, weekly, hourly }
 
+/// استراتيجية التنظيف التلقائي
+enum RetentionPolicy { none, days, count }
+
+/// مسار حفظ النسخ الاحتياطية محلياً
+enum BackupStorageLocation { internal, external }
+
 /// نموذج عنصر النسخة الاحتياطية المحفوظة
 class BackupModel {
   final String id;

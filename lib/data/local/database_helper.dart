@@ -302,6 +302,34 @@ class DatabaseHelper {
     );
   }
 
+  /// استرجاع قيمة إعداد عام من جدول app_settings
+  Future<String?> getSetting(String key) async {
+    try {
+      final db = await database;
+      final res = await db.query(
+        'app_settings',
+        where: 'key = ?',
+        whereArgs: [key],
+      );
+      if (res.isEmpty) return null;
+      return res.first['value'] as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// حفظ أو تحديث قيمة إعداد عام في جدول app_settings
+  Future<void> setSetting(String key, String value) async {
+    try {
+      final db = await database;
+      await db.insert(
+        'app_settings',
+        {'key': key, 'value': value},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (_) {}
+  }
+
   /// الحصول على المسار الفعلي لملف قاعدة البيانات المحلي
   Future<String> getDatabaseFilePath() async {
     final dbPath = await getDatabasesPath();
