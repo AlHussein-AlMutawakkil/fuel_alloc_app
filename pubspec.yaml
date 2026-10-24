@@ -46,6 +46,7 @@ dependencies:
   archive: ^4.5.2
   connectivity_plus: 6.0.5
   workmanager: 0.5.2
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:

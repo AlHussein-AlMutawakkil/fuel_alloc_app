@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../models/message_template_model.dart';
 
 /// مدير قاعدة البيانات المحلية SQLite
 class DatabaseHelper {
@@ -66,6 +67,24 @@ class DatabaseHelper {
           await db.execute(
               'ALTER TABLE accounts ADD COLUMN default_commission_rate REAL NOT NULL DEFAULT 2.0;');
         }
+        final hasAccMessaging =
+            accCols.any((c) => c['name'] == 'is_messaging_enabled');
+        if (!hasAccMessaging) {
+          await db.execute(
+              'ALTER TABLE accounts ADD COLUMN is_messaging_enabled INTEGER NOT NULL DEFAULT 1;');
+        }
+        final hasAccCustomTemplate =
+            accCols.any((c) => c['name'] == 'custom_sms_template');
+        if (!hasAccCustomTemplate) {
+          await db.execute(
+              'ALTER TABLE accounts ADD COLUMN custom_sms_template TEXT;');
+        }
+        final hasAccNotifPhone =
+            accCols.any((c) => c['name'] == 'notification_phone');
+        if (!hasAccNotifPhone) {
+          await db.execute(
+              'ALTER TABLE accounts ADD COLUMN notification_phone TEXT;');
+        }
 
         final stCols = await db.rawQuery('PRAGMA table_info(stations)');
         final hasStArchived = stCols.any((c) => c['name'] == 'is_archived');
@@ -85,6 +104,28 @@ class DatabaseHelper {
             value TEXT NOT NULL
           );
         ''');
+
+        // جدول قوالب الرسائل النصية
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS message_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            template_key TEXT UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            target_type TEXT NOT NULL,
+            operation_type TEXT NOT NULL,
+            content TEXT NOT NULL,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL,
+            updated_at TEXT
+          );
+        ''');
+
+        // التأكد من توفر القوالب الافتراضية
+        final tplCount = Sqflite.firstIntValue(await db.rawQuery(
+            'SELECT COUNT(*) FROM message_templates')) ?? 0;
+        if (tplCount == 0) {
+          await _insertDefaultTemplates(db);
+        }
 
         // التأكد من وجود نوعي عملية التحويل في transaction_types وتحديث الاسم إلى "تحويل"
         await db.execute('''
@@ -152,6 +193,9 @@ class DatabaseHelper {
         default_commission_rate REAL NOT NULL DEFAULT 2.0,
         is_active INTEGER NOT NULL DEFAULT 1,
         is_archived INTEGER NOT NULL DEFAULT 0,
+        is_messaging_enabled INTEGER NOT NULL DEFAULT 1,
+        custom_sms_template TEXT,
+        notification_phone TEXT,
         deleted_at TEXT,
         created_at TEXT NOT NULL
       )
@@ -237,6 +281,21 @@ class DatabaseHelper {
       );
     ''');
 
+    // جدول قوالب الرسائل النصية
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS message_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        template_key TEXT UNIQUE NOT NULL,
+        title TEXT NOT NULL,
+        target_type TEXT NOT NULL,
+        operation_type TEXT NOT NULL,
+        content TEXT NOT NULL,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT
+      );
+    ''');
+
     // تهيئة البيانات الافتراضية
     await _insertInitialData(db);
   }
@@ -278,6 +337,119 @@ class DatabaseHelper {
         {'id': 6, 'name': 'تحويل', 'code': 'TRANSFER_OUT'});
     await db.insert(
         'transaction_types', {'id': 7, 'name': 'تحويل', 'code': 'TRANSFER_IN'});
+
+    // إدراج قوالب الرسائل الافتراضية
+    await _insertDefaultTemplates(db);
+
+    // إدراج إعدادات نظام الرسائل الافتراضية
+    await db.insert('app_settings',
+        {'key': 'messaging_enabled', 'value': 'true'},
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    await db.insert('app_settings',
+        {'key': 'messaging_default_channel', 'value': 'sms'},
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    await db.insert('app_settings',
+        {'key': 'messaging_auto_preview', 'value': 'true'},
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    await db.insert('app_settings',
+        {'key': 'messaging_notify_station_default', 'value': 'true'},
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+    await db.insert('app_settings',
+        {'key': 'messaging_notify_account_default', 'value': 'true'},
+        conflictAlgorithm: ConflictAlgorithm.ignore);
+  }
+
+  /// إدراج القوالب الافتراضية للرسائل النصية
+  Future<void> _insertDefaultTemplates(Database db) async {
+    final now = DateTime.now().toIso8601String();
+    final defaultTemplates = [
+      {
+        'template_key': 'station_dispense',
+        'title': 'أمر صرف وقود للمحطة',
+        'target_type': 'STATION',
+        'operation_type': 'DISPENSE',
+        'content': MessageTemplateModel.defaultStationDispense,
+        'is_active': 1,
+        'created_at': now,
+        'updated_at': now,
+      },
+      {
+        'template_key': 'beneficiary_dispense',
+        'title': 'إشعار صرف وقود للمستفيد',
+        'target_type': 'BENEFICIARY',
+        'operation_type': 'DISPENSE',
+        'content': MessageTemplateModel.defaultBeneficiaryDispense,
+        'is_active': 1,
+        'created_at': now,
+        'updated_at': now,
+      },
+      {
+        'template_key': 'supplier_supply',
+        'title': 'إشعار توريد وقود',
+        'target_type': 'SUPPLIER',
+        'operation_type': 'SUPPLY',
+        'content': MessageTemplateModel.defaultSupplierSupply,
+        'is_active': 1,
+        'created_at': now,
+        'updated_at': now,
+      },
+      {
+        'template_key': 'transfer',
+        'title': 'إشعار تحويل وقود',
+        'target_type': 'ANY',
+        'operation_type': 'TRANSFER',
+        'content': MessageTemplateModel.defaultTransfer,
+        'is_active': 1,
+        'created_at': now,
+        'updated_at': now,
+      },
+    ];
+
+    for (final tpl in defaultTemplates) {
+      await db.insert('message_templates', tpl,
+          conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+  }
+
+  /// جلب كافة قوالب الرسائل
+  Future<List<MessageTemplateModel>> getMessageTemplates() async {
+    final db = await database;
+    final res = await db.query('message_templates', orderBy: 'id ASC');
+    return res.map((m) => MessageTemplateModel.fromMap(m)).toList();
+  }
+
+  /// جلب قالب رسالة بمفتاحه
+  Future<MessageTemplateModel?> getMessageTemplateByKey(String key) async {
+    final db = await database;
+    final res = await db.query(
+      'message_templates',
+      where: 'template_key = ?',
+      whereArgs: [key],
+      limit: 1,
+    );
+    if (res.isEmpty) return null;
+    return MessageTemplateModel.fromMap(res.first);
+  }
+
+  /// تحديث نص قالب رسالة
+  Future<int> updateMessageTemplate(String key, String content) async {
+    final db = await database;
+    return await db.update(
+      'message_templates',
+      {
+        'content': content,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'template_key = ?',
+      whereArgs: [key],
+    );
+  }
+
+  /// استعادة جميع القوالب إلى نصوصها الافتراضية القياسية
+  Future<void> resetMessageTemplatesToDefault() async {
+    final db = await database;
+    await db.delete('message_templates');
+    await _insertDefaultTemplates(db);
   }
 
   /// فحص هل سلة المحذوفات مفعلة

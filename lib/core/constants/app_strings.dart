@@ -510,4 +510,49 @@ class AppStrings {
   static const String dropboxComingSoon = 'مزامنة Dropbox قيد التطوير وستتوفر قريباً';
   static const String editCount = 'تعديل العدد';
   static const String editDays = 'تعديل الأيام';
+
+  // --- نظام الرسائل النصية والقوالب ---
+  static const String messageSettingsTitle = 'الرسائل النصية والقوالب';
+  static const String messageSettingsDesc = 'إدارة قوالب الرسائل وإشعارات العمليات للمحطات والمستفيدين';
+  static const String enableMessagingTitle = 'تفعيل نظام الرسائل';
+  static const String enableMessagingDesc = 'تجهيز وإرسال الإشعارات للمستفيدين والمحطات عند تسجيل العمليات';
+  static const String preferredChannelTitle = 'طريقة الإرسال الافتراضية';
+  static const String channelSms = 'رسائل نصية (SMS)';
+  static const String channelWhatsApp = 'واتساب (WhatsApp)';
+  static const String autoPreviewTitle = 'معاينة الرسائل بعد كل عملية';
+  static const String autoPreviewDesc = 'إظهار نافذة مراجعة وتعديل نص الرسالة فور حفظ أي عملية';
+  static const String defaultNotifyStationTitle = 'إشعار المحطة افتراضياً';
+  static const String defaultNotifyStationDesc = 'تحديد خيار إرسال أمر الصرف للمحطة تلقائياً في نافذة الإرسال';
+  static const String defaultNotifyAccountTitle = 'إشعار المستفيد افتراضياً';
+  static const String defaultNotifyAccountDesc = 'تحديد خيار إرسال الإشعار للعميل أو المستفيد تلقائياً في نافذة الإرسال';
+  static const String messageTemplatesSection = 'قوالب الرسائل الديناميكية';
+  static const String messageTemplatesSectionDesc = 'انقر على أي قالب لتعديل صياغته وإضافة المتغيرات الذكية';
+  static const String editTemplateTitle = 'تعديل قالب الرسالة';
+  static const String templateContentLabel = 'نص القالب';
+  static const String availableVariables = 'المتغيرات الذكية (انقر للإدراج في النص)';
+  static const String resetTemplates = 'استعادة القوالب الافتراضية';
+  static const String resetTemplatesConfirm = 'هل أنت متأكد من استعادة كافة القوالب إلى نصوصها الافتراضية الأصلية؟';
+  static const String templateUpdatedSuccess = 'تم تحديث القالب بنجاح';
+  static const String templatesResetSuccess = 'تم استعادة القوالب الافتراضية بنجاح';
+  static const String sendSmsButton = 'إرسال SMS';
+  static const String sendWhatsAppButton = 'إرسال WhatsApp';
+  static const String operationMessagesTitle = 'إرسال إشعار العملية';
+  static const String beneficiaryNotice = 'إشعار المستفيد / العميل';
+  static const String stationOrder = 'أمر صرف المحطة';
+  static const String noPhoneAvailable = 'لا يوجد رقم هاتف مسجل';
+  static const String customAccountTemplate = 'قالب رسائل مخصص لهذا الحساب (اختياري)';
+  static const String customAccountTemplateHint = 'اتركه فارغاً للاعتماد على القالب العام';
+  static const String enableAccountMessaging = 'تفعيل إرسال الرسائل لهذا الحساب';
+  static const String notificationPhoneLabel = 'رقم هاتف الإشعارات (اختياري)';
+  static const String copyMessageText = 'نسخ نص الرسالة';
+  static const String messageTextCopied = 'تم نسخ نص الرسالة إلى الحافظة';
+  static const String sendFailed = 'تعذر إطلاق تطبيق الإرسال، يرجى التأكد من توفر التطبيق والرقم';
+  static const String stationDispenseOrderTemplateTitle = 'أمر صرف وقود للمحطة';
+  static const String beneficiaryDispenseNoticeTemplateTitle = 'إشعار صرف وقود للمستفيد';
+  static const String supplierSupplyNoticeTemplateTitle = 'إشعار توريد وقود';
+  static const String transferNoticeTemplateTitle = 'إشعار تحويل وقود';
+  static const String closeDialog = 'تم / إنهاء';
+  static const String execute = 'تنفيذ';
+  static const String verifyMessageNotice = 'يرجى التحقق من البيانات قبل التنفيذ';
 }
+

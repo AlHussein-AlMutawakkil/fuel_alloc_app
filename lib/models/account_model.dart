@@ -18,6 +18,9 @@ class AccountModel {
   final String? deletedAt;
   final int operationsCount;
   final double currentBalance;
+  final bool isMessagingEnabled;
+  final String? customSmsTemplate;
+  final String? notificationPhone;
 
   AccountModel({
     this.id,
@@ -32,7 +35,16 @@ class AccountModel {
     this.deletedAt,
     this.operationsCount = 0,
     this.currentBalance = 0.0,
+    this.isMessagingEnabled = true,
+    this.customSmsTemplate,
+    this.notificationPhone,
   });
+
+  /// الحصول على رقم الهاتف الفعلي المعتمد للإشعارات والرسائل
+  String? get effectivePhone =>
+      (notificationPhone != null && notificationPhone!.trim().isNotEmpty)
+          ? notificationPhone
+          : phoneNumber;
 
   Map<String, dynamic> toMap() {
     String typeStr;
@@ -60,6 +72,9 @@ class AccountModel {
       'is_archived': isArchived ? 1 : 0,
       if (deletedAt != null) 'deleted_at': deletedAt,
       'created_at': createdAt ?? DateTime.now().toIso8601String(),
+      'is_messaging_enabled': isMessagingEnabled ? 1 : 0,
+      'custom_sms_template': customSmsTemplate,
+      'notification_phone': notificationPhone,
     };
   }
 
@@ -88,6 +103,9 @@ class AccountModel {
       deletedAt: map['deleted_at'] as String?,
       operationsCount: (map['operations_count'] as num?)?.toInt() ?? 0,
       currentBalance: (map['balance'] as num?)?.toDouble() ?? 0.0,
+      isMessagingEnabled: (map['is_messaging_enabled'] as int? ?? 1) == 1,
+      customSmsTemplate: map['custom_sms_template'] as String?,
+      notificationPhone: map['notification_phone'] as String?,
     );
   }
 
@@ -104,6 +122,9 @@ class AccountModel {
     String? deletedAt,
     int? operationsCount,
     double? currentBalance,
+    bool? isMessagingEnabled,
+    String? customSmsTemplate,
+    String? notificationPhone,
   }) {
     return AccountModel(
       id: id ?? this.id,
@@ -119,6 +140,9 @@ class AccountModel {
       deletedAt: deletedAt ?? this.deletedAt,
       operationsCount: operationsCount ?? this.operationsCount,
       currentBalance: currentBalance ?? this.currentBalance,
+      isMessagingEnabled: isMessagingEnabled ?? this.isMessagingEnabled,
+      customSmsTemplate: customSmsTemplate ?? this.customSmsTemplate,
+      notificationPhone: notificationPhone ?? this.notificationPhone,
     );
   }
 }

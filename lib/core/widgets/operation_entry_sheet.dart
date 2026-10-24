@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/accounts_controller.dart';
+import '../../controllers/messaging_controller.dart';
 import '../../controllers/transactions_controller.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
@@ -12,6 +13,7 @@ import '../../models/account_model.dart';
 import '../../models/transaction_model.dart';
 import 'custom_dropdown.dart';
 import 'custom_modal_sheet.dart';
+import 'operation_message_preview_dialog.dart';
 
 /// واجهة تسجيل وتعديل القيود والعمليات (مكون مشترك وذكي لكافة شاشات التطبيق)
 class OperationEntrySheet extends StatefulWidget {
@@ -41,8 +43,8 @@ class OperationEntrySheet extends StatefulWidget {
     int initialDirection = 0,
     int? initialFuelTypeId,
     int? initialStationId,
-  }) {
-    return showModalBottomSheet<bool>(
+  }) async {
+    final result = await showModalBottomSheet<dynamic>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -56,6 +58,74 @@ class OperationEntrySheet extends StatefulWidget {
         initialStationId: initialStationId,
       ),
     );
+
+    if (result is TransactionModel && context.mounted) {
+      try {
+        final messagingController = context.read<MessagingController>();
+        if (messagingController.isMessagingEnabled &&
+            messagingController.autoPreviewEnabled) {
+          final accController = context.read<AccountsController>();
+          final txController = context.read<TransactionsController>();
+
+          // تحديث قائمة الحسابات لجلب أحدث البيانات والأرصدة
+          await accController.fetchAccounts();
+          final allAccs = accController.allAccounts.isNotEmpty
+              ? accController.allAccounts
+              : accController.accounts;
+
+          final matchedAccount = allAccs.cast<AccountModel?>().firstWhere(
+                (a) => a?.id == result.accountId,
+                orElse: () => account,
+              );
+
+          final matchedStation = allAccs.cast<AccountModel?>().firstWhere(
+                (a) =>
+                    a?.id == result.stationId &&
+                    a?.accountType == AccountType.station,
+                orElse: () => null,
+              );
+
+          // حساب الرصيد المتبقي بدقة متناهية حسب الصنف
+          double? remainingBalance;
+          if (matchedAccount?.id != null) {
+            final isStation = matchedAccount!.accountType == AccountType.station;
+            if (isStation) {
+              remainingBalance = await txController.getStationBalance(
+                matchedAccount.id!,
+                fuelTypeId: result.fuelTypeId,
+              );
+            } else {
+              final isSupplier =
+                  matchedAccount.accountType == AccountType.supplier;
+              remainingBalance = await txController.getAccountBalance(
+                matchedAccount.id!,
+                isSupplier,
+                fuelTypeId: result.fuelTypeId,
+              );
+            }
+          }
+          remainingBalance ??= matchedAccount?.currentBalance;
+
+          final prepared = messagingController.prepareMessagesForTransaction(
+            transaction: result,
+            account: matchedAccount,
+            station: matchedStation,
+            remainingBalance: remainingBalance,
+          );
+
+          if (prepared.hasAnyMessageToSend && context.mounted) {
+            await OperationMessagePreviewDialog.show(
+              context: context,
+              preparedMessages: prepared,
+              transaction: result,
+            );
+          }
+        }
+      } catch (_) {}
+      return true;
+    }
+
+    return result == true;
   }
 
   @override
@@ -1496,6 +1566,65 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
     final manualRef = _referenceNumberController.text.trim();
 
+    final String typeName;
+    switch (typeId) {
+      case 1:
+        typeName = AppStrings.supplyQuota;
+        break;
+      case 2:
+        typeName = AppStrings.supplyActual;
+        break;
+      case 3:
+        typeName = AppStrings.aerationCommission;
+        break;
+      case 4:
+        typeName = AppStrings.dispenseQuota;
+        break;
+      case 5:
+        typeName = AppStrings.dispenseActual;
+        break;
+      case 6:
+      case 7:
+        typeName = AppStrings.transfer;
+        break;
+      default:
+        typeName = AppStrings.operation;
+    }
+
+    final fuelList = txController.fuelTypes.isNotEmpty
+        ? txController.fuelTypes
+        : [
+            {'id': 1, 'name': AppStrings.fuelPetrol},
+            {'id': 2, 'name': AppStrings.fuelDiesel},
+          ];
+    final selectedFuel = fuelList.firstWhere(
+      (f) => f['id'] == _selectedFuelTypeId,
+      orElse: () => {'name': ''},
+    );
+    final fuelTypeName = (selectedFuel['name'] as String?) ?? '';
+
+    final unitName = (u['name'] as String?) ?? AppStrings.unitLiter;
+
+    String? stationName;
+    if (isActual && _selectedStationId != null) {
+      final accController = context.read<AccountsController>();
+      final allAccs = accController.allAccounts.isNotEmpty
+          ? accController.allAccounts
+          : accController.accounts;
+      final st = allAccs.cast<AccountModel?>().firstWhere(
+            (a) => a?.id == _selectedStationId,
+            orElse: () => null,
+          );
+      stationName = st?.name;
+    }
+
+    String txNumber = widget.editTransaction?.transactionNumber?.trim() ?? '';
+    if (txNumber.isEmpty) {
+      final now = DateTime.now();
+      txNumber =
+          'TX-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(8)}';
+    }
+
     // التحقق والتنفيذ في حال كانت العملية تحويل بين حسابين
     if (_selectedTab == 3) {
       if (_selectedAccount == null) {
@@ -1543,7 +1672,32 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       );
 
       if (success && mounted) {
-        navigator.pop(true);
+        final now = DateTime.now();
+        final transferTxNumber =
+            'TR-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}-${now.millisecondsSinceEpoch.toString().substring(8)}';
+        final transferTx = TransactionModel(
+          transactionNumber:
+              manualRef.isNotEmpty ? manualRef : transferTxNumber,
+          transactionDate: _dateController.text.trim().replaceAll('/', '-'),
+          typeId: 6,
+          typeName: AppStrings.transfer,
+          accountId: _selectedAccount!.id,
+          accountName: _selectedAccount!.name,
+          accountPhone: _selectedAccount!.phoneNumber,
+          fuelTypeId: _selectedFuelTypeId,
+          fuelTypeName: fuelTypeName,
+          unitId: _selectedUnitId!,
+          unitName: unitName,
+          unitFactor: unitFactor,
+          enteredQuantity: qty,
+          baseQuantityLiters: baseLiters,
+          referenceNumber: manualRef.isEmpty ? null : manualRef,
+          notes: _statementController.text.trim().isEmpty
+              ? null
+              : _statementController.text.trim(),
+        );
+
+        navigator.pop(transferTx);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(AppStrings.transferSuccess),
@@ -1560,15 +1714,22 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
     final tx = TransactionModel(
       id: widget.editTransaction?.id,
-      transactionNumber: widget.editTransaction?.transactionNumber,
+      transactionNumber: txNumber,
       transactionDate: _dateController.text.trim().replaceAll('/', '-'),
       typeId: typeId,
+      typeName: typeName,
       accountId: _selectedAccount?.id,
+      accountName: _selectedAccount?.name,
+      accountPhone: _selectedAccount?.phoneNumber,
       stationId: isActual ? _selectedStationId : null,
+      stationName: isActual ? stationName : null,
       referenceStationId:
           isActual ? (_selectedReferenceStationId ?? _selectedStationId) : null,
       fuelTypeId: _selectedFuelTypeId,
+      fuelTypeName: fuelTypeName,
       unitId: _selectedUnitId!,
+      unitName: unitName,
+      unitFactor: unitFactor,
       enteredQuantity: qty,
       baseQuantityLiters: baseLiters,
       referenceNumber: manualRef.isEmpty ? null : manualRef,
@@ -1587,7 +1748,7 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
 
     if (success && mounted) {
       txController.fetchRecipients();
-      navigator.pop(true);
+      navigator.pop(tx);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(AppStrings.operationSuccess),

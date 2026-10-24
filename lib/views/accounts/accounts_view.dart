@@ -10,6 +10,7 @@ import '../../core/constants/app_typography.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/app_loading_indicator.dart';
 import '../../core/widgets/app_snackbar.dart';
+import '../../core/widgets/app_switch.dart';
 import '../../core/widgets/contact_picker_sheet.dart';
 import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/custom_dropdown.dart';
@@ -65,6 +66,10 @@ class _AccountsViewState extends State<AccountsView> {
           ? account.defaultCommissionRate.toString()
           : '2.0',
     );
+    final customTemplateController = TextEditingController(
+      text: account?.customSmsTemplate ?? '',
+    );
+    bool isMessagingEnabled = account?.isMessagingEnabled ?? true;
     AccountType selectedType =
         account?.accountType ?? defaultType ?? AccountType.beneficiary;
 
@@ -157,6 +162,36 @@ class _AccountsViewState extends State<AccountsView> {
                 },
               ),
             ),
+            const SizedBox(height: AppDimensions.spaceL),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  AppStrings.enableAccountMessaging,
+                  style: TextStyle(
+                    fontSize: AppTypography.sizeBody,
+                    fontWeight: AppTypography.weightMedium,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                AppSwitch(
+                  value: isMessagingEnabled,
+                  onChanged: (val) {
+                    setModalState(() {
+                      isMessagingEnabled = val;
+                    });
+                  },
+                ),
+              ],
+            ),
+            if (isMessagingEnabled) ...[
+              const SizedBox(height: AppDimensions.spaceM),
+              CustomModalSheet.buildTextField(
+                label: AppStrings.customAccountTemplate,
+                controller: customTemplateController,
+                maxLines: 2,
+              ),
+            ],
           ],
         );
       },
@@ -168,6 +203,10 @@ class _AccountsViewState extends State<AccountsView> {
         final controller = context.read<AccountsController>();
         final commRate =
             double.tryParse(commissionController.text.trim()) ?? 2.0;
+        final isMsgEnabled = isMessagingEnabled;
+        final customTpl = customTemplateController.text.trim().isEmpty
+            ? null
+            : customTemplateController.text.trim();
 
         if (account == null) {
           if (selectedType == AccountType.station) {
@@ -180,6 +219,8 @@ class _AccountsViewState extends State<AccountsView> {
                   ? null
                   : phoneController.text.trim(),
               defaultCommission: commRate,
+              isMessagingEnabled: isMsgEnabled,
+              customSmsTemplate: customTpl,
             );
           } else {
             await controller.addAccount(
@@ -188,6 +229,8 @@ class _AccountsViewState extends State<AccountsView> {
               phoneController.text.trim().isEmpty
                   ? null
                   : phoneController.text.trim(),
+              isMessagingEnabled: isMsgEnabled,
+              customSmsTemplate: customTpl,
             );
           }
         } else {
@@ -202,6 +245,8 @@ class _AccountsViewState extends State<AccountsView> {
               phoneNumber: phoneController.text.trim().isEmpty
                   ? null
                   : phoneController.text.trim(),
+              isMessagingEnabled: isMsgEnabled,
+              customSmsTemplate: customTpl,
             ),
           );
         }

@@ -16,6 +16,7 @@ import 'about_app_view.dart';
 import 'archived_accounts_view.dart';
 import 'backup_settings_view.dart';
 import 'language_settings_view.dart';
+import 'message_settings_view.dart';
 import 'permissions_settings_view.dart';
 import 'recycle_bin_view.dart';
 import 'theme_settings_view.dart';
@@ -391,8 +392,25 @@ class _SettingsViewState extends State<SettingsView> {
                   );
                 },
               ),
+              OneUiTile(
+                leading: const Icon(
+                  AppIcons.message,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
+                ),
+                title: AppStrings.messageSettingsTitle,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MessageSettingsView()),
+                  );
+                },
+              ),
             ],
           ),
+
+          // كرت الرسائل النصية والقوالب
 
           // 5. كرت المظهر واللغة
           OneUiCard(

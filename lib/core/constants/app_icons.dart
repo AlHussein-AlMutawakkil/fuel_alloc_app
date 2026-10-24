@@ -102,4 +102,12 @@ class AppIcons {
   static const IconData removeCircleOutline = Icons.remove_circle_outline;
   static const IconData addCircleOutline = Icons.add_circle_outline;
   static const IconData cleanSweep = Icons.cleaning_services_outlined;
+
+  // --- نظام الرسائل والقوالب ---
+  static const IconData message = Icons.message_outlined;
+  static const IconData sms = Icons.sms_outlined;
+  static const IconData whatsapp = Icons.chat_rounded;
+  static const IconData template = Icons.article_outlined;
+  static const IconData send = Icons.send_rounded;
+  static const IconData preview = Icons.visibility_outlined;
 }

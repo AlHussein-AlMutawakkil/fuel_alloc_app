@@ -72,12 +72,26 @@ class AccountsController extends ChangeNotifier {
   }
 
   // إضافة حساب جديد
-  Future<bool> addAccount(String name, AccountType type, String? phone) async {
+  Future<bool> addAccount(
+    String name,
+    AccountType type,
+    String? phone, {
+    bool isMessagingEnabled = true,
+    String? customSmsTemplate,
+    String? notificationPhone,
+  }) async {
     try {
       final newAccount = AccountModel(
         name: name.trim(),
         accountType: type,
         phoneNumber: phone?.trim().isEmpty == true ? null : phone?.trim(),
+        isMessagingEnabled: isMessagingEnabled,
+        customSmsTemplate: customSmsTemplate?.trim().isEmpty == true
+            ? null
+            : customSmsTemplate?.trim(),
+        notificationPhone: notificationPhone?.trim().isEmpty == true
+            ? null
+            : notificationPhone?.trim(),
       );
       await _repository.insertAccount(newAccount);
       await fetchAccounts();
@@ -94,6 +108,9 @@ class AccountsController extends ChangeNotifier {
     String? location,
     String? phone,
     double defaultCommission = 2.0,
+    bool isMessagingEnabled = true,
+    String? customSmsTemplate,
+    String? notificationPhone,
   }) async {
     try {
       final newStation = AccountModel(
@@ -102,6 +119,13 @@ class AccountsController extends ChangeNotifier {
         location: location?.trim().isEmpty == true ? null : location?.trim(),
         phoneNumber: phone?.trim().isEmpty == true ? null : phone?.trim(),
         defaultCommissionRate: defaultCommission,
+        isMessagingEnabled: isMessagingEnabled,
+        customSmsTemplate: customSmsTemplate?.trim().isEmpty == true
+            ? null
+            : customSmsTemplate?.trim(),
+        notificationPhone: notificationPhone?.trim().isEmpty == true
+            ? null
+            : notificationPhone?.trim(),
       );
       await _repository.insertAccount(newStation);
       await fetchAccounts();
