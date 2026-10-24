@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/accounts_controller.dart';
+import 'controllers/analysis_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/backup_controller.dart';
 import 'controllers/messaging_controller.dart';
+import 'controllers/personal_info_controller.dart';
 import 'controllers/stations_controller.dart';
 import 'controllers/transactions_controller.dart';
 import 'core/constants/app_strings.dart';
@@ -30,6 +32,8 @@ class FuelAllocApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthController()),
         ChangeNotifierProvider(create: (_) => BackupController()),
         ChangeNotifierProvider(create: (_) => MessagingController()),
+        ChangeNotifierProvider(create: (_) => PersonalInfoController()),
+        ChangeNotifierProvider(create: (_) => AnalysisController()),
       ],
       child: MaterialApp(
         title: AppStrings.appTitle,

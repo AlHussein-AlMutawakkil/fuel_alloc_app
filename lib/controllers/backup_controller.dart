@@ -874,10 +874,24 @@ class BackupController extends ChangeNotifier {
       }
 
       if (fileName.endsWith('.zip')) {
+        final personalInfo = await DatabaseHelper.instance.getPersonalInfo();
+        final List<File> extraFiles = [];
+        if (personalInfo.includeInBackup) {
+          if (personalInfo.logoPath != null && personalInfo.logoPath!.isNotEmpty) {
+            extraFiles.add(File(personalInfo.logoPath!));
+          }
+          if (personalInfo.stampPath != null && personalInfo.stampPath!.isNotEmpty) {
+            extraFiles.add(File(personalInfo.stampPath!));
+          }
+          if (personalInfo.signaturePath != null && personalInfo.signaturePath!.isNotEmpty) {
+            extraFiles.add(File(personalInfo.signaturePath!));
+          }
+        }
         await BackupArchiveService.compressDatabaseFile(
           sourceDbFile: sourceFile,
           targetZipFile: targetFile,
           password: _isEncryptionEnabled ? _encryptionPassword : null,
+          extraFiles: extraFiles,
         );
       } else {
         await sourceFile.copy(targetFile.path);
@@ -926,10 +940,13 @@ class BackupController extends ChangeNotifier {
       final isZip = await BackupArchiveService.isZipFile(file) || fileName.endsWith('.zip');
       if (isZip) {
         final tempDbFile = File(p.join(Directory.systemTemp.path, 'temp_extracted_restore.db'));
+        final docDir = await getApplicationDocumentsDirectory();
+        final assetsDir = Directory(p.join(docDir.path, 'personal_assets'));
         await BackupArchiveService.extractDatabaseFile(
           sourceZipFile: file,
           targetDbFile: tempDbFile,
           password: password?.isNotEmpty == true ? password : _encryptionPassword,
+          targetAssetsDir: assetsDir,
         );
         final restored = await DatabaseHelper.instance.restoreDatabaseFromFile(tempDbFile.path);
         return restored;
@@ -952,9 +969,25 @@ class BackupController extends ChangeNotifier {
         fileId: fileId,
         targetLocalPath: tempPath,
       );
-      final restored =
-          await DatabaseHelper.instance.restoreDatabaseFromFile(tempPath);
-      return restored;
+      final file = File(tempPath);
+      final isZip = await BackupArchiveService.isZipFile(file);
+      if (isZip) {
+        final tempDbFile = File(p.join(Directory.systemTemp.path, 'temp_cloud_extracted.db'));
+        final docDir = await getApplicationDocumentsDirectory();
+        final assetsDir = Directory(p.join(docDir.path, 'personal_assets'));
+        await BackupArchiveService.extractDatabaseFile(
+          sourceZipFile: file,
+          targetDbFile: tempDbFile,
+          password: _isEncryptionEnabled ? _encryptionPassword : null,
+          targetAssetsDir: assetsDir,
+        );
+        final restored = await DatabaseHelper.instance.restoreDatabaseFromFile(tempDbFile.path);
+        return restored;
+      } else {
+        final restored =
+            await DatabaseHelper.instance.restoreDatabaseFromFile(tempPath);
+        return restored;
+      }
     } catch (_) {
       return false;
     }

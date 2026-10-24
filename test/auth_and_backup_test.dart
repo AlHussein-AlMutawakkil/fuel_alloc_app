@@ -59,8 +59,9 @@ void main() {
         ),
       );
 
-      // Verify Unregistered state initially (one in profile card title, one in account card value)
-      expect(find.text(AppStrings.unregisteredUser), findsNWidgets(2));
+      // Verify Unregistered state initially in profile card and Personal Info tile
+      expect(find.text(AppStrings.unregisteredUser), findsOneWidget);
+      expect(find.text(AppStrings.personalInfo), findsOneWidget);
       expect(find.text(AppStrings.loginOrLinkAccount), findsOneWidget);
 
       // Verify Backup tile is present

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../models/message_template_model.dart';
+import '../../models/personal_info_model.dart';
 
 /// مدير قاعدة البيانات المحلية SQLite
 class DatabaseHelper {
@@ -102,6 +103,25 @@ class DatabaseHelper {
           CREATE TABLE IF NOT EXISTS app_settings (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
+          );
+        ''');
+
+        // جدول البيانات الشخصية
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS personal_info (
+            id INTEGER PRIMARY KEY,
+            arabic_name TEXT,
+            english_name TEXT,
+            arabic_address TEXT,
+            english_address TEXT,
+            contact_numbers TEXT,
+            logo_path TEXT,
+            stamp_path TEXT,
+            signature_path TEXT,
+            logo_scale_percent INTEGER NOT NULL DEFAULT 100,
+            stamp_scale_percent INTEGER NOT NULL DEFAULT 100,
+            signature_scale_percent INTEGER NOT NULL DEFAULT 100,
+            include_in_backup INTEGER NOT NULL DEFAULT 1
           );
         ''');
 
@@ -278,6 +298,25 @@ class DatabaseHelper {
       CREATE TABLE IF NOT EXISTS app_settings (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
+      );
+    ''');
+
+    // جدول البيانات الشخصية
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS personal_info (
+        id INTEGER PRIMARY KEY,
+        arabic_name TEXT,
+        english_name TEXT,
+        arabic_address TEXT,
+        english_address TEXT,
+        contact_numbers TEXT,
+        logo_path TEXT,
+        stamp_path TEXT,
+        signature_path TEXT,
+        logo_scale_percent INTEGER NOT NULL DEFAULT 100,
+        stamp_scale_percent INTEGER NOT NULL DEFAULT 100,
+        signature_scale_percent INTEGER NOT NULL DEFAULT 100,
+        include_in_backup INTEGER NOT NULL DEFAULT 1
       );
     ''');
 
@@ -559,5 +598,31 @@ class DatabaseHelper {
       }
       return false;
     }
+  }
+
+  /// استرجاع البيانات الشخصية من جدول personal_info
+  Future<PersonalInfoModel> getPersonalInfo() async {
+    try {
+      final db = await database;
+      final res = await db.query('personal_info', where: 'id = ?', whereArgs: [1]);
+      if (res.isNotEmpty) {
+        return PersonalInfoModel.fromMap(res.first);
+      }
+    } catch (_) {}
+    return const PersonalInfoModel();
+  }
+
+  /// حفظ وتحديث البيانات الشخصية في جدول personal_info
+  Future<void> savePersonalInfo(PersonalInfoModel model) async {
+    try {
+      final db = await database;
+      final map = model.toMap();
+      map['id'] = 1;
+      await db.insert(
+        'personal_info',
+        map,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (_) {}
   }
 }

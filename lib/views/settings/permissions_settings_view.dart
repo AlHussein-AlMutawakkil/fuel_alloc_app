@@ -1,10 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/constants/app_typography.dart';
 import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/one_ui_card.dart';
 
@@ -20,12 +20,14 @@ class PermissionsSettingsView extends StatefulWidget {
 class _PermissionsSettingsViewState extends State<PermissionsSettingsView>
     with WidgetsBindingObserver {
   bool _contactsEnabled = false;
+  bool _photosEnabled = false;
+  bool _cameraEnabled = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _checkPermission();
+    _checkPermissions();
   }
 
   @override
@@ -37,85 +39,89 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _checkPermission();
+      _checkPermissions();
     }
   }
 
-  /// التحقق الصامت والمباشر من النظام لحالة الإذن دون إظهار أي نافذة مطالبة
-  Future<void> _checkPermission() async {
+  /// التحقق الصامت والمباشر من النظام لحالة كافة الأذونات
+  Future<void> _checkPermissions() async {
     try {
-      final status = await Permission.contacts.status;
+      final contactsStatus = await Permission.contacts.status;
+      final cameraStatus = await Permission.camera.status;
+
+      // الصور: التحقق من إذن photos أو storage
+      bool photosGranted = false;
+      if (Platform.isAndroid) {
+        final photosStatus = await Permission.photos.status;
+        final storageStatus = await Permission.storage.status;
+        photosGranted = photosStatus.isGranted || storageStatus.isGranted;
+      } else {
+        final photosStatus = await Permission.photos.status;
+        photosGranted = photosStatus.isGranted;
+      }
+
       if (mounted) {
-        setState(() => _contactsEnabled = status.isGranted);
+        setState(() {
+          _contactsEnabled = contactsStatus.isGranted;
+          _cameraEnabled = cameraStatus.isGranted;
+          _photosEnabled = photosGranted;
+        });
       }
     } catch (_) {}
   }
 
-  Widget _buildPermissionRow({
-    required IconData icon,
-    required String title,
-    required bool isEnabled,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.space2XL,
-            vertical: AppDimensions.spaceXL,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: AppColors.textPrimary,
-                size: AppDimensions.iconMedium + 2,
-              ),
-              const SizedBox(width: AppDimensions.spaceL + 2),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: AppTypography.sizeH2,
-                    fontWeight: AppTypography.weightMedium,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              Icon(
-                isEnabled
-                    ? AppIcons.checkCircleRounded
-                    : AppIcons.cancelRounded,
-                color: isEnabled ? AppColors.success : AppColors.textMuted,
-                size: 17,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handlePermissionRequest() async {
+  Future<void> _handlePermissionRequest({
+    required Permission permission,
+    required String deniedMsg,
+  }) async {
     try {
-      final status = await Permission.contacts.status;
+      final status = await permission.status;
       if (status.isGranted) {
-        // إذا كان مفعل مسبقاً، فتح إعدادات التطبيق في الهاتف لإدارته
+        // إذا كان مفعلاً مسبقاً، فتح إعدادات التطبيق في الهاتف لإدارته
         await openAppSettings();
         return;
       }
 
-      final res = await Permission.contacts.request();
+      final res = await permission.request();
+      await _checkPermissions();
       if (!mounted) return;
-      setState(() => _contactsEnabled = res.isGranted);
       if (res.isGranted) {
         AppSnackBar.showSuccess(context, AppStrings.operationSuccess);
       } else if (res.isPermanentlyDenied) {
         await openAppSettings();
       } else {
-        AppSnackBar.showError(context, AppStrings.contactsPermissionDenied);
+        AppSnackBar.showError(context, deniedMsg);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      AppSnackBar.showError(context, AppStrings.operationFailed);
+    }
+  }
+
+  Future<void> _handlePhotosPermissionRequest() async {
+    try {
+      Permission perm = Permission.photos;
+      final photosStatus = await Permission.photos.status;
+      final storageStatus = await Permission.storage.status;
+      if (photosStatus.isGranted || storageStatus.isGranted) {
+        await openAppSettings();
+        return;
+      }
+
+      // طلب الإذن المناسب
+      var res = await perm.request();
+      if (!res.isGranted && Platform.isAndroid) {
+        res = await Permission.storage.request();
+      }
+
+      await _checkPermissions();
+      if (!mounted) return;
+      if (res.isGranted) {
+        AppSnackBar.showSuccess(context, AppStrings.operationSuccess);
+      } else if (res.isPermanentlyDenied) {
+        await openAppSettings();
+      } else {
+        AppSnackBar.showError(context, AppStrings.photosPermissionDenied);
       }
     } catch (_) {
       if (!mounted) return;
@@ -137,11 +143,63 @@ class _PermissionsSettingsViewState extends State<PermissionsSettingsView>
         children: [
           OneUiCard(
             children: [
-              _buildPermissionRow(
-                icon: AppIcons.contacts,
+              OneUiTile(
+                leading: const Icon(
+                  AppIcons.photos,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
+                ),
+                title: AppStrings.photosPermission,
+                trailing: Icon(
+                  _photosEnabled
+                      ? AppIcons.checkCircleRounded
+                      : AppIcons.cancelRounded,
+                  color:
+                      _photosEnabled ? AppColors.success : AppColors.textMuted,
+                  size: 18,
+                ),
+                onTap: _handlePhotosPermissionRequest,
+              ),
+              OneUiTile(
+                leading: const Icon(
+                  AppIcons.camera,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
+                ),
+                title: AppStrings.cameraPermission,
+                trailing: Icon(
+                  _cameraEnabled
+                      ? AppIcons.checkCircleRounded
+                      : AppIcons.cancelRounded,
+                  color:
+                      _cameraEnabled ? AppColors.success : AppColors.textMuted,
+                  size: 18,
+                ),
+                onTap: () => _handlePermissionRequest(
+                  permission: Permission.camera,
+                  deniedMsg: AppStrings.cameraPermissionDenied,
+                ),
+              ),
+              OneUiTile(
+                leading: const Icon(
+                  AppIcons.contacts,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
+                ),
                 title: AppStrings.contactsPermission,
-                isEnabled: _contactsEnabled,
-                onTap: _handlePermissionRequest,
+                trailing: Icon(
+                  _contactsEnabled
+                      ? AppIcons.checkCircleRounded
+                      : AppIcons.cancelRounded,
+                  color: _contactsEnabled
+                      ? AppColors.success
+                      : AppColors.textMuted,
+                  size: 18,
+                ),
+                onTap: () => _handlePermissionRequest(
+                  permission: Permission.contacts,
+                  deniedMsg: AppStrings.contactsPermissionDenied,
+                ),
               ),
             ],
           ),

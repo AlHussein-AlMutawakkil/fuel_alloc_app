@@ -13,11 +13,13 @@ import '../../core/widgets/one_ui_card.dart';
 import '../data/fuel_types_view.dart';
 import '../data/units_view.dart';
 import 'about_app_view.dart';
+import 'analysis_view.dart';
 import 'archived_accounts_view.dart';
 import 'backup_settings_view.dart';
 import 'language_settings_view.dart';
 import 'message_settings_view.dart';
 import 'permissions_settings_view.dart';
+import 'personal_info_settings_view.dart';
 import 'recycle_bin_view.dart';
 import 'theme_settings_view.dart';
 
@@ -291,24 +293,42 @@ class _SettingsViewState extends State<SettingsView> {
             },
           ),
 
-          // 2. كرت الحساب
-          Consumer<AuthController>(
-            builder: (context, auth, _) {
-              return OneUiCard(
-                children: [
-                  OneUiTile(
-                    leading: const Icon(
-                      AppIcons.accountOutline,
-                      color: AppColors.textPrimary,
-                      size: AppDimensions.iconMedium + 2,
+          // 2. كرت البيانات الشخصية والتحليل
+          OneUiCard(
+            children: [
+              OneUiTile(
+                leading: const Icon(
+                  AppIcons.badge,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
+                ),
+                title: AppStrings.personalInfo,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PersonalInfoSettingsView(),
                     ),
-                    title: AppStrings.account,
-                    valueText: auth.accountStatusText,
-                    onTap: () => _showAccountDialog(auth),
-                  ),
-                ],
-              );
-            },
+                  );
+                },
+              ),
+              OneUiTile(
+                leading: const Icon(
+                  AppIcons.analytics,
+                  color: AppColors.textPrimary,
+                  size: AppDimensions.iconMedium + 2,
+                ),
+                title: AppStrings.analysis,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const AnalysisView(),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
 
           // 3. كرت البيانات (الأصناف والوحدات)

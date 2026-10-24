@@ -110,4 +110,17 @@ class AppIcons {
   static const IconData template = Icons.article_outlined;
   static const IconData send = Icons.send_rounded;
   static const IconData preview = Icons.visibility_outlined;
+
+  // --- البيانات الشخصية ---
+  static const IconData badge = Icons.badge_outlined;
+  static const IconData image = Icons.image_outlined;
+  static const IconData draw = Icons.draw_outlined;
+  static const IconData stamp = Icons.approval_outlined;
+  static const IconData photoCamera = Icons.photo_camera_outlined;
+
+  // --- التحليل وصحة النظام ---
+  static const IconData analytics = Icons.insights_rounded;
+  static const IconData healthAndSafety = Icons.health_and_safety_outlined;
+  static const IconData pieChart = Icons.pie_chart_outline_rounded;
+  static const IconData memory = Icons.memory_rounded;
 }
