@@ -46,6 +46,10 @@ void main() {
   group('SettingsView Backup & Auth Integration Tests', () {
     testWidgets('SettingsView displays backup tile above recycle bin in same card',
         (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       await tester.pumpWidget(
         ChangeNotifierProvider(
           create: (_) => AuthController(),
@@ -71,6 +75,8 @@ void main() {
       expect(find.byType(BackupSettingsView), findsOneWidget);
       expect(find.text(AppStrings.createLocalBackup), findsOneWidget);
       expect(find.text(AppStrings.restoreLocalBackup), findsOneWidget);
+      expect(find.text(AppStrings.backupStorageLocation), findsOneWidget);
     });
   });
 }
+

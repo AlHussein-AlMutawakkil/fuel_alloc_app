@@ -302,7 +302,8 @@ class BackupController extends ChangeNotifier {
   }
 
   /// مزامنة ورفع نسخة قاعدة البيانات إلى مجلد FuelAlloc_Backups في Google Drive
-  Future<bool> syncCurrentBackupToCloud() async {
+  Future<bool> syncCurrentBackupToCloud({bool force = false}) async {
+    if (_isSyncing) return false;
     if (!isGoogleDriveConnected) return false;
 
     if (_wifiOnlySync) {
@@ -318,12 +319,21 @@ class BackupController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // إنشاء نسخة محلية طبقاً للإعدادات
-      final localBackup = createLocalBackup();
-
-      // مسار قاعدة البيانات الفعلي
+      // 1. مسار قاعدة البيانات الفعلي
       final dbPath = await DatabaseHelper.instance.getDatabaseFilePath();
       final dbFile = File(dbPath);
+
+      // فحص عدم التكرار (Deduplication Check): إذا لم تتغير البيانات، لا داعي لرفع نسخة مكررة
+      if (!force && await dbFile.exists() && _lastCloudSyncTime != null && _lastCloudSyncSizeBytes != null) {
+        final stat = await dbFile.stat();
+        if (stat.size == _lastCloudSyncSizeBytes && stat.modified.isBefore(_lastCloudSyncTime!)) {
+          // قاعدة البيانات لم تعدل منذ آخر رفع ناجح
+          return true;
+        }
+      }
+
+      // 2. إنشاء نسخة محلية طبقاً للإعدادات مع تفادي استدعاء الرفع السحابي مجدداً لمنع التكرار
+      final localBackup = createLocalBackup(skipAutoSync: true);
 
       File fileToUpload = dbFile;
       if (!await dbFile.exists()) {
@@ -354,9 +364,32 @@ class BackupController extends ChangeNotifier {
       );
 
       _backups.insert(0, cloudItem);
+
+      // 3. تطبيق سياسة تنظيف السحابة تلقائياً بعد كل رفع ناجح
+      await _driveService.applyCloudRetention(
+        policy: _cloudRetentionPolicy,
+        maxDays: _cloudRetentionDays,
+        maxCount: _cloudRetentionCount,
+      );
+
       return true;
     } catch (_) {
       return false;
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  /// تنظيف النسخ السحابية المكررة في Google Drive وحذفها
+  Future<int> cleanDuplicateCloudBackups() async {
+    if (!isGoogleDriveConnected || _isSyncing) return 0;
+    _isSyncing = true;
+    notifyListeners();
+    try {
+      final count = await _driveService.deleteDuplicateCloudBackups();
+      await fetchCloudBackups();
+      return count;
     } finally {
       _isSyncing = false;
       notifyListeners();
@@ -716,11 +749,20 @@ class BackupController extends ChangeNotifier {
           await deleteBackup(b.id);
         }
       }
+
+      // 4. تطبيق سياسة تنظيف Google Drive السحابية الفعلية
+      if (isGoogleDriveConnected) {
+        await _driveService.applyCloudRetention(
+          policy: _cloudRetentionPolicy,
+          maxDays: _cloudRetentionDays,
+          maxCount: _cloudRetentionCount,
+        );
+      }
     } catch (_) {}
   }
 
   /// إنشاء نسخة احتياطية محلية بتطبيق منطق الأنواع الثلاثة بالكامل وحفظ الملف الحقيقي
-  BackupModel createLocalBackup({bool isScheduled = false}) {
+  BackupModel createLocalBackup({bool isScheduled = false, bool skipAutoSync = false}) {
     final now = DateTime.now();
     BackupType effectiveType = _backupType;
     String typeTag = 'full';
@@ -750,7 +792,9 @@ class BackupController extends ChangeNotifier {
           _backups[existingArchiveIdx] = updated;
           _saveLocalBackupFile('fuel_alloc_archive_main.db');
           notifyListeners();
-          _checkAutoCloudSync(updated, isScheduled);
+          if (!skipAutoSync) {
+            _checkAutoCloudSync(updated, isScheduled);
+          }
           return updated;
         }
         break;
@@ -805,8 +849,10 @@ class BackupController extends ChangeNotifier {
     applyAutoClean();
     notifyListeners();
 
-    // التحقق من المزامنة السحابية التلقائية مع الجدولة
-    _checkAutoCloudSync(newBackup, isScheduled);
+    // التحقق من المزامنة السحابية التلقائية مع الجدولة إن لم تكن مستدعاة من سياق المزامنة
+    if (!skipAutoSync) {
+      _checkAutoCloudSync(newBackup, isScheduled);
+    }
 
     return newBackup;
   }
@@ -840,6 +886,7 @@ class BackupController extends ChangeNotifier {
   }
 
   void _checkAutoCloudSync(BackupModel backup, bool isScheduled) {
+    if (_isSyncing) return; // حماية صارمة تمنع التكرار والحلقة اللانهائية
     if (isGoogleDriveConnected && (_autoBackupEnabled || isScheduled)) {
       syncCurrentBackupToCloud();
     }

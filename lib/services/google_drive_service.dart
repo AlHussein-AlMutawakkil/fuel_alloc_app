@@ -222,4 +222,118 @@ class GoogleDriveService extends ChangeNotifier {
     if (_driveApi == null) return;
     await _driveApi!.files.delete(fileId);
   }
+
+  /// تنظيف وحذف كافة النسخ المتطابقة المتكررة من Google Drive والإبقاء على الأحدث
+  Future<int> deleteDuplicateCloudBackups() async {
+    if (_driveApi == null) return 0;
+    try {
+      final folderId = await getOrCreateAppFolder();
+      final List<drive.File> allFiles = [];
+      String? pageToken;
+
+      do {
+        final res = await _driveApi!.files.list(
+          q: "'$folderId' in parents and trashed = false",
+          spaces: 'drive',
+          orderBy: 'createdTime desc',
+          $fields: 'nextPageToken, files(id, name, size, createdTime, md5Checksum)',
+          pageSize: 1000,
+          pageToken: pageToken,
+        );
+        if (res.files != null) {
+          allFiles.addAll(res.files!);
+        }
+        pageToken = res.nextPageToken;
+      } while (pageToken != null && pageToken.isNotEmpty);
+
+      if (allFiles.isEmpty) return 0;
+
+      // تجميع الملفات المتطابقة بناءً على md5Checksum أو الحجم
+      final Map<String, List<drive.File>> groups = {};
+      for (final file in allFiles) {
+        final key = (file.md5Checksum != null && file.md5Checksum!.isNotEmpty)
+            ? file.md5Checksum!
+            : '${file.size ?? 0}_${file.name?.split('.').last}';
+        groups.putIfAbsent(key, () => []).add(file);
+      }
+
+      int deletedCount = 0;
+      for (final entry in groups.entries) {
+        final duplicates = entry.value;
+        if (duplicates.length > 1) {
+          // ترتيب تنازلي حسب تاريخ الإنشاء لضمان الحفاظ على أحدث نسخة
+          duplicates.sort((a, b) {
+            final timeA = a.createdTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+            final timeB = b.createdTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+            return timeB.compareTo(timeA);
+          });
+
+          // حذف كل النسخ القديمة المتطابقة والإبقاء على أحدث نسخة (duplicates.first)
+          for (int i = 1; i < duplicates.length; i++) {
+            final fileToDelete = duplicates[i];
+            if (fileToDelete.id != null) {
+              try {
+                await _driveApi!.files.delete(fileToDelete.id!);
+                deletedCount++;
+              } catch (_) {}
+            }
+          }
+        }
+      }
+      return deletedCount;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// تطبيق سياسة التنظيف التلقائي على نسخ Google Drive
+  Future<int> applyCloudRetention({
+    required RetentionPolicy policy,
+    required int maxDays,
+    required int maxCount,
+  }) async {
+    if (_driveApi == null || policy == RetentionPolicy.none) return 0;
+    try {
+      final folderId = await getOrCreateAppFolder();
+      final res = await _driveApi!.files.list(
+        q: "'$folderId' in parents and trashed = false",
+        spaces: 'drive',
+        orderBy: 'createdTime desc',
+        $fields: 'files(id, name, size, createdTime)',
+        pageSize: 1000,
+      );
+
+      final files = res.files ?? [];
+      if (files.isEmpty) return 0;
+
+      int deletedCount = 0;
+      if (policy == RetentionPolicy.days) {
+        final cutoff = DateTime.now().subtract(Duration(days: maxDays));
+        for (int i = 1; i < files.length; i++) {
+          final f = files[i];
+          if (f.createdTime != null && f.createdTime!.isBefore(cutoff) && f.id != null) {
+            try {
+              await _driveApi!.files.delete(f.id!);
+              deletedCount++;
+            } catch (_) {}
+          }
+        }
+      } else if (policy == RetentionPolicy.count) {
+        if (files.length > maxCount) {
+          final toDelete = files.skip(maxCount);
+          for (final f in toDelete) {
+            if (f.id != null) {
+              try {
+                await _driveApi!.files.delete(f.id!);
+                deletedCount++;
+              } catch (_) {}
+            }
+          }
+        }
+      }
+      return deletedCount;
+    } catch (_) {
+      return 0;
+    }
+  }
 }

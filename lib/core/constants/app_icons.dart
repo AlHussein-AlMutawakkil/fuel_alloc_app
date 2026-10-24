@@ -98,4 +98,8 @@ class AppIcons {
   static const IconData lock = Icons.lock_outline;
   static const IconData wifi = Icons.wifi;
   static const IconData folderOpen = Icons.folder_open_outlined;
+  static const IconData copy = Icons.copy_rounded;
+  static const IconData removeCircleOutline = Icons.remove_circle_outline;
+  static const IconData addCircleOutline = Icons.add_circle_outline;
+  static const IconData cleanSweep = Icons.cleaning_services_outlined;
 }

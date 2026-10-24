@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../core/constants/app_strings.dart';
+import '../data/local/database_helper.dart';
 import '../services/google_drive_service.dart';
 
 /// متحكم حالة تسجيل الدخول وبيانات حساب المستخدم الفعلي (Auth & User Profile Controller)
@@ -10,37 +11,98 @@ class AuthController extends ChangeNotifier {
   String? _manualEmail;
   String? _manualPhotoUrl;
 
+  // الحفظ المؤقت المحلي للبيانات لظهور فوري دون وميض أو تأخير
+  String? _cachedUserName;
+  String? _cachedEmail;
+  String? _cachedPhotoUrl;
+  bool _cachedIsLoggedIn = false;
+
   AuthController() {
     _driveService.addListener(_onDriveAuthChanged);
     _initAuth();
   }
 
   void _onDriveAuthChanged() {
+    if (_driveService.isSignedIn) {
+      _cachedIsLoggedIn = true;
+      _cachedUserName = _driveService.currentUser?.displayName;
+      _cachedEmail = _driveService.currentUser?.email;
+      _cachedPhotoUrl = _driveService.currentUser?.photoUrl;
+      _saveProfileLocally();
+    }
     notifyListeners();
   }
 
   Future<void> _initAuth() async {
-    await _driveService.initSilentSignIn();
+    // 1. استرجاع البيانات المحفوظة محلياً فوراً لمنع الوميض وظهور "غير مسجل"
+    try {
+      final db = DatabaseHelper.instance;
+      final savedLogin = await db.getSetting('auth_is_logged_in');
+      if (savedLogin == 'true') {
+        _cachedIsLoggedIn = true;
+        _cachedUserName = await db.getSetting('auth_user_name');
+        _cachedEmail = await db.getSetting('auth_user_email');
+        _cachedPhotoUrl = await db.getSetting('auth_photo_url');
+        notifyListeners();
+      }
+    } catch (_) {}
+
+    // 2. الفحص الصامت مع Google Drive والتحديث في الخلفية دون هز الواجهة
+    try {
+      final account = await _driveService.initSilentSignIn();
+      if (account != null) {
+        _cachedIsLoggedIn = true;
+        _cachedUserName = account.displayName;
+        _cachedEmail = account.email;
+        _cachedPhotoUrl = account.photoUrl;
+        await _saveProfileLocally();
+      } else if (!_manualOverride) {
+        if (!_driveService.isSignedIn && _cachedIsLoggedIn) {
+          // في حال عدم توفر اتصال بالشبكة، نحتفظ بالبيانات المحلية ولا نقوم بتسجيل الخروج
+        }
+      }
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  Future<void> _saveProfileLocally() async {
+    try {
+      final db = DatabaseHelper.instance;
+      await db.setSetting('auth_is_logged_in', _cachedIsLoggedIn ? 'true' : 'false');
+      if (_cachedUserName != null) await db.setSetting('auth_user_name', _cachedUserName!);
+      if (_cachedEmail != null) await db.setSetting('auth_user_email', _cachedEmail!);
+      if (_cachedPhotoUrl != null) await db.setSetting('auth_photo_url', _cachedPhotoUrl!);
+    } catch (_) {}
+  }
+
+  Future<void> _clearProfileLocally() async {
+    try {
+      final db = DatabaseHelper.instance;
+      await db.setSetting('auth_is_logged_in', 'false');
+      await db.setSetting('auth_user_name', '');
+      await db.setSetting('auth_user_email', '');
+      await db.setSetting('auth_photo_url', '');
+    } catch (_) {}
   }
 
   bool get isLoggedIn {
     if (_manualOverride) return true;
-    return _driveService.isSignedIn;
+    return _driveService.isSignedIn || _cachedIsLoggedIn;
   }
 
   String? get userName {
     if (_manualOverride) return _manualUserName;
-    return _driveService.currentUser?.displayName;
+    return _driveService.currentUser?.displayName ?? _cachedUserName;
   }
 
   String? get email {
     if (_manualOverride) return _manualEmail;
-    return _driveService.currentUser?.email;
+    return _driveService.currentUser?.email ?? _cachedEmail;
   }
 
   String? get photoUrl {
     if (_manualOverride) return _manualPhotoUrl;
-    return _driveService.currentUser?.photoUrl;
+    return _driveService.currentUser?.photoUrl ?? _cachedPhotoUrl;
   }
 
   /// عنوان الملف الشخصي:
@@ -70,6 +132,13 @@ class AuthController extends ChangeNotifier {
     try {
       final account = await _driveService.signIn();
       _manualOverride = false;
+      if (account != null) {
+        _cachedIsLoggedIn = true;
+        _cachedUserName = account.displayName;
+        _cachedEmail = account.email;
+        _cachedPhotoUrl = account.photoUrl;
+        await _saveProfileLocally();
+      }
       notifyListeners();
       return account != null;
     } catch (_) {
@@ -83,13 +152,18 @@ class AuthController extends ChangeNotifier {
     _manualUserName = null;
     _manualEmail = null;
     _manualPhotoUrl = null;
+    _cachedIsLoggedIn = false;
+    _cachedUserName = null;
+    _cachedEmail = null;
+    _cachedPhotoUrl = null;
+    await _clearProfileLocally();
     await _driveService.signOut();
     notifyListeners();
   }
 
   /// تبديل الحساب
   Future<bool> switchAccount() async {
-    await _driveService.signOut();
+    await logout();
     return await signInWithGoogle();
   }
 

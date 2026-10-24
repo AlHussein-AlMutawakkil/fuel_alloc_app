@@ -13,7 +13,7 @@ import '../../core/widgets/custom_dialog.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../../models/backup_model.dart';
 
-/// شاشة إعدادات التنظيف التلقائي بنمط One UI مطابقة للواجهة المعتمدة
+/// شاشة إعدادات التنظيف التلقائي بنمط One UI مطابقة للمواصفات القياسية
 class AutoCleanSettingsView extends StatefulWidget {
   const AutoCleanSettingsView({super.key});
 
@@ -36,7 +36,6 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
 
   bool _isLocalExpanded = true;
   bool _isDriveExpanded = true;
-  bool _isDropboxExpanded = false;
 
   @override
   void initState() {
@@ -96,7 +95,7 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
+                    icon: const Icon(AppIcons.removeCircleOutline),
                     color: AppColors.charcoal,
                     onPressed: tempDays > 1
                         ? () => setDialogState(() => tempDays--)
@@ -121,7 +120,7 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
+                    icon: const Icon(AppIcons.addCircleOutline),
                     color: AppColors.charcoal,
                     onPressed: tempDays < 365
                         ? () => setDialogState(() => tempDays++)
@@ -170,7 +169,7 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
+                    icon: const Icon(AppIcons.removeCircleOutline),
                     color: AppColors.charcoal,
                     onPressed: tempCount > 1
                         ? () => setDialogState(() => tempCount--)
@@ -195,7 +194,7 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
+                    icon: const Icon(AppIcons.addCircleOutline),
                     color: AppColors.charcoal,
                     onPressed: tempCount < 100
                         ? () => setDialogState(() => tempCount++)
@@ -220,6 +219,109 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
         }
       });
     }
+  }
+
+  Widget _buildRetentionTile({
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required VoidCallback onSelect,
+    VoidCallback? onEdit,
+    String? editBadge,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          onSelect();
+          if (onEdit != null && isSelected) {
+            onEdit();
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.space2XL,
+            vertical: AppDimensions.spaceL,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: AppTypography.sizeBody + 1,
+                        fontWeight: isSelected
+                            ? AppTypography.weightSemiBold
+                            : AppTypography.weightMedium,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: AppDimensions.spaceXXS),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeCaption,
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (editBadge != null) ...[
+                GestureDetector(
+                  onTap: onEdit,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppDimensions.spaceM,
+                      vertical: AppDimensions.spaceXXS + 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.searchBackground,
+                      borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
+                      border: Border.all(
+                        color: isSelected ? AppColors.charcoal : AppColors.borderLight,
+                        width: AppDimensions.borderWidthThin,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          editBadge,
+                          style: TextStyle(
+                            fontSize: AppTypography.sizeCaption,
+                            fontWeight: AppTypography.weightSemiBold,
+                            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.spaceXS),
+                        Icon(
+                          AppIcons.edit,
+                          size: AppDimensions.iconSmall,
+                          color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.spaceM),
+              ],
+              Icon(
+                isSelected ? AppIcons.radioChecked : AppIcons.radioUnchecked,
+                color: isSelected ? AppColors.charcoal : AppColors.border,
+                size: AppDimensions.iconMedium + 2,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -255,51 +357,30 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                 // 1. قسم النسخ الاحتياطية التزايدية
                 OneUiCard(
                   children: [
-                    Padding(
-                      padding: AppDimensions.paddingTile,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            AppStrings.incrementalBackupsHeader,
-                            style: TextStyle(
-                              fontSize: AppTypography.sizeBodySecondary,
-                              fontWeight: AppTypography.weightSemiBold,
-                              color: AppColors.supplyGreen,
-                            ),
-                          ),
-                          const SizedBox(height: AppDimensions.spaceM),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Expanded(
-                                child: Text(
-                                  AppStrings.deleteBeforeLastFull,
-                                  style: TextStyle(
-                                    fontSize: AppTypography.sizeBody,
-                                    fontWeight: AppTypography.weightSemiBold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              AppSwitch(
-                                value: _deleteBeforeLastFull,
-                                onChanged: (val) {
-                                  setState(() => _deleteBeforeLastFull = val);
-                                },
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppDimensions.spaceS),
-                          const Text(
-                            AppStrings.deleteBeforeLastFullDesc,
-                            style: TextStyle(
-                              fontSize: AppTypography.sizeCaption,
-                              color: AppColors.textTertiary,
-                              height: 1.45,
-                            ),
-                          ),
-                        ],
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppDimensions.space2XL,
+                        AppDimensions.spaceL,
+                        AppDimensions.space2XL,
+                        AppDimensions.spaceXS,
+                      ),
+                      child: Text(
+                        AppStrings.incrementalBackupsHeader,
+                        style: TextStyle(
+                          fontSize: AppTypography.sizeBodySecondary,
+                          fontWeight: AppTypography.weightSemiBold,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    OneUiTile(
+                      title: AppStrings.deleteBeforeLastFull,
+                      subtitle: AppStrings.deleteBeforeLastFullDesc,
+                      trailing: AppSwitch(
+                        value: _deleteBeforeLastFull,
+                        onChanged: (val) {
+                          setState(() => _deleteBeforeLastFull = val);
+                        },
                       ),
                     ),
                   ],
@@ -318,7 +399,7 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                               _isLocalExpanded
                                   ? AppIcons.expandLess
                                   : AppIcons.expandMore,
-                              color: AppColors.supplyGreen,
+                              color: AppColors.textPrimary,
                               size: AppDimensions.iconRegular,
                             ),
                             const SizedBox(width: AppDimensions.spaceM),
@@ -326,9 +407,9 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                               child: Text(
                                 AppStrings.localBackupSection,
                                 style: TextStyle(
-                                  fontSize: AppTypography.sizeBody,
+                                  fontSize: AppTypography.sizeBody + 1,
                                   fontWeight: AppTypography.weightBold,
-                                  color: AppColors.supplyGreen,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ),
@@ -349,204 +430,59 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: AppDimensions.spaceM),
+                      const SizedBox(height: AppDimensions.spaceS),
 
                       // خيار عدم الحذف
-                      OneUiSelectionTile(
+                      _buildRetentionTile(
                         title: AppStrings.noDeletion,
+                        subtitle: '',
                         isSelected: _localPolicy == RetentionPolicy.none,
-                        selectionType: SelectionTileType.radio,
-                        onTap: () => setState(() => _localPolicy = RetentionPolicy.none),
+                        onSelect: () => setState(() => _localPolicy = RetentionPolicy.none),
                       ),
 
                       // خيار الاحتفاظ بعدد من الأيام
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => setState(() => _localPolicy = RetentionPolicy.days),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.space2XL,
-                              vertical: AppDimensions.spaceM,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        AppStrings.keepForDays,
-                                        style: TextStyle(
-                                          fontSize: AppTypography.sizeBodySecondary,
-                                          fontWeight: AppTypography.weightMedium,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: AppDimensions.spaceXS),
-                                      GestureDetector(
-                                        onTap: () => _showDaysDialog(isCloud: false),
-                                        child: Text(
-                                          '$_localDays ${AppStrings.keepForDaysCountUnit}',
-                                          style: const TextStyle(
-                                            fontSize: AppTypography.sizeBody,
-                                            fontWeight: AppTypography.weightSemiBold,
-                                            color: AppColors.infoText,
-                                            decoration: TextDecoration.underline,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  _localPolicy == RetentionPolicy.days
-                                      ? AppIcons.radioChecked
-                                      : AppIcons.radioUnchecked,
-                                  color: _localPolicy == RetentionPolicy.days
-                                      ? AppColors.charcoal
-                                      : AppColors.border,
-                                  size: AppDimensions.iconMedium + 2,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      _buildRetentionTile(
+                        title: AppStrings.keepForDays,
+                        subtitle: '$_localDays ${AppStrings.keepForDaysCountUnit}',
+                        isSelected: _localPolicy == RetentionPolicy.days,
+                        editBadge: '$_localDays ${AppStrings.keepForDaysCountUnit}',
+                        onSelect: () => setState(() => _localPolicy = RetentionPolicy.days),
+                        onEdit: () => _showDaysDialog(isCloud: false),
                       ),
 
                       // خيار الاحتفاظ بعدد من النسخ الأخيرة
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => setState(() => _localPolicy = RetentionPolicy.count),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.space2XL,
-                              vertical: AppDimensions.spaceM,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        AppStrings.keepLastCount,
-                                        style: TextStyle(
-                                          fontSize: AppTypography.sizeBodySecondary,
-                                          fontWeight: AppTypography.weightMedium,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: AppDimensions.spaceXS),
-                                      GestureDetector(
-                                        onTap: () => _showCountDialog(isCloud: false),
-                                        child: Text(
-                                          '$_localCount ${AppStrings.keepLastCountUnit}',
-                                          style: const TextStyle(
-                                            fontSize: AppTypography.sizeBody,
-                                            fontWeight: AppTypography.weightSemiBold,
-                                            color: AppColors.infoText,
-                                            decoration: TextDecoration.underline,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  _localPolicy == RetentionPolicy.count
-                                      ? AppIcons.radioChecked
-                                      : AppIcons.radioUnchecked,
-                                  color: _localPolicy == RetentionPolicy.count
-                                      ? AppColors.charcoal
-                                      : AppColors.border,
-                                  size: AppDimensions.iconMedium + 2,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      _buildRetentionTile(
+                        title: AppStrings.keepLastCount,
+                        subtitle: '$_localCount ${AppStrings.keepLastCountUnit}',
+                        isSelected: _localPolicy == RetentionPolicy.count,
+                        editBadge: '$_localCount ${AppStrings.keepLastCountUnit}',
+                        onSelect: () => setState(() => _localPolicy = RetentionPolicy.count),
+                        onEdit: () => _showCountDialog(isCloud: false),
                       ),
 
-                      const Divider(
-                        height: 1,
-                        color: AppColors.borderLight,
-                      ),
+                      const OneUiDivider(),
 
                       // مفتاح الاحتفاظ بنسخة من أحدث نسخة احتياطية
-                      Padding(
-                        padding: AppDimensions.paddingTile,
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    AppStrings.keepLatestLocalCopy,
-                                    style: TextStyle(
-                                      fontSize: AppTypography.sizeBodySecondary,
-                                      fontWeight: AppTypography.weightSemiBold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  SizedBox(height: AppDimensions.spaceXXS),
-                                  Text(
-                                    AppStrings.keepLatestLocalCopyDesc,
-                                    style: TextStyle(
-                                      fontSize: AppTypography.sizeCaption,
-                                      color: AppColors.textTertiary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            AppSwitch(
-                              value: _keepLatestLocalCopy,
-                              onChanged: (val) {
-                                setState(() => _keepLatestLocalCopy = val);
-                              },
-                            ),
-                          ],
+                      OneUiTile(
+                        title: AppStrings.keepLatestLocalCopy,
+                        subtitle: AppStrings.keepLatestLocalCopyDesc,
+                        trailing: AppSwitch(
+                          value: _keepLatestLocalCopy,
+                          onChanged: (val) {
+                            setState(() => _keepLatestLocalCopy = val);
+                          },
                         ),
                       ),
 
                       // مفتاح حذف النسخ الاحتياطية التي لم ترفع بعد
-                      Padding(
-                        padding: AppDimensions.paddingTile,
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    AppStrings.deleteUnuploadedBackups,
-                                    style: TextStyle(
-                                      fontSize: AppTypography.sizeBodySecondary,
-                                      fontWeight: AppTypography.weightSemiBold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  SizedBox(height: AppDimensions.spaceXXS),
-                                  Text(
-                                    AppStrings.deleteUnuploadedBackupsDesc,
-                                    style: TextStyle(
-                                      fontSize: AppTypography.sizeCaption,
-                                      color: AppColors.textTertiary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            AppSwitch(
-                              value: _deleteUnuploadedBackups,
-                              onChanged: (val) {
-                                setState(() => _deleteUnuploadedBackups = val);
-                              },
-                            ),
-                          ],
+                      OneUiTile(
+                        title: AppStrings.deleteUnuploadedBackups,
+                        subtitle: AppStrings.deleteUnuploadedBackupsDesc,
+                        trailing: AppSwitch(
+                          value: _deleteUnuploadedBackups,
+                          onChanged: (val) {
+                            setState(() => _deleteUnuploadedBackups = val);
+                          },
                         ),
                       ),
                     ],
@@ -566,7 +502,7 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                               _isDriveExpanded
                                   ? AppIcons.expandLess
                                   : AppIcons.expandMore,
-                              color: AppColors.supplyGreen,
+                              color: AppColors.textPrimary,
                               size: AppDimensions.iconRegular,
                             ),
                             const SizedBox(width: AppDimensions.spaceM),
@@ -574,9 +510,9 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                               child: Text(
                                 AppStrings.googleDriveSection,
                                 style: TextStyle(
-                                  fontSize: AppTypography.sizeBody,
+                                  fontSize: AppTypography.sizeBody + 1,
                                   fontWeight: AppTypography.weightBold,
-                                  color: AppColors.supplyGreen,
+                                  color: AppColors.textPrimary,
                                 ),
                               ),
                             ),
@@ -586,186 +522,61 @@ class _AutoCleanSettingsViewState extends State<AutoCleanSettingsView> {
                     ),
                     if (_isDriveExpanded) ...[
                       // خيار عدم الحذف
-                      OneUiSelectionTile(
+                      _buildRetentionTile(
                         title: AppStrings.noDeletion,
+                        subtitle: '',
                         isSelected: _cloudPolicy == RetentionPolicy.none,
-                        selectionType: SelectionTileType.radio,
-                        onTap: () => setState(() => _cloudPolicy = RetentionPolicy.none),
+                        onSelect: () => setState(() => _cloudPolicy = RetentionPolicy.none),
                       ),
 
                       // خيار الاحتفاظ بعدد من الأيام
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => setState(() => _cloudPolicy = RetentionPolicy.days),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.space2XL,
-                              vertical: AppDimensions.spaceM,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        AppStrings.keepForDays,
-                                        style: TextStyle(
-                                          fontSize: AppTypography.sizeBodySecondary,
-                                          fontWeight: AppTypography.weightMedium,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: AppDimensions.spaceXS),
-                                      GestureDetector(
-                                        onTap: () => _showDaysDialog(isCloud: true),
-                                        child: Text(
-                                          '$_cloudDays ${AppStrings.keepForDaysCountUnit}',
-                                          style: const TextStyle(
-                                            fontSize: AppTypography.sizeBody,
-                                            fontWeight: AppTypography.weightSemiBold,
-                                            color: AppColors.infoText,
-                                            decoration: TextDecoration.underline,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  _cloudPolicy == RetentionPolicy.days
-                                      ? AppIcons.radioChecked
-                                      : AppIcons.radioUnchecked,
-                                  color: _cloudPolicy == RetentionPolicy.days
-                                      ? AppColors.charcoal
-                                      : AppColors.border,
-                                  size: AppDimensions.iconMedium + 2,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      _buildRetentionTile(
+                        title: AppStrings.keepForDays,
+                        subtitle: '$_cloudDays ${AppStrings.keepForDaysCountUnit}',
+                        isSelected: _cloudPolicy == RetentionPolicy.days,
+                        editBadge: '$_cloudDays ${AppStrings.keepForDaysCountUnit}',
+                        onSelect: () => setState(() => _cloudPolicy = RetentionPolicy.days),
+                        onEdit: () => _showDaysDialog(isCloud: true),
                       ),
 
                       // خيار الاحتفاظ بعدد من النسخ الأخيرة
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => setState(() => _cloudPolicy = RetentionPolicy.count),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.space2XL,
-                              vertical: AppDimensions.spaceM,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        AppStrings.keepLastCount,
-                                        style: TextStyle(
-                                          fontSize: AppTypography.sizeBodySecondary,
-                                          fontWeight: AppTypography.weightMedium,
-                                          color: AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: AppDimensions.spaceXS),
-                                      GestureDetector(
-                                        onTap: () => _showCountDialog(isCloud: true),
-                                        child: Text(
-                                          '$_cloudCount ${AppStrings.keepLastCountUnit}',
-                                          style: const TextStyle(
-                                            fontSize: AppTypography.sizeBody,
-                                            fontWeight: AppTypography.weightSemiBold,
-                                            color: AppColors.infoText,
-                                            decoration: TextDecoration.underline,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                  _cloudPolicy == RetentionPolicy.count
-                                      ? AppIcons.radioChecked
-                                      : AppIcons.radioUnchecked,
-                                  color: _cloudPolicy == RetentionPolicy.count
-                                      ? AppColors.charcoal
-                                      : AppColors.border,
-                                  size: AppDimensions.iconMedium + 2,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      _buildRetentionTile(
+                        title: AppStrings.keepLastCount,
+                        subtitle: '$_cloudCount ${AppStrings.keepLastCountUnit}',
+                        isSelected: _cloudPolicy == RetentionPolicy.count,
+                        editBadge: '$_cloudCount ${AppStrings.keepLastCountUnit}',
+                        onSelect: () => setState(() => _cloudPolicy = RetentionPolicy.count),
+                        onEdit: () => _showCountDialog(isCloud: true),
                       ),
 
-                      const Divider(
-                        height: 1,
-                        color: AppColors.borderLight,
-                      ),
+                      const OneUiDivider(),
 
                       // مفتاح حذف نهائي
-                      Padding(
-                        padding: AppDimensions.paddingTile,
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                AppStrings.permanentDelete,
-                                style: TextStyle(
-                                  fontSize: AppTypography.sizeBodySecondary,
-                                  fontWeight: AppTypography.weightSemiBold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            AppSwitch(
-                              value: _cloudPermanentDelete,
-                              onChanged: (val) {
-                                setState(() => _cloudPermanentDelete = val);
-                              },
-                            ),
-                          ],
+                      OneUiTile(
+                        title: AppStrings.permanentDelete,
+                        trailing: AppSwitch(
+                          value: _cloudPermanentDelete,
+                          onChanged: (val) {
+                            setState(() => _cloudPermanentDelete = val);
+                          },
                         ),
                       ),
                     ],
                   ],
                 ),
 
-                // 4. قسم DROPBOX (جاهز ومطابق للصورة)
-                OneUiCard(
+                // 4. قسم DROPBOX
+                const OneUiCard(
                   children: [
-                    InkWell(
-                      onTap: () => setState(() => _isDropboxExpanded = !_isDropboxExpanded),
-                      child: Padding(
-                        padding: AppDimensions.paddingTile,
-                        child: Row(
-                          children: [
-                            Icon(
-                              _isDropboxExpanded
-                                  ? AppIcons.expandLess
-                                  : AppIcons.expandMore,
-                              color: AppColors.supplyGreen,
-                              size: AppDimensions.iconRegular,
-                            ),
-                            const SizedBox(width: AppDimensions.spaceM),
-                            const Expanded(
-                              child: Text(
-                                AppStrings.dropboxSection,
-                                style: TextStyle(
-                                  fontSize: AppTypography.sizeBody,
-                                  fontWeight: AppTypography.weightBold,
-                                  color: AppColors.supplyGreen,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                    OneUiTile(
+                      leading: Icon(
+                        AppIcons.cloudQueue,
+                        color: AppColors.textSecondary,
+                        size: AppDimensions.iconMedium + 2,
                       ),
+                      title: AppStrings.dropboxSection,
+                      subtitle: AppStrings.dropboxComingSoon,
+                      valueText: AppStrings.underDevelopment,
                     ),
                   ],
                 ),

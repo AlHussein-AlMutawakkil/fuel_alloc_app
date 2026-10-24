@@ -103,7 +103,7 @@ class _ScheduledBackupSettingsViewState
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
+                    icon: const Icon(AppIcons.removeCircleOutline),
                     color: AppColors.charcoal,
                     onPressed: tempDays > 1
                         ? () => setDialogState(() => tempDays--)
@@ -131,7 +131,7 @@ class _ScheduledBackupSettingsViewState
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
+                    icon: const Icon(AppIcons.addCircleOutline),
                     color: AppColors.charcoal,
                     onPressed: tempDays < 30
                         ? () => setDialogState(() => tempDays++)

@@ -489,4 +489,25 @@ class AppStrings {
 
   static const String logout = 'تسجيل الخروج';
   static const String underDevelopment = 'تحت التطوير';
+
+  // مسار حفظ النسخ والنسخ المتكررة
+  static const String backupStorageLocationSelectTitle = 'تحديد مسار حفظ النسخ الاحتياطية';
+  static const String backupStorageInternalTitle = 'ذاكرة التخزين الداخلية';
+  static const String backupStorageInternalDesc = 'مجلد التطبيق الداخلي الآمن (يوصى به)';
+  static const String backupStorageExternalTitle = 'ذاكرة التخزين المشتركة';
+  static const String backupStorageExternalDesc = 'مجلد المستندات المشترك (دائم ولا يحذف مع التطبيق)';
+  static const String backupStorageCurrentPath = 'المسار الفعلي الحالي:';
+  static const String copyPath = 'نسخ المسار';
+  static const String pathCopied = 'تم نسخ المسار إلى الحافظة بنجاح';
+  static const String backupNoChangesToUpload = 'لا توجد أي تغييرات جديدة على قاعدة البيانات تستدعي المزامنة';
+  static const String cleanDuplicateCloudBackups = 'تنظيف النسخ السحابية المكررة';
+  static const String cleanDuplicatesDesc = 'حذف النسخ المتطابقة من Google Drive والإبقاء على النسخ الفريدة فقط';
+  static const String cleanDuplicatesConfirmTitle = 'تأكيد تنظيف النسخ السحابية';
+  static const String cleanDuplicatesConfirmMsg = 'سيتم فحص جميع النسخ في Google Drive وحذف النسخ المكررة والمتطابقة تلقائياً لتوفير المساحة وتنظيم السحابة. هل تريد المتابعة؟';
+  static const String cleanDuplicatesSuccess = 'تم تنظيف النسخ المكررة بنجاح وحذف الملفات الزائدة';
+  static const String noDuplicatesFound = 'السحابة منظمة بالفعل، لا توجد نسخ مكررة';
+  static const String cleaningDuplicates = 'جارٍ تنظيف النسخ المكررة من Google Drive...';
+  static const String dropboxComingSoon = 'مزامنة Dropbox قيد التطوير وستتوفر قريباً';
+  static const String editCount = 'تعديل العدد';
+  static const String editDays = 'تعديل الأيام';
 }

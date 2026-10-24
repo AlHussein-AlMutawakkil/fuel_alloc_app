@@ -72,7 +72,7 @@ class _BackupTypeSettingsViewState extends State<BackupTypeSettingsView> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.remove_circle_outline),
+                    icon: const Icon(AppIcons.removeCircleOutline),
                     color: AppColors.charcoal,
                     onPressed: tempDays > 1
                         ? () => setDialogState(() => tempDays--)
@@ -98,7 +98,7 @@ class _BackupTypeSettingsViewState extends State<BackupTypeSettingsView> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add_circle_outline),
+                    icon: const Icon(AppIcons.addCircleOutline),
                     color: AppColors.charcoal,
                     onPressed: tempDays < 90
                         ? () => setDialogState(() => tempDays++)

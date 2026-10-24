@@ -344,7 +344,7 @@ class DatabaseHelper {
     }
   }
 
-  /// استبدال واستعادة ملف قاعدة البيانات من مسار محدد
+  /// استبدال واستعادة ملف قاعدة البيانات من مسار محدد بأمان مع آلية التراجع عند الفشل
   Future<bool> restoreDatabaseFromFile(String sourceFilePath) async {
     final sourceFile = File(sourceFilePath);
     if (!await sourceFile.exists()) return false;
@@ -357,9 +357,35 @@ class DatabaseHelper {
     }
 
     final targetPath = await getDatabaseFilePath();
-    await closeDatabase();
-    await sourceFile.copy(targetPath);
-    await database; // إعادة فتح وتهيئة الاتصال
-    return true;
+    final targetFile = File(targetPath);
+    final rollbackPath = '$targetPath.rollback';
+    final rollbackFile = File(rollbackPath);
+
+    try {
+      if (await targetFile.exists()) {
+        await targetFile.copy(rollbackPath);
+      }
+
+      await closeDatabase();
+      await sourceFile.copy(targetPath);
+      await database; // إعادة فتح وتهيئة الاتصال للتحقق من سلامته
+
+      // تم الاستعادة بنجاح، نحذف ملف التراجع بأمان
+      if (await rollbackFile.exists()) {
+        await rollbackFile.delete();
+      }
+      return true;
+    } catch (_) {
+      // في حال حدوث أي خطأ، نسترجع النسخة السابقة الأصلية
+      if (await rollbackFile.exists()) {
+        try {
+          await closeDatabase();
+          await rollbackFile.copy(targetPath);
+          await database;
+          await rollbackFile.delete();
+        } catch (_) {}
+      }
+      return false;
+    }
   }
 }
