@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../../models/fuel_type_metrics.dart';
 import '../../models/transaction_model.dart';
 
 /// متحكم إدارة العمليات والقيود المحاسبية
@@ -31,10 +32,8 @@ class TransactionsController extends ChangeNotifier {
 
   /// الأصناف التي توجد لها عمليات مسجلة فعلياً للحساب/المحطة الحالي
   List<Map<String, dynamic>> get activeFuelTypes {
-    final activeIds = _allTransactions
-        .map((tx) => tx.fuelTypeId)
-        .whereType<int>()
-        .toSet();
+    final activeIds =
+        _allTransactions.map((tx) => tx.fuelTypeId).whereType<int>().toSet();
     if (activeIds.isEmpty) return [];
     return _fuelTypes.where((ft) => activeIds.contains(ft['id'])).toList();
   }
@@ -252,10 +251,8 @@ class TransactionsController extends ChangeNotifier {
       _allTransactions =
           await _repository.getTransactionsByAccountId(accountId);
       await loadFormData();
-      final activeIds = _allTransactions
-          .map((tx) => tx.fuelTypeId)
-          .whereType<int>()
-          .toSet();
+      final activeIds =
+          _allTransactions.map((tx) => tx.fuelTypeId).whereType<int>().toSet();
 
       if (defaultFuelTypeId != null && activeIds.contains(defaultFuelTypeId)) {
         _selectedFuelTypeId = defaultFuelTypeId;
@@ -290,10 +287,8 @@ class TransactionsController extends ChangeNotifier {
       _allTransactions =
           await _repository.getTransactionsByStationId(stationId);
       await loadFormData();
-      final activeIds = _allTransactions
-          .map((tx) => tx.fuelTypeId)
-          .whereType<int>()
-          .toSet();
+      final activeIds =
+          _allTransactions.map((tx) => tx.fuelTypeId).whereType<int>().toSet();
 
       if (defaultFuelTypeId != null && activeIds.contains(defaultFuelTypeId)) {
         _selectedFuelTypeId = defaultFuelTypeId;
@@ -343,6 +338,7 @@ class TransactionsController extends ChangeNotifier {
 
   /// إعادة تحميل العمليات النشطة حالياً (لحساب أو لمحطة)
   Future<void> reloadCurrentView() async {
+    await fetchRecentTransactions(limit: 5);
     if (_currentAccountId != null) {
       _allTransactions =
           await _repository.getTransactionsByAccountId(_currentAccountId!);
@@ -419,6 +415,132 @@ class TransactionsController extends ChangeNotifier {
   List<TransactionModel> _deletedTransactions = [];
   List<TransactionModel> get deletedTransactions => _deletedTransactions;
 
+  List<TransactionModel> _recentTransactions = [];
+  List<TransactionModel> get recentTransactions => _recentTransactions;
+
+  /// إجمالي مخزون الوقود المتاح في جميع المحطات باللتر
+  double get totalStationsStockLiters {
+    double total = 0.0;
+    for (final fuelMap in _allStationBalances.values) {
+      for (final bal in fuelMap.values) {
+        if (bal > 0) total += bal;
+      }
+    }
+    return total;
+  }
+
+  /// رصيد المحطات الإجمالي لصنف وقود معين
+  double getStationsStockForFuel(int fuelTypeId) {
+    double total = 0.0;
+    for (final fuelMap in _allStationBalances.values) {
+      final bal = fuelMap[fuelTypeId];
+      if (bal != null && bal > 0) {
+        total += bal;
+      }
+    }
+    return total;
+  }
+
+  /// جلب آخر العمليات المسجلة في النظام
+  Future<void> fetchRecentTransactions({int limit = 5}) async {
+    try {
+      _recentTransactions =
+      await _repository.getRecentTransactions(
+        limit: limit,
+        year: _dashboardYear,
+        month: _dashboardMonth,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching recent transactions: $e');
+    }
+  }
+
+  /// تحميل كافة بيانات لوحة التحكم الرئيسية
+  List<FuelTypeMetrics> _fuelTypeMetrics = [];
+  List<FuelTypeMetrics> get fuelTypeMetrics => _fuelTypeMetrics;
+
+  int? _dashboardFuelTypeId;
+  int? get dashboardFuelTypeId => _dashboardFuelTypeId;
+
+  int? _dashboardYear = DateTime.now().year;
+  int? get dashboardYear => _dashboardYear;
+
+  int? _dashboardMonth = DateTime.now().month;
+  int? get dashboardMonth => _dashboardMonth;
+
+  List<int> _availableYears = [DateTime.now().year];
+  List<int> get availableYears => _availableYears;
+
+  void setDashboardFuelTypeId(int fuelTypeId) {
+    if (_dashboardFuelTypeId != fuelTypeId) {
+      _dashboardFuelTypeId = fuelTypeId;
+      notifyListeners();
+    }
+  }
+
+  /// تحديد فترة الفلترة الزمنية للوحة التحكم (السنة والشهر)
+  Future<void> setDashboardPeriod({int? year, int? month}) async {
+    _dashboardYear = year;
+    _dashboardMonth = month;
+    notifyListeners();
+    await Future.wait([
+      fetchFuelTypeMetrics(),
+      fetchRecentTransactions(limit: 5),
+    ]);
+  }
+
+  /// إحصائيات الصنف المختار حالياً في لوحة التحكم (منع خلط الأصناف)
+  FuelTypeMetrics? get currentDashboardFuelMetrics {
+    if (_fuelTypeMetrics.isEmpty) return null;
+    if (_dashboardFuelTypeId != null) {
+      final match = _fuelTypeMetrics
+          .where((m) => m.fuelTypeId == _dashboardFuelTypeId)
+          .firstOrNull;
+      if (match != null) return match;
+    }
+    return _fuelTypeMetrics.first;
+  }
+
+  /// جلب رصيد محطة معينة لصنف وقود محدد
+  double getStationFuelBalance(int stationId, int fuelTypeId) {
+    return _allStationBalances[stationId]?[fuelTypeId] ?? 0.0;
+  }
+
+  /// جلب حركة وإحصائيات الوقود منفصلة لكل صنف
+  Future<void> fetchFuelTypeMetrics() async {
+    try {
+      _fuelTypeMetrics = await _repository.getFuelMetricsByFuelType(
+        year: _dashboardYear,
+        month: _dashboardMonth,
+      );
+      if ((_dashboardFuelTypeId == null ||
+              !_fuelTypeMetrics
+                  .any((m) => m.fuelTypeId == _dashboardFuelTypeId)) &&
+          _fuelTypeMetrics.isNotEmpty) {
+        _dashboardFuelTypeId = _fuelTypeMetrics.first.fuelTypeId;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error fetching fuel type metrics: $e');
+    }
+  }
+
+  Future<void> fetchDashboardData() async {
+    try {
+      final years = await _repository.getTransactionYears();
+      final currentYear = DateTime.now().year;
+      _availableYears = <int>{...years, currentYear}.toList()
+        ..sort((a, b) => b.compareTo(a));
+    } catch (_) {}
+    await Future.wait([
+      fetchAllBalancesSummary(),
+      fetchFuelTypeMetrics(),
+      fetchRecentTransactions(limit: 5),
+      loadFormData(),
+    ]);
+  }
+
   Map<int, Map<int, double>> _allAccountBalances = {};
   Map<int, Map<int, double>> _allStationBalances = {};
   Map<int, Map<int, double>> get allAccountBalances => _allAccountBalances;
@@ -429,6 +551,15 @@ class TransactionsController extends ChangeNotifier {
     try {
       _allAccountBalances = await _repository.getAllAccountFuelBalances();
       _allStationBalances = await _repository.getAllStationFuelBalances();
+      _recentTransactions = await _repository.getRecentTransactions(
+        limit: 5,
+        year: _dashboardYear,
+        month: _dashboardMonth,
+      );
+      _fuelTypeMetrics = await _repository.getFuelMetricsByFuelType(
+        year: _dashboardYear,
+        month: _dashboardMonth,
+      );
       notifyListeners();
     } catch (e) {
       debugPrint('Error fetching all balances summary: $e');

@@ -187,7 +187,8 @@ class AppStrings {
   static const String recipientLabel = 'المستلم:';
   static const String recipientNameLabel = 'اسم المستلم';
   static const String sameAsAccountName = 'المستلم بنفس اسم الحساب';
-  static const String enterRecipientNameHint = 'اكتب اسم المستلم أو اختر من القائمة...';
+  static const String enterRecipientNameHint =
+      'اكتب اسم المستلم أو اختر من القائمة...';
   static const String recipientPrefix = 'المستلم: ';
 
   // الأصناف والوحدات
@@ -240,6 +241,94 @@ class AppStrings {
 
   // الشاشات الثابتة ولوحة التحكم
   static const String dashboard = 'الرئيسية';
+  static const String welcomeGreeting = 'مرحباً بك';
+  static const String welcomeToApp = 'نظام مخصصات ومحاسبة الوقود';
+  static const String systemStatusHealthy = 'قاعدة البيانات والنظام سليم 100%';
+  static const String systemStatusAttention = 'تنبيه في مطابقة البيانات';
+  static const String stationsFuelBalance = 'رصيد الوقود بالمحطات';
+  static const String supplierSupplyTitle = 'ميزان توريد الموردين';
+  static const String supplierSupplyVsActual = 'اعتماد التوريد والتوريد الفعلي';
+  static const String supplierSupplyRatioTitle = 'نسبة التوريد الفعلي';
+  static const String stationBalanceAndFlow = 'مخزون وحركة المحطات';
+  static const String stationInflowVsOutflow = 'الوارد الفعلي والمنصرف الفعلي';
+  static const String stationDispenseRatioTitle = 'نسبة المنصرف من الوارد';
+  static const String beneficiaryQuotaSummary = 'ميزان صرف المستفيدين';
+  static const String selectFuelTypePrompt = 'صنف الوقود:';
+  static const String noStationsForFuelType =
+      'لا توجد محطات لديها رصيد لهذا الصنف حالياً';
+  static const String activeStationsForFuel = 'محطة بها رصيد';
+  static const String quotaVsActualSummary = 'ميزان الاعتمادات والمنفذ';
+  static const String quotaBalanceTitle = 'ميزان الاعتمادات';
+
+  // الفلترة بالسنوات والشهور
+  static const String filterYear = 'السنة';
+  static const String filterMonth = 'الشهر';
+  static const String allYears = 'كل السنوات';
+  static const String allMonths = 'كل الشهور';
+  static const String selectYear = 'اختر السنة';
+  static const String selectMonth = 'اختر الشهر';
+  static const String resetFilter = 'إلغاء الفلترة';
+  static const String monthJan = 'يناير (01)';
+  static const String monthFeb = 'فبراير (02)';
+  static const String monthMar = 'مارس (03)';
+  static const String monthApr = 'أبريل (04)';
+  static const String monthMay = 'مايو (05)';
+  static const String monthJun = 'يونيو (06)';
+  static const String monthJul = 'يوليو (07)';
+  static const String monthAug = 'أغسطس (08)';
+  static const String monthSep = 'سبتمبر (09)';
+  static const String monthOct = 'أكتوبر (10)';
+  static const String monthNov = 'نوفمبر (11)';
+  static const String monthDec = 'ديسمبر (12)';
+
+  static String getMonthLabel(int month) {
+    switch (month) {
+      case 1:
+        return monthJan;
+      case 2:
+        return monthFeb;
+      case 3:
+        return monthMar;
+      case 4:
+        return monthApr;
+      case 5:
+        return monthMay;
+      case 6:
+        return monthJun;
+      case 7:
+        return monthJul;
+      case 8:
+        return monthAug;
+      case 9:
+        return monthSep;
+      case 10:
+        return monthOct;
+      case 11:
+        return monthNov;
+      case 12:
+        return monthDec;
+      default:
+        return '$month';
+    }
+  }
+
+  static const String quickActions = 'إجراءات سريعة';
+  static const String quickDispenseActual = 'صرف وقود';
+  static const String quickSupplyActual = 'توريد لمحطة';
+  static const String quickTransfer = 'تحويل كمية';
+  static const String stationsStockStatus = 'رصيد المحطات الحي';
+  static const String recentTransactions = 'آخر العمليات المسجلة';
+  static const String viewAllTransactionsAndAccounts =
+      'عرض كافة الحسابات والعمليات';
+  static const String noRecentTransactionsYet = 'لا توجد عمليات مسجلة حديثاً';
+  static const String noStationsWithBalance =
+      'لا توجد محطات لديها رصيد متاح حالياً';
+  static const String stockAdequate = 'كافٍ';
+  static const String stockLow = 'منخفض';
+  static const String totalAvailableStock = 'إجمالي المخزون';
+  static const String executionPercentage = 'نسبة التنفيذ';
+  static const String remainingQuotaBalance = 'المتبقي من الاعتماد';
+  static const String registeredStations = 'محطات معتمدة';
   static const String homeUnderDevelopmentMsg =
       'سيتم تفعيل لوحة المؤشرات والأرصدة في الخطوة التالية';
   static const String reportsAndReconciliation = 'التقارير والمطابقات';
@@ -256,15 +345,19 @@ class AppStrings {
   static const String account = 'الحساب';
   static const String backup = 'النسخ الاحتياطي';
   static const String backupTitle = 'النسخ الاحتياطي';
-  static const String backupSubtitle = 'إنشاء واستعادة النسخ الاحتياطية لقاعدة البيانات';
+  static const String backupSubtitle =
+      'إنشاء واستعادة النسخ الاحتياطية لقاعدة البيانات';
   static const String createLocalBackup = 'إنشاء نسخة احتياطية محلية';
-  static const String createLocalBackupDesc = 'تصدير نسخة كاملة من البيانات إلى التخزين الداخلي';
+  static const String createLocalBackupDesc =
+      'تصدير نسخة كاملة من البيانات إلى التخزين الداخلي';
   static const String restoreLocalBackup = 'استعادة نسخة احتياطية';
-  static const String restoreLocalBackupDesc = 'استرجاع البيانات من نسخة سابقة محفوظة';
+  static const String restoreLocalBackupDesc =
+      'استرجاع البيانات من نسخة سابقة محفوظة';
   static const String cloudBackup = 'النسخ الاحتياطي السحابي';
   static const String cloudBackupDesc = 'المزامنة السحابية مع Google Drive';
   static const String autoBackup = 'النسخ الاحتياطي التلقائي';
-  static const String autoBackupDesc = 'أخذ نسخة احتياطية دورياً لحماية بياناتك';
+  static const String autoBackupDesc =
+      'أخذ نسخة احتياطية دورياً لحماية بياناتك';
   static const String backupSuccessMsg = 'تم إنشاء النسخة الاحتياطية بنجاح';
   static const String restoreSuccessMsg = 'تمت استعادة البيانات بنجاح';
   static const String googleDriveConnected = 'متصل بـ Google Drive';
@@ -276,20 +369,26 @@ class AppStrings {
   static const String noSyncYet = 'لم تتم المزامنة السحابية بعد';
   static const String syncNow = 'مزامنة الآن';
   static const String syncing = 'جاري المزامنة...';
-  static const String cloudSyncSuccess = 'تمت المزامنة والرفع إلى Google Drive بنجاح';
-  static const String cloudRestoreSuccess = 'تمت استعادة البيانات من النسخة السحابية بنجاح';
+  static const String cloudSyncSuccess =
+      'تمت المزامنة والرفع إلى Google Drive بنجاح';
+  static const String cloudRestoreSuccess =
+      'تمت استعادة البيانات من النسخة السحابية بنجاح';
   static const String cloudSyncError = 'حدث خطأ أثناء الاتصال بـ Google Drive';
   static const String confirmDisconnectGoogleTitle = 'فصل حساب Google';
-  static const String confirmDisconnectGoogleMsg = 'هل تريد حقاً تسجيل الخروج وفصل الربط مع Google Drive؟';
+  static const String confirmDisconnectGoogleMsg =
+      'هل تريد حقاً تسجيل الخروج وفصل الربط مع Google Drive؟';
   static const String googleAccount = 'حساب Google';
-  static const String restoreFailed = 'فشلت استعادة البيانات أو أن ملف النسخة غير صالح';
+  static const String restoreFailed =
+      'فشلت استعادة البيانات أو أن ملف النسخة غير صالح';
   static const String restoreLatestBackup = 'استعادة الأحدث';
   static const String viewAllBackups = 'استعراض الكل';
-  static const String restoreConfirmPrompt = 'هل تريد استعادة أحدث نسخة احتياطية محلية أم استعراض جميع النسخ؟';
+  static const String restoreConfirmPrompt =
+      'هل تريد استعادة أحدث نسخة احتياطية محلية أم استعراض جميع النسخ؟';
 
   // نوع النسخة الاحتياطية
   static const String backupType = 'نوع النسخة الاحتياطية';
-  static const String backupTypeSubtitle = 'حدد آلية حفظ وأرشفة بيانات العمليات والحسابات';
+  static const String backupTypeSubtitle =
+      'حدد آلية حفظ وأرشفة بيانات العمليات والحسابات';
   static const String backupFullTitle = 'النسخ الاحتياطية الكاملة';
   static const String backupFullDesc =
       'أنشئ دائماً نسخاً احتياطية جديدة بجميع بيانات وسجلات العمليات والحسابات المتاحة.';
@@ -325,16 +424,20 @@ class AppStrings {
   // عرض النسخ الاحتياطية
   static const String backupsListTitle = 'النسخ الاحتياطية';
   static const String viewBackups = 'عرض النسخ الاحتياطية';
-  static const String viewBackupsDesc = 'استعراض وإدارة ملفات النسخ السابقة محلياً وسحابياً';
+  static const String viewBackupsDesc =
+      'استعراض وإدارة ملفات النسخ السابقة محلياً وسحابياً';
   static const String tabLocal = 'محلي';
   static const String tabCloud = 'سحابي';
   static const String noLocalBackups = 'لا توجد نسخ احتياطية محلية';
   static const String noCloudBackups = 'لا توجد نسخ احتياطية سحابية';
-  static const String localBackupEmptyDesc = 'يمكنك إنشاء نسخة جديدة لحفظ بياناتك في أي وقت.';
-  static const String cloudBackupEmptyDesc = 'قم بربط حساب سحابي للمزامنة والوصول للنسخ السحابية.';
+  static const String localBackupEmptyDesc =
+      'يمكنك إنشاء نسخة جديدة لحفظ بياناتك في أي وقت.';
+  static const String cloudBackupEmptyDesc =
+      'قم بربط حساب سحابي للمزامنة والوصول للنسخ السحابية.';
   static const String backupDate = 'التاريخ';
   static const String backupSize = 'الحجم';
-  static const String backupTypeIntro = 'كيف ترغب في إدارة وحفظ النسخ الاحتياطية لقاعدة البيانات والعمليات؟';
+  static const String backupTypeIntro =
+      'كيف ترغب في إدارة وحفظ النسخ الاحتياطية لقاعدة البيانات والعمليات؟';
   static const String share = 'مشاركة';
   static const String repeatDaysPrefix = 'كرّر كل ';
   static const String days = 'أيام';
@@ -351,7 +454,8 @@ class AppStrings {
   static const String backupShareSuccess = 'تمت مشاركة النسخة الاحتياطية بنجاح';
   static const String backupDeleteSuccess = 'تم حذف النسخة الاحتياطية بنجاح';
   static const String confirmDeleteBackupTitle = 'تأكيد حذف النسخة';
-  static const String confirmDeleteBackupMsg = 'هل تريد حذف ملف النسخة الاحتياطية هذا نهائياً؟';
+  static const String confirmDeleteBackupMsg =
+      'هل تريد حذف ملف النسخة الاحتياطية هذا نهائياً؟';
   static const String settingsSavedSuccess = 'تم حفظ الإعدادات بنجاح';
   static const String amSuffix = 'ص';
   static const String pmSuffix = 'م';
@@ -361,9 +465,11 @@ class AppStrings {
 
   // التنظيف التلقائي (Auto Clean)
   static const String autoCleanTitle = 'التنظيف التلقائي';
-  static const String autoCleanSubtitle = 'اختر كيفية حذف النسخ الاحتياطية القديمة تلقائياً لكل موقع.';
+  static const String autoCleanSubtitle =
+      'اختر كيفية حذف النسخ الاحتياطية القديمة تلقائياً لكل موقع.';
   static const String incrementalBackupsHeader = 'النسخ الاحتياطية التزايدية';
-  static const String deleteBeforeLastFull = 'حذف النسخ الاحتياطية قبل آخر نسخة احتياطية كاملة';
+  static const String deleteBeforeLastFull =
+      'حذف النسخ الاحتياطية قبل آخر نسخة احتياطية كاملة';
   static const String deleteBeforeLastFullDesc =
       'أنت تستخدم النسخ الاحتياطية التزايدية، لذا لا ينطبق عليها أي من إعدادات التنظيف أدناه. تحتفظ كل نسخة احتياطية تزايدية بالسجلات المضافة منذ النسخة السابقة فقط، وحذف النسخ الأقدم حسب العمر أو العدد قد يؤدي إلى تعذر الاستعادة. لتنظيف النسخ الاحتياطية المحلية، استخدم الخيار أعلاه لحذف النسخ الاحتياطية التي أنشئت قبل آخر نسخة احتياطية كاملة.';
   static const String localBackupSection = 'نسخة احتياطية محلية';
@@ -372,12 +478,15 @@ class AppStrings {
   static const String noDeletion = 'عدم الحذف';
   static const String keepForDays = 'الاحتفاظ بالنسخ الاحتياطية لعدد من الأيام';
   static const String keepForDaysCountUnit = 'أيام';
-  static const String keepLastCount = 'الاحتفاظ بعدد من النسخ الاحتياطية الأخيرة';
+  static const String keepLastCount =
+      'الاحتفاظ بعدد من النسخ الاحتياطية الأخيرة';
   static const String keepLastCountUnit = 'نسخ احتياطية';
-  static const String keepLatestLocalCopy = 'الاحتفاظ بنسخة محلية من أحدث نسخة احتياطية';
+  static const String keepLatestLocalCopy =
+      'الاحتفاظ بنسخة محلية من أحدث نسخة احتياطية';
   static const String keepLatestLocalCopyDesc =
       'الاحتفاظ بنسخة محلية من أحدث نسخة احتياطية سحابية للاستعادة السريعة';
-  static const String deleteUnuploadedBackups = 'حذف النسخ الاحتياطية التي لم تُرْفَع بعد';
+  static const String deleteUnuploadedBackups =
+      'حذف النسخ الاحتياطية التي لم تُرْفَع بعد';
   static const String deleteUnuploadedBackupsDesc =
       'احذف أيضاً النسخ الاحتياطية المحلية التي لا تزال بانتظار الرفع إلى السحابة.';
   static const String googleDriveSection = 'GOOGLE DRIVE';
@@ -386,7 +495,8 @@ class AppStrings {
   // الضغط والتشفير (Compression & Encryption)
   static const String compressionEncryptionTitle = 'الضغط والتشفير';
   static const String compressBackups = 'ضغط النسخ الاحتياطية';
-  static const String compressBackupsDesc = 'اضغط النسخ الاحتياطية باستخدام ضغط ZIP.';
+  static const String compressBackupsDesc =
+      'اضغط النسخ الاحتياطية باستخدام ضغط ZIP.';
   static const String encryptBackups = 'تشفير النسخ الاحتياطية';
   static const String encryptBackupsDesc =
       'شفّر الملف داخل ملف ZIP باستخدام تشفير AES-256.';
@@ -395,26 +505,34 @@ class AppStrings {
   static const String enterPassword = 'ادخال كلمة المرور:';
   static const String confirmPassword = 'تأكيد كلمة المرور:';
   static const String passwordMismatch = 'كلمتا المرور غير متطابقتين';
-  static const String passwordRequired = 'يرجى إدخال كلمة المرور لتفعيل التشفير';
-  static const String enterPasswordToRestore = 'أدخل كلمة مرور فك التشفير للاستعادة';
+  static const String passwordRequired =
+      'يرجى إدخال كلمة المرور لتفعيل التشفير';
+  static const String enterPasswordToRestore =
+      'أدخل كلمة مرور فك التشفير للاستعادة';
   static const String invalidPassword = 'كلمة المرور غير صحيحة';
 
   // مسار الحفظ والواي فاي
   static const String wifiOnlyTitle = 'الرفع عبر Wi-Fi فقط';
-  static const String wifiOnlyDesc = 'تجنب استهلاك بيانات باقة الهاتف عند المزامنة السحابية';
-  static const String wifiRequiredMsg = 'تم تأجيل المزامنة؛ مفعل خيار Wi-Fi فقط والاتصال الحالي عبر بيانات الهاتف';
+  static const String wifiOnlyDesc =
+      'تجنب استهلاك بيانات باقة الهاتف عند المزامنة السحابية';
+  static const String wifiRequiredMsg =
+      'تم تأجيل المزامنة؛ مفعل خيار Wi-Fi فقط والاتصال الحالي عبر بيانات الهاتف';
   static const String backupStorageLocation = 'مسار حفظ النسخ الاحتياطية';
-  static const String backupStorageLocationDesc = 'حدد مكان تخزين النسخ محلياً لضمان عدم فقدانها عند إزالة التطبيق';
+  static const String backupStorageLocationDesc =
+      'حدد مكان تخزين النسخ محلياً لضمان عدم فقدانها عند إزالة التطبيق';
   static const String backupStorageInternal = 'مجلد التطبيق الداخلي';
-  static const String backupStorageExternal = 'مجلد المستندات المشترك (دائم حتى بعد حذف التطبيق)';
-  static const String storagePermissionDenied = 'تم رفض إذن التخزين؛ سيتم الحفظ في المجلد الداخلي';
+  static const String backupStorageExternal =
+      'مجلد المستندات المشترك (دائم حتى بعد حذف التطبيق)';
+  static const String storagePermissionDenied =
+      'تم رفض إذن التخزين؛ سيتم الحفظ في المجلد الداخلي';
 
   static const String unregisteredUser = 'غير مسجل';
   static const String loginOrLinkAccount = 'تسجيل الدخول / ربط بحساب';
   static const String unlinkedAccount = 'غير مسجل';
   static const String linkAccount = 'ربط الحساب';
   static const String accountLinkDialogTitle = 'تسجيل الدخول / ربط الحساب';
-  static const String accountLinkDialogMsg = 'يمكنك تسجيل الدخول لربط بياناتك وحفظها سحابياً.';
+  static const String accountLinkDialogMsg =
+      'يمكنك تسجيل الدخول لربط بياناتك وحفظها سحابياً.';
   static const String alreadyLoggedOutMsg = 'أنت بالفعل غير مسجل الدخول';
   static const String theme = 'المظهر';
   static const String themeSystem = 'النظام';
@@ -426,7 +544,8 @@ class AppStrings {
   static const String hapticFeedback = 'ردود فعل لمسية';
   // سلة المحذوفات والأرشيف
   static const String recycleBinTitle = 'سلة المحذوفات';
-  static const String recycleBinSubtitle = 'استعادة أو حذف العمليات والحسابات نهائياً';
+  static const String recycleBinSubtitle =
+      'استعادة أو حذف العمليات والحسابات نهائياً';
   static const String archiveTitle = 'الأرشيف';
   static const String archiveSubtitle = 'عرض الحسابات المؤرشفة واستعادتها';
   static const String tabOperations = 'العمليات';
@@ -442,18 +561,24 @@ class AppStrings {
   static const String confirmPermanentDeleteMsg =
       'هل أنت متأكد من الحذف النهائي؟ لا يمكن التراجع عن هذا الإجراء أبداً.';
   static const String confirmRestoreTitle = 'تأكيد الاستعادة';
-  static const String confirmRestoreMsg = 'هل تريد استعادة هذا العنصر من سلة المحذوفات؟';
+  static const String confirmRestoreMsg =
+      'هل تريد استعادة هذا العنصر من سلة المحذوفات؟';
   static const String confirmUnarchiveTitle = 'تأكيد إلغاء الأرشفة';
-  static const String confirmUnarchiveMsg = 'هل تريد إعادة تنشيط هذا الحساب وإخراجه من الأرشيف؟';
-  static const String confirmArchiveAccountMsg = 'هل تريد نقل هذا الحساب إلى الأرشيف؟';
+  static const String confirmUnarchiveMsg =
+      'هل تريد إعادة تنشيط هذا الحساب وإخراجه من الأرشيف؟';
+  static const String confirmArchiveAccountMsg =
+      'هل تريد نقل هذا الحساب إلى الأرشيف؟';
   static const String itemRestoredSuccess = 'تمت استعادة العنصر بنجاح';
   static const String itemDeletedPermanentSuccess = 'تم الحذف النهائي بنجاح';
   static const String accountArchivedSuccess = 'تمت أرشفة الحساب بنجاح';
-  static const String accountUnarchivedSuccess = 'تمت استعادة الحساب من الأرشيف بنجاح';
+  static const String accountUnarchivedSuccess =
+      'تمت استعادة الحساب من الأرشيف بنجاح';
   static const String stationArchivedSuccess = 'تمت أرشفة المحطة بنجاح';
-  static const String stationUnarchivedSuccess = 'تمت استعادة المحطة من الأرشيف بنجاح';
+  static const String stationUnarchivedSuccess =
+      'تمت استعادة المحطة من الأرشيف بنجاح';
   static const String confirmUnarchiveStationTitle = 'تأكيد إلغاء أرشفة المحطة';
-  static const String confirmUnarchiveStationMsg = 'هل تريد إعادة تنشيط هذه المحطة وإخراجها من الأرشيف؟';
+  static const String confirmUnarchiveStationMsg =
+      'هل تريد إعادة تنشيط هذه المحطة وإخراجها من الأرشيف؟';
   static const String noArchivedStations = 'لا توجد محطات مؤرشفة';
   static const String archivedStationsTab = 'المحطات';
   static const String archivedAccountsTab = 'الحسابات';
@@ -462,7 +587,8 @@ class AppStrings {
   static const String viewAccountStatement = 'كشف الحساب';
   static const String viewDetails = 'عرض التفاصيل';
   static const String recycleBinSetting = 'سلة المحذوفات';
-  static const String recycleBinSettingDesc = 'الاحتفاظ بالعناصر المحذوفة في السلة بدلاً من الحذف المباشر';
+  static const String recycleBinSettingDesc =
+      'الاحتفاظ بالعناصر المحذوفة في السلة بدلاً من الحذف المباشر';
   static const String enableRecycleBin = 'تفعيل سلة المحذوفات';
 
   // جهات الاتصال والأذونات
@@ -474,13 +600,16 @@ class AppStrings {
   static const String contactsPermissionDesc =
       'الوصول لجهات الاتصال لاختيار وتعبئة أرقام الهواتف والأسماء تلقائياً';
   static const String pickFromContacts = 'اختيار من جهات الاتصال';
-  static const String contactsPermissionDenied = 'تم رفض الإذن بالوصول لجهات الاتصال';
+  static const String contactsPermissionDenied =
+      'تم رفض الإذن بالوصول لجهات الاتصال';
   static const String cameraPermissionDenied = 'تم رفض الإذن بالوصول للكاميرا';
-  static const String photosPermissionDenied = 'تم رفض الإذن بالوصول للصور والاستوديو';
+  static const String photosPermissionDenied =
+      'تم رفض الإذن بالوصول للصور والاستوديو';
   static const String contactsEmpty = 'لم يتم العثور على جهات اتصال في الهاتف';
   static const String searchContactsHint = 'بحث بالاسم أو رقم الهاتف...';
   static const String selectContact = 'اختر جهة اتصال';
-  static const String contactHasNoPhone = 'جهة الاتصال المحددة لا تحتوي على رقم هاتف';
+  static const String contactHasNoPhone =
+      'جهة الاتصال المحددة لا تحتوي على رقم هاتف';
 
   // حول التطبيق
   static const String aboutApp = 'حول التطبيق';
@@ -495,73 +624,101 @@ class AppStrings {
   static const String underDevelopment = 'تحت التطوير';
 
   // مسار حفظ النسخ والنسخ المتكررة
-  static const String backupStorageLocationSelectTitle = 'تحديد مسار حفظ النسخ الاحتياطية';
+  static const String backupStorageLocationSelectTitle =
+      'تحديد مسار حفظ النسخ الاحتياطية';
   static const String backupStorageInternalTitle = 'ذاكرة التخزين الداخلية';
-  static const String backupStorageInternalDesc = 'مجلد التطبيق الداخلي الآمن (يوصى به)';
+  static const String backupStorageInternalDesc =
+      'مجلد التطبيق الداخلي الآمن (يوصى به)';
   static const String backupStorageExternalTitle = 'ذاكرة التخزين المشتركة';
-  static const String backupStorageExternalDesc = 'مجلد المستندات المشترك (دائم ولا يحذف مع التطبيق)';
+  static const String backupStorageExternalDesc =
+      'مجلد المستندات المشترك (دائم ولا يحذف مع التطبيق)';
   static const String backupStorageCurrentPath = 'المسار الفعلي الحالي:';
   static const String copyPath = 'نسخ المسار';
   static const String pathCopied = 'تم نسخ المسار إلى الحافظة بنجاح';
-  static const String backupNoChangesToUpload = 'لا توجد أي تغييرات جديدة على قاعدة البيانات تستدعي المزامنة';
-  static const String cleanDuplicateCloudBackups = 'تنظيف النسخ السحابية المكررة';
-  static const String cleanDuplicatesDesc = 'حذف النسخ المتطابقة من Google Drive والإبقاء على النسخ الفريدة فقط';
-  static const String cleanDuplicatesConfirmTitle = 'تأكيد تنظيف النسخ السحابية';
-  static const String cleanDuplicatesConfirmMsg = 'سيتم فحص جميع النسخ في Google Drive وحذف النسخ المكررة والمتطابقة تلقائياً لتوفير المساحة وتنظيم السحابة. هل تريد المتابعة؟';
-  static const String cleanDuplicatesSuccess = 'تم تنظيف النسخ المكررة بنجاح وحذف الملفات الزائدة';
-  static const String noDuplicatesFound = 'السحابة منظمة بالفعل، لا توجد نسخ مكررة';
-  static const String cleaningDuplicates = 'جارٍ تنظيف النسخ المكررة من Google Drive...';
-  static const String dropboxComingSoon = 'مزامنة Dropbox قيد التطوير وستتوفر قريباً';
+  static const String backupNoChangesToUpload =
+      'لا توجد أي تغييرات جديدة على قاعدة البيانات تستدعي المزامنة';
+  static const String cleanDuplicateCloudBackups =
+      'تنظيف النسخ السحابية المكررة';
+  static const String cleanDuplicatesDesc =
+      'حذف النسخ المتطابقة من Google Drive والإبقاء على النسخ الفريدة فقط';
+  static const String cleanDuplicatesConfirmTitle =
+      'تأكيد تنظيف النسخ السحابية';
+  static const String cleanDuplicatesConfirmMsg =
+      'سيتم فحص جميع النسخ في Google Drive وحذف النسخ المكررة والمتطابقة تلقائياً لتوفير المساحة وتنظيم السحابة. هل تريد المتابعة؟';
+  static const String cleanDuplicatesSuccess =
+      'تم تنظيف النسخ المكررة بنجاح وحذف الملفات الزائدة';
+  static const String noDuplicatesFound =
+      'السحابة منظمة بالفعل، لا توجد نسخ مكررة';
+  static const String cleaningDuplicates =
+      'جارٍ تنظيف النسخ المكررة من Google Drive...';
+  static const String dropboxComingSoon =
+      'مزامنة Dropbox قيد التطوير وستتوفر قريباً';
   static const String editCount = 'تعديل العدد';
   static const String editDays = 'تعديل الأيام';
 
   // --- نظام الرسائل النصية والقوالب ---
   static const String messageSettingsTitle = 'الرسائل النصية والقوالب';
-  static const String messageSettingsDesc = 'إدارة قوالب الرسائل وإشعارات العمليات للمحطات والمستفيدين';
+  static const String messageSettingsDesc =
+      'إدارة قوالب الرسائل وإشعارات العمليات للمحطات والمستفيدين';
   static const String enableMessagingTitle = 'تفعيل نظام الرسائل';
-  static const String enableMessagingDesc = 'تجهيز وإرسال الإشعارات للمستفيدين والمحطات عند تسجيل العمليات';
+  static const String enableMessagingDesc =
+      'تجهيز وإرسال الإشعارات للمستفيدين والمحطات عند تسجيل العمليات';
   static const String preferredChannelTitle = 'طريقة الإرسال الافتراضية';
   static const String channelSms = 'رسائل نصية (SMS)';
   static const String channelWhatsApp = 'واتساب (WhatsApp)';
   static const String autoPreviewTitle = 'معاينة الرسائل بعد كل عملية';
-  static const String autoPreviewDesc = 'إظهار نافذة مراجعة وتعديل نص الرسالة فور حفظ أي عملية';
+  static const String autoPreviewDesc =
+      'إظهار نافذة مراجعة وتعديل نص الرسالة فور حفظ أي عملية';
   static const String defaultNotifyStationTitle = 'إشعار المحطة افتراضياً';
-  static const String defaultNotifyStationDesc = 'تحديد خيار إرسال أمر الصرف للمحطة تلقائياً في نافذة الإرسال';
+  static const String defaultNotifyStationDesc =
+      'تحديد خيار إرسال أمر الصرف للمحطة تلقائياً في نافذة الإرسال';
   static const String defaultNotifyAccountTitle = 'إشعار المستفيد افتراضياً';
-  static const String defaultNotifyAccountDesc = 'تحديد خيار إرسال الإشعار للعميل أو المستفيد تلقائياً في نافذة الإرسال';
+  static const String defaultNotifyAccountDesc =
+      'تحديد خيار إرسال الإشعار للعميل أو المستفيد تلقائياً في نافذة الإرسال';
   static const String messageTemplatesSection = 'قوالب الرسائل الديناميكية';
-  static const String messageTemplatesSectionDesc = 'انقر على أي قالب لتعديل صياغته وإضافة المتغيرات الذكية';
+  static const String messageTemplatesSectionDesc =
+      'انقر على أي قالب لتعديل صياغته وإضافة المتغيرات الذكية';
   static const String editTemplateTitle = 'تعديل قالب الرسالة';
   static const String templateContentLabel = 'نص القالب';
-  static const String availableVariables = 'المتغيرات الذكية (انقر للإدراج في النص)';
+  static const String availableVariables =
+      'المتغيرات الذكية (انقر للإدراج في النص)';
   static const String resetTemplates = 'استعادة القوالب الافتراضية';
-  static const String resetTemplatesConfirm = 'هل أنت متأكد من استعادة كافة القوالب إلى نصوصها الافتراضية الأصلية؟';
+  static const String resetTemplatesConfirm =
+      'هل أنت متأكد من استعادة كافة القوالب إلى نصوصها الافتراضية الأصلية؟';
   static const String templateUpdatedSuccess = 'تم تحديث القالب بنجاح';
-  static const String templatesResetSuccess = 'تم استعادة القوالب الافتراضية بنجاح';
+  static const String templatesResetSuccess =
+      'تم استعادة القوالب الافتراضية بنجاح';
   static const String sendSmsButton = 'إرسال SMS';
   static const String sendWhatsAppButton = 'إرسال WhatsApp';
   static const String operationMessagesTitle = 'إرسال إشعار العملية';
   static const String beneficiaryNotice = 'إشعار المستفيد / العميل';
   static const String stationOrder = 'أمر صرف المحطة';
   static const String noPhoneAvailable = 'لا يوجد رقم هاتف مسجل';
-  static const String customAccountTemplate = 'قالب رسائل مخصص لهذا الحساب (اختياري)';
-  static const String customAccountTemplateHint = 'اتركه فارغاً للاعتماد على القالب العام';
-  static const String enableAccountMessaging = 'تفعيل إرسال الرسائل لهذا الحساب';
+  static const String customAccountTemplate =
+      'قالب رسائل مخصص لهذا الحساب (اختياري)';
+  static const String customAccountTemplateHint =
+      'اتركه فارغاً للاعتماد على القالب العام';
+  static const String enableAccountMessaging =
+      'تفعيل إرسال الرسائل لهذا الحساب';
   static const String notificationPhoneLabel = 'رقم هاتف الإشعارات (اختياري)';
   static const String copyMessageText = 'نسخ نص الرسالة';
   static const String messageTextCopied = 'تم نسخ نص الرسالة إلى الحافظة';
-  static const String sendFailed = 'تعذر إطلاق تطبيق الإرسال، يرجى التأكد من توفر التطبيق والرقم';
+  static const String sendFailed =
+      'تعذر إطلاق تطبيق الإرسال، يرجى التأكد من توفر التطبيق والرقم';
   static const String stationDispenseOrderTemplateTitle = 'أمر صرف وقود للمحطة';
-  static const String beneficiaryDispenseNoticeTemplateTitle = 'إشعار صرف وقود للمستفيد';
+  static const String beneficiaryDispenseNoticeTemplateTitle =
+      'إشعار صرف وقود للمستفيد';
   static const String supplierSupplyNoticeTemplateTitle = 'إشعار توريد وقود';
   static const String transferNoticeTemplateTitle = 'إشعار تحويل وقود';
   static const String closeDialog = 'تم / إنهاء';
   static const String execute = 'تنفيذ';
-  static const String verifyMessageNotice = 'يرجى التحقق من البيانات قبل التنفيذ';
+  static const String verifyMessageNotice =
+      'يرجى التحقق من البيانات قبل التنفيذ';
 
   // --- البيانات الشخصية ---
   static const String personalInfo = 'البيانات الشخصية';
-  static const String personalInfoSubtitle = 'الاسم، العناوين، أرقام التواصل، والشعار والختم والتوقيع';
+  static const String personalInfoSubtitle =
+      'الاسم، العناوين، أرقام التواصل، والشعار والختم والتوقيع';
   static const String personalInfoViewTitle = 'إعدادات البيانات الشخصية';
   static const String generalInfoSection = 'المعلومات الأساسية والعناوين';
   static const String arabicNameLabel = 'الاسم باللغة العربية';
@@ -573,7 +730,8 @@ class AppStrings {
   static const String englishAddressLabel = 'العنوان باللغة الإنجليزية';
   static const String englishAddressHint = 'City, Street, State...';
   static const String contactNumbersLabel = 'أرقام التواصل';
-  static const String contactNumbersHint = 'أرقام الهواتف أو الواتساب مفصولة بفاصلة';
+  static const String contactNumbersHint =
+      'أرقام الهواتف أو الواتساب مفصولة بفاصلة';
   static const String brandingSection = 'الشعار والختم والتوقيع';
   static const String logoLabel = 'شعار المنشأة (Logo)';
   static const String stampLabel = 'الختم الرسمي (Stamp)';
@@ -587,9 +745,12 @@ class AppStrings {
   static const String logoSizePercentLabel = 'حجم الشعار في المستندات';
   static const String stampSizePercentLabel = 'حجم الختم في المستندات';
   static const String signatureSizePercentLabel = 'حجم التوقيع في المستندات';
-  static const String backupInclusionSection = 'النسخ الاحتياطي للبيانات الشخصية';
-  static const String includePersonalInfoInBackupTitle = 'تضمين البيانات الشخصية في النسخة الاحتياطية';
-  static const String includePersonalInfoInBackupDesc = 'حفظ الأسماء والعناوين وملفات الشعار والختم والتوقيع ضمن ملف النسخة الاحتياطية واستعادتها تلقائياً';
+  static const String backupInclusionSection =
+      'النسخ الاحتياطي للبيانات الشخصية';
+  static const String includePersonalInfoInBackupTitle =
+      'تضمين البيانات الشخصية في النسخة الاحتياطية';
+  static const String includePersonalInfoInBackupDesc =
+      'حفظ الأسماء والعناوين وملفات الشعار والختم والتوقيع ضمن ملف النسخة الاحتياطية واستعادتها تلقائياً';
   static const String savePersonalInfo = 'حفظ البيانات الشخصية';
   static const String savePersonalInfoSuccess = 'تم حفظ البيانات الشخصية بنجاح';
   static const String selectImageFromGallery = 'اختيار من المعرض';
@@ -597,12 +758,14 @@ class AppStrings {
 
   // --- التحليل وصحة التطبيق ---
   static const String analysis = 'التحليل';
-  static const String analysisSubtitle = 'فحص صحة النظام، إحصائيات الحسابات، تفصيل العمليات والأصناف';
+  static const String analysisSubtitle =
+      'فحص صحة النظام، إحصائيات الحسابات، تفصيل العمليات والأصناف';
   static const String analysisTitle = 'تحليل التطبيق';
   static const String systemHealthTitle = 'صحة وسلامة النظام';
   static const String systemHealthStatus = 'حالة النظام والتطبيق';
   static const String systemHealthExcellent = 'النظام سليم ومتناسق 100%';
-  static const String systemHealthIssues = 'توجد بعض التنبيهات تحتاج إلى مراجعة';
+  static const String systemHealthIssues =
+      'توجد بعض التنبيهات تحتاج إلى مراجعة';
   static const String databaseIntegrity = 'سلامة قاعدة البيانات';
   static const String databaseIntegrityOk = 'تم التحقق (سليمة تماماً)';
   static const String databaseSize = 'حجم قاعدة البيانات';
@@ -611,7 +774,8 @@ class AppStrings {
   static const String noBackupFound = 'لا توجد نسخة احتياطية بعد';
   static const String runDiagnostics = 'إجراء فحص فوري للنظام';
   static const String diagnosticsRunning = 'جاري فحص وتدقيق سلامة البيانات...';
-  static const String diagnosticsSuccess = 'اكتمل الفحص: قاعدة البيانات والقيود متطابقة وسليمة 100%';
+  static const String diagnosticsSuccess =
+      'اكتمل الفحص: قاعدة البيانات والقيود متطابقة وسليمة 100%';
   static const String accountsAnalysisTitle = 'تحليل وإحصائيات الحسابات';
   static const String totalAccountsCount = 'إجمالي الحسابات';
   static const String activeAccountsCount = 'حسابات نشطة';
@@ -645,4 +809,3 @@ class AppStrings {
   static const String storageAndDb = 'التخزين وقاعدة البيانات';
   static const String systemOverview = 'نظرة عامة على النظام';
 }
-

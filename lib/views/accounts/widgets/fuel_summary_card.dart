@@ -25,6 +25,7 @@ class FuelCardData {
   final String fuelName;
   final double balance;
   final String? secondaryTag;
+  final String? badgeText;
   final List<FuelCardMetric> metrics;
 
   const FuelCardData({
@@ -33,6 +34,7 @@ class FuelCardData {
     required this.balance,
     required this.metrics,
     this.secondaryTag,
+    this.badgeText,
   });
 }
 
@@ -100,7 +102,7 @@ class FuelSummaryCard extends StatelessWidget {
                       borderRadius: AppDimensions.borderRadius2XL,
                     ),
                     child: Text(
-                      data.fuelName,
+                      data.badgeText ?? data.fuelName,
                       style: const TextStyle(
                         fontSize: AppTypography.sizeSmall + 0.5,
                         fontWeight: AppTypography.weightBold,

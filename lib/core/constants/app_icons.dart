@@ -35,6 +35,7 @@ class AppIcons {
   static const IconData checkCircleRounded = Icons.check_circle_rounded;
   static const IconData cancelRounded = Icons.cancel_rounded;
   static const IconData info = Icons.info_outline;
+  static const IconData warning = Icons.warning_amber_rounded;
 
   // --- أيقونات المجال والعمليات (Domain & Operations) ---
   static const IconData gasStation = Icons.local_gas_station;
@@ -119,6 +120,7 @@ class AppIcons {
   static const IconData photoCamera = Icons.photo_camera_outlined;
 
   // --- التحليل وصحة النظام ---
+  static const IconData bolt = Icons.bolt_rounded;
   static const IconData analytics = Icons.insights_rounded;
   static const IconData healthAndSafety = Icons.health_and_safety_outlined;
   static const IconData pieChart = Icons.pie_chart_outline_rounded;

@@ -1,55 +1,54 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../controllers/accounts_controller.dart';
 import '../../controllers/analysis_controller.dart';
-import '../../controllers/auth_controller.dart';
 import '../../controllers/backup_controller.dart';
-import '../../controllers/personal_info_controller.dart';
 import '../../controllers/stations_controller.dart';
 import '../../controllers/transactions_controller.dart';
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/utils/formatters.dart';
-import '../../core/widgets/empty_state_widget.dart';
+import '../../core/widgets/custom_modal_sheet.dart';
 import '../../core/widgets/one_ui_card.dart';
 import '../../core/widgets/operation_entry_sheet.dart';
 import '../../core/widgets/transaction_details_dialog.dart';
-import '../accounts/station_transactions_view.dart';
-import '../accounts/widgets/fuel_summary_card.dart';
-import '../settings/analysis_view.dart';
+import '../../models/fuel_type_metrics.dart';
+import '../../models/transaction_model.dart';
+import '../accounts/account_transactions_view.dart';
 import '../settings/backup_settings_view.dart';
 
-/// الشاشة الرئيسية (لوحة التحكم العامة) بنمط Samsung One UI الموحد
+/// الشاشة الرئيسية (لوحة التحكم العامة ومراقبة الأرصدة) بنمط One UI
 class HomeView extends StatefulWidget {
-  const HomeView({super.key});
+  final ValueChanged<int>? onNavigateToTab;
+
+  const HomeView({
+    super.key,
+    this.onNavigateToTab,
+  });
 
   @override
   State<HomeView> createState() => _HomeViewState();
 }
 
 class _HomeViewState extends State<HomeView> {
-  int _selectedFuelId = 1; // 1: بترول, 2: ديزل
+  bool _isStationsExpanded = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshAllData();
+      _loadDashboardData();
     });
   }
 
-  Future<void> _refreshAllData() async {
-    if (!mounted) return;
+  Future<void> _loadDashboardData() async {
     await Future.wait([
-      context.read<TransactionsController>().fetchAllBalancesSummary(),
-      context.read<AccountsController>().fetchAccounts(),
+      context.read<TransactionsController>().fetchDashboardData(),
       context.read<StationsController>().fetchStations(),
       context.read<AnalysisController>().loadAnalysisData(),
-      context.read<PersonalInfoController>().loadPersonalInfo(),
     ]);
   }
 
@@ -57,414 +56,1435 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: AppColors.primary,
-          backgroundColor: AppColors.surface,
-          onRefresh: _refreshAllData,
-          child: Consumer6<
-              TransactionsController,
-              AccountsController,
-              StationsController,
-              PersonalInfoController,
-              AuthController,
-              AnalysisController>(
-            builder: (context, txCtrl, accCtrl, stCtrl, personalCtrl, authCtrl,
-                analysisCtrl, _) {
-              return ListView(
-                padding: const EdgeInsets.only(bottom: AppDimensions.space4XL),
-                children: [
-                  // 1. الترويسة العلوية الترحيبية وفحص سلامة النظام
-                  _buildHeader(personalCtrl, authCtrl, analysisCtrl),
-
-                  // 2. بطاقة المؤشرات والأرصدة الكلية للأصناف
-                  _buildFuelBalancesSection(txCtrl),
-
-                  const SizedBox(height: AppDimensions.spaceS),
-
-                  // 3. شريط الوصول السريع للعمليات الميدانية
-                  _buildQuickActionsSection(),
-
-                  const SizedBox(height: AppDimensions.spaceS),
-
-                  // 4. حالة ومخزون المحطات النشطة
-                  _buildStationsStockSection(stCtrl),
-
-                  const SizedBox(height: AppDimensions.spaceS),
-
-                  // 5. آخر العمليات الميدانية المسجلة
-                  _buildRecentTransactionsSection(txCtrl),
-
-                  const SizedBox(height: AppDimensions.spaceS),
-
-                  // 6. بطاقة أمان البيانات والنسخ الاحتياطي
-                  _buildBackupCard(),
-                ],
-              );
-            },
-          ),
+      appBar: OneUiAppBar(
+        showBackButton: false,
+        titleWidget: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              AppAssets.appIconTransparent,
+              width: AppDimensions.iconLarge + 4,
+              height: AppDimensions.iconLarge + 4,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: AppDimensions.spaceM),
+            const Text(
+              AppStrings.appNameEn,
+              style: TextStyle(
+                fontWeight: AppTypography.weightBold,
+                fontSize: AppTypography.sizeH2,
+                color: AppColors.textPrimary,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
         ),
-      ),
-    );
-  }
+        actions: [
+          Consumer<BackupController>(
+            builder: (context, backupCtrl, _) {
+              final isSyncing = backupCtrl.isSyncing;
+              final hasBackup = backupCtrl.localBackups.isNotEmpty ||
+                  backupCtrl.isGoogleDriveConnected;
 
-  // --- 1. الترويسة العلوية ---
-  Widget _buildHeader(
-    PersonalInfoController personalCtrl,
-    AuthController authCtrl,
-    AnalysisController analysisCtrl,
-  ) {
-    final hasLogo = personalCtrl.info.logoPath != null &&
-        File(personalCtrl.info.logoPath!).existsSync();
-    final displayName = personalCtrl.info.arabicName.trim().isNotEmpty
-        ? personalCtrl.info.arabicName.trim()
-        : (authCtrl.isLoggedIn && authCtrl.displayName.trim().isNotEmpty
-            ? authCtrl.displayName.trim()
-            : AppStrings.welcomeBack);
+              final IconData backupIcon = isSyncing
+                  ? AppIcons.sync
+                  : (backupCtrl.isGoogleDriveConnected
+                      ? AppIcons.cloudDone
+                      : (backupCtrl.localBackups.isNotEmpty
+                          ? AppIcons.backup
+                          : AppIcons.cloudQueue));
 
-    final isHealthy = analysisCtrl.isSystemHealthy;
+              final Color iconColor =
+                  hasBackup ? AppColors.supplyGreen : AppColors.textPrimary;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.spaceXL,
-        AppDimensions.spaceXL,
-        AppDimensions.spaceXL,
-        AppDimensions.spaceM,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // الشعار أو الأيقونة الدائرية
-          Container(
-            width: AppDimensions.avatarSize,
-            height: AppDimensions.avatarSize,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.borderLight,
-                width: AppDimensions.borderWidthThin,
-              ),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: hasLogo
-                ? Image.file(
-                    File(personalCtrl.info.logoPath!),
-                    fit: BoxFit.cover,
-                  )
-                : const Center(
-                    child: Icon(
-                      AppIcons.gasStation,
-                      color: AppColors.textWhite,
-                      size: AppDimensions.iconLarge,
+              return IconButton(
+                tooltip: AppStrings.backupTitle,
+                icon: Icon(
+                  backupIcon,
+                  color: iconColor,
+                  size: AppDimensions.iconLarge,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const BackupSettingsView(),
                     ),
-                  ),
-          ),
-          const SizedBox(width: AppDimensions.spaceL),
-
-          // التحية والاسم
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  AppStrings.welcomeBack,
-                  style: TextStyle(
-                    fontSize: AppTypography.sizeCaption,
-                    color: AppColors.textTertiary,
-                    fontWeight: AppTypography.weightMedium,
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.spaceXXS),
-                Text(
-                  displayName,
-                  style: const TextStyle(
-                    fontSize: AppTypography.sizeH2 + 1,
-                    fontWeight: AppTypography.weightBold,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppDimensions.spaceS),
-
-          // شارة فحص حالة النظام التفاعلية
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AnalysisView()),
+                  );
+                },
               );
             },
-            borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppDimensions.spaceL,
-                vertical: AppDimensions.spaceS - 1,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    isHealthy ? AppColors.supplyLight : AppColors.warningLight,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusFull),
-                border: Border.all(
-                  color: isHealthy ? AppColors.supplyGreen : AppColors.warning,
-                  width: AppDimensions.borderWidthHairline,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isHealthy ? AppIcons.checkCircleRounded : AppIcons.info,
-                    size: AppDimensions.iconSmall,
-                    color:
-                        isHealthy ? AppColors.supplyGreen : AppColors.warning,
-                  ),
-                  const SizedBox(width: AppDimensions.spaceXS),
-                  Text(
-                    isHealthy
-                        ? AppStrings.secureAndHealthy
-                        : AppStrings.needsAttention,
-                    style: TextStyle(
-                      fontSize: AppTypography.sizeMicro + 1,
-                      fontWeight: AppTypography.weightBold,
-                      color:
-                          isHealthy ? AppColors.supplyGreen : AppColors.warning,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
+          const SizedBox(width: AppDimensions.spaceXS),
         ],
       ),
+      body: RefreshIndicator(
+        onRefresh: _loadDashboardData,
+        color: AppColors.primary,
+        backgroundColor: AppColors.surface,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppDimensions.spaceM,
+          ),
+          children: [
+            // 1. شريط فلترة السنة والشهر
+            _buildPeriodFilterRow(),
+
+            // 2. تبويب صنف الوقود العلوي المطابق تماماً لتبويب واجهة الحسابات
+            _buildFuelTypeSegmentControl(),
+
+            // 3. كرت ميزان توريد الموردين بتصميم كشف الحساب الأنيق والمقتضب
+            _buildSupplierSummaryCard(),
+
+            // 4. كرت مخزون وحركة المحطات بتصميم كشف الحساب الأنيق والمقتضب
+            _buildStationSummaryCard(),
+
+            // قائمة المحطات المنسدلة عند النقر على كرت مخزون المحطات
+            if (_isStationsExpanded) _buildExpandedStationsList(),
+
+            // 5. كرت ميزان الاعتمادات بتصميم كشف الحساب الأنيق والمقتضب
+            _buildQuotaSummaryCard(),
+
+            // 6. كرت الإجراءات السريعة
+            _buildQuickActionsCard(),
+
+            // 7. كرت آخر العمليات المسجلة
+            _buildRecentTransactionsCard(),
+
+            const SizedBox(height: AppDimensions.space3XL),
+          ],
+        ),
+      ),
     );
   }
 
-  // --- 2. بطاقة المؤشرات والأرصدة الكلية للأصناف ---
-  Widget _buildFuelBalancesSection(TransactionsController txCtrl) {
-    final fuelTypes = txCtrl.fuelTypes.isNotEmpty
-        ? txCtrl.fuelTypes
-        : [
-            {'id': 1, 'name': AppStrings.fuelPetrol},
-            {'id': 2, 'name': AppStrings.fuelDiesel},
-          ];
+  static final List<MapEntry<int?, String>> _staticMonthEntries = [
+    const MapEntry<int?, String>(null, AppStrings.allMonths),
+    const MapEntry<int?, String>(1, AppStrings.monthJan),
+    const MapEntry<int?, String>(2, AppStrings.monthFeb),
+    const MapEntry<int?, String>(3, AppStrings.monthMar),
+    const MapEntry<int?, String>(4, AppStrings.monthApr),
+    const MapEntry<int?, String>(5, AppStrings.monthMay),
+    const MapEntry<int?, String>(6, AppStrings.monthJun),
+    const MapEntry<int?, String>(7, AppStrings.monthJul),
+    const MapEntry<int?, String>(8, AppStrings.monthAug),
+    const MapEntry<int?, String>(9, AppStrings.monthSep),
+    const MapEntry<int?, String>(10, AppStrings.monthOct),
+    const MapEntry<int?, String>(11, AppStrings.monthNov),
+    const MapEntry<int?, String>(12, AppStrings.monthDec),
+  ];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildSectionHeader(
-          title: AppStrings.fuelBalancesOverview,
-          icon: AppIcons.gasStation,
-          trailing: IconButton(
-            icon: const Icon(
-              AppIcons.refresh,
-              size: AppDimensions.iconMedium,
-              color: AppColors.textTertiary,
+  /// 2. شريط فلترة السنة والشهر بتصميم One UI أنيق
+  Widget _buildPeriodFilterRow() {
+    return Consumer<TransactionsController>(
+      builder: (context, txCtrl, _) {
+        final year = txCtrl.dashboardYear;
+        final month = txCtrl.dashboardMonth;
+        final now = DateTime.now();
+        final isDefault = year == now.year && month == now.month;
+
+        final yearLabel = year != null ? '$year' : AppStrings.allYears;
+        final monthLabel = month != null
+            ? AppStrings.getMonthLabel(month)
+            : AppStrings.allMonths;
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppDimensions.fuelCardMaxWidth,
             ),
-            tooltip: AppStrings.quickRefresh,
-            onPressed: () {
-              txCtrl.fetchAllBalancesSummary();
-            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spaceXL,
+                vertical: AppDimensions.spaceXXS,
+              ),
+              child: Row(
+                children: [
+                  // فلتر السنة
+                  Expanded(
+                    child: _buildFilterDropdownButton(
+                      label: AppStrings.filterYear,
+                      valueText: yearLabel,
+                      isSelected: year != null,
+                      onTap: () => _showYearPicker(context, txCtrl),
+                    ),
+                  ),
+                  const SizedBox(width: AppDimensions.spaceS),
+
+                  // فلتر الشهر
+                  Expanded(
+                    child: _buildFilterDropdownButton(
+                      label: AppStrings.filterMonth,
+                      valueText: monthLabel,
+                      isSelected: month != null,
+                      onTap: () => _showMonthPicker(context, txCtrl),
+                    ),
+                  ),
+
+                  // زر إلغاء الفلترة وإعادة التعيين للفترة الافتراضية
+                  if (!isDefault) ...[
+                    const SizedBox(width: AppDimensions.spaceXS),
+                    Tooltip(
+                      message: AppStrings.resetFilter,
+                      child: Material(
+                        color: AppColors.chipBackground,
+                        borderRadius:
+                            BorderRadius.circular(AppDimensions.radiusL),
+                        child: InkWell(
+                          onTap: () {
+                            txCtrl.setDashboardPeriod(
+                              year: now.year,
+                              month: now.month,
+                            );
+                          },
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusL),
+                          child: Container(
+                            height: 44,
+                            width: 44,
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              AppIcons.close,
+                              size: AppDimensions.iconMedium,
+                              color: AppColors.dispenseRed,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterDropdownButton({
+    required String label,
+    required String valueText,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: isSelected ? AppColors.infoLight : AppColors.surface,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+      elevation: 0,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+        child: Container(
+          height: 44,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.spaceM,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppDimensions.radiusL),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.borderSubtle,
+              width: AppDimensions.borderWidthThin,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                AppIcons.calendar,
+                size: AppDimensions.iconSmall + 2,
+                color: isSelected ? AppColors.primary : AppColors.textTertiary,
+              ),
+              const SizedBox(width: AppDimensions.spaceS),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: AppTypography.sizeMicro,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.textMuted,
+                        fontWeight: AppTypography.weightMedium,
+                        height: 1.1,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      valueText,
+                      style: TextStyle(
+                        fontSize: AppTypography.sizeBodySecondary - 0.5,
+                        color: isSelected
+                            ? AppColors.primaryDark
+                            : AppColors.textPrimary,
+                        fontWeight: isSelected
+                            ? AppTypography.weightBold
+                            : AppTypography.weightMedium,
+                        height: 1.2,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                AppIcons.dropdownArrow,
+                size: AppDimensions.iconSmall,
+                color: isSelected ? AppColors.primary : AppColors.textMuted,
+              ),
+            ],
           ),
         ),
-        FuelSummarySlider(
-          fuelTypes: fuelTypes,
-          selectedFuelId: _selectedFuelId,
-          onFuelChanged: (newId) {
-            setState(() {
-              _selectedFuelId = newId;
-            });
-          },
-          cardBuilder: (fuelId, fuelName) {
-            // استخراج إجماليات الصنف من ملخص العمليات الكلي
-            double totalQuota = 0.0;
-            double totalDispensed = 0.0;
-
-            final summaryRow = txCtrl.fuelTotalsSummary.firstWhere(
-              (r) => r['fuel_type_id'] == fuelId,
-              orElse: () => <String, dynamic>{},
-            );
-
-            if (summaryRow.isNotEmpty) {
-              totalQuota = (summaryRow['total_quota'] as num?)?.toDouble() ?? 0.0;
-              totalDispensed =
-                  (summaryRow['total_actual_dispensed'] as num?)?.toDouble() ?? 0.0;
-            }
-
-            final balance = totalQuota - totalDispensed;
-
-            // حساب إجمالي المخزون الحالي في المحطات لهذا الصنف
-            double stationStock = 0.0;
-            for (final stBalances in txCtrl.allStationBalances.values) {
-              stationStock += (stBalances[fuelId] ?? 0.0);
-            }
-
-            return FuelCardData(
-              title: AppStrings.fuelBalancesOverview,
-              fuelName: fuelName,
-              balance: balance,
-              secondaryTag: stationStock > 0
-                  ? '${AppFormatters.formatQuantity(stationStock)} ${AppStrings.unitLiter}'
-                  : null,
-              metrics: [
-                FuelCardMetric(
-                  value: totalQuota,
-                  label: AppStrings.allocatedQuota,
-                  valueColor: AppColors.primary,
-                ),
-                FuelCardMetric(
-                  value: totalDispensed,
-                  label: AppStrings.actualDispensed,
-                  valueColor: AppColors.dispenseRed,
-                ),
-                FuelCardMetric(
-                  value: balance,
-                  label: AppStrings.balanceQuota,
-                  valueColor: AppColors.supplyGreen,
-                ),
-              ],
-            );
-          },
-        ),
-      ],
+      ),
     );
   }
 
-  // --- 3. شريط الوصول السريع للعمليات الميدانية ---
-  Widget _buildQuickActionsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+  Future<void> _showYearPicker(
+      BuildContext context, TransactionsController txCtrl) async {
+    final availableYears = txCtrl.availableYears;
+    final entries = <MapEntry<int?, String>>[
+      const MapEntry<int?, String>(null, AppStrings.allYears),
+      ...availableYears.map((y) => MapEntry<int?, String>(y, '$y')),
+    ];
+
+    final currentYear = txCtrl.dashboardYear;
+    final selectedEntry = entries.firstWhere(
+      (e) => e.key == currentYear,
+      orElse: () => entries.first,
+    );
+
+    final picked =
+        await CustomModalSheet.showItemPicker<MapEntry<int?, String>>(
+      context: context,
+      title: AppStrings.selectYear,
+      items: entries,
+      selectedItem: selectedEntry,
+      itemLabel: (e) => e.value,
+    );
+
+    if (picked != null) {
+      await txCtrl.setDashboardPeriod(
+        year: picked.key,
+        month: txCtrl.dashboardMonth,
+      );
+    }
+  }
+
+  Future<void> _showMonthPicker(
+      BuildContext context, TransactionsController txCtrl) async {
+    final currentMonth = txCtrl.dashboardMonth;
+    final selectedEntry = _staticMonthEntries.firstWhere(
+      (e) => e.key == currentMonth,
+      orElse: () => _staticMonthEntries.first,
+    );
+
+    final picked =
+        await CustomModalSheet.showItemPicker<MapEntry<int?, String>>(
+      context: context,
+      title: AppStrings.selectMonth,
+      items: _staticMonthEntries,
+      selectedItem: selectedEntry,
+      itemLabel: (e) => e.value,
+    );
+
+    if (picked != null) {
+      await txCtrl.setDashboardPeriod(
+        year: txCtrl.dashboardYear,
+        month: picked.key,
+      );
+    }
+  }
+
+  /// 3. تبويب أصناف الوقود المطابق لتبويب واجهة الحسابات تماماً
+  Widget _buildFuelTypeSegmentControl() {
+    return Consumer<TransactionsController>(
+      builder: (context, txCtrl, _) {
+        final metricsList = txCtrl.fuelTypeMetrics;
+        if (metricsList.isEmpty) return const SizedBox.shrink();
+
+        final currentId =
+            txCtrl.dashboardFuelTypeId ?? metricsList.first.fuelTypeId;
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppDimensions.fuelCardMaxWidth,
+            ),
+            child: Container(
+              margin: AppDimensions.paddingSegment,
+              padding: AppDimensions.paddingAllXS,
+              decoration: const BoxDecoration(
+                color: AppColors.segmentBackground,
+                borderRadius: AppDimensions.borderRadiusXL,
+              ),
+              child: Row(
+                children: metricsList.map((m) {
+                  final isSelected = m.fuelTypeId == currentId;
+                  return Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        txCtrl.setDashboardFuelTypeId(m.fuelTypeId);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.surface
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(9),
+                          boxShadow: isSelected
+                              ? const [
+                                  BoxShadow(
+                                    color: AppColors.shadowSubtle,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Text(
+                          m.fuelTypeName,
+                          style: TextStyle(
+                            fontSize: AppTypography.sizeBody,
+                            fontWeight: isSelected
+                                ? AppTypography.weightBold
+                                : AppTypography.weightMedium,
+                            color: isSelected
+                                ? AppColors.textPrimary
+                                : AppColors.textTertiary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 3. كرت ميزان توريد الموردين (مطابق لتصميم FuelSummaryCard في كشف الحساب)
+  Widget _buildSupplierSummaryCard() {
+    return Consumer<TransactionsController>(
+      builder: (context, txCtrl, _) {
+        final metrics = txCtrl.currentDashboardFuelMetrics ??
+            FuelTypeMetrics(
+              fuelTypeId: 1,
+              fuelTypeName: AppStrings.fuelPetrol,
+              supplierSupplyQuota: 0.0,
+              supplierSupplyActual: 0.0,
+              stationSupplyActual: 0.0,
+              stationDispenseActual: 0.0,
+              stationAeration: 0.0,
+              stationCurrentStock: 0.0,
+              beneficiaryDispenseQuota: 0.0,
+              beneficiaryDispenseActual: 0.0,
+            );
+
+        final percent = metrics.supplierSupplyPercent.toStringAsFixed(1);
+        final ratio = metrics.supplierSupplyRatio;
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppDimensions.fuelCardMaxWidth,
+            ),
+            child: Container(
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spaceXL,
+                vertical: AppDimensions.spaceS,
+              ),
+              padding: AppDimensions.paddingCard,
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: AppDimensions.borderRadius3XL,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowSubtle,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 1. الصف العلوي: العنوان + شارة النسبة البيضاوية الداكنة
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          AppStrings.supplierSupplyTitle,
+                          style: TextStyle(
+                            fontSize: AppTypography.sizeH2,
+                            fontWeight: AppTypography.weightBold,
+                            color: AppColors.textDarkSlate,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.spaceM),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.spaceL - 2,
+                          vertical: AppDimensions.spaceXXS + 0.5,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: AppColors.charcoal,
+                          borderRadius: AppDimensions.borderRadius2XL,
+                        ),
+                        child: Text(
+                          '$percent%',
+                          style: const TextStyle(
+                            fontSize: AppTypography.sizeSmall + 0.5,
+                            fontWeight: AppTypography.weightBold,
+                            color: AppColors.textWhite,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // خط فاصل خفيف وناعم تحت الصف العلوي
+                  const Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppDimensions.spaceXS,
+                    ),
+                    child: Divider(
+                      height: AppDimensions.dividerHeight,
+                      thickness: AppDimensions.borderWidthHairline,
+                      color: AppColors.borderSubtle,
+                    ),
+                  ),
+
+                  // 2. الجزء الأوسط: الرقم الرئيسي مع أيقونة ✦
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        AppIcons.star,
+                        size: AppDimensions.space2XL - 5,
+                        color: AppColors.textDarkSlate,
+                      ),
+                      const SizedBox(width: AppDimensions.spaceXS + 1),
+                      Text(
+                        AppFormatters.formatQuantity(
+                            metrics.supplierRemainingQuota),
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeH2 + 1,
+                          fontWeight: AppTypography.weightBold,
+                          color: AppColors.textDarkSlate,
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.spaceS),
+                      Text(
+                        '${AppStrings.unitLiter} ${metrics.fuelTypeName}',
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeBody,
+                          fontWeight: AppTypography.weightSemiBold,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppDimensions.spaceXS + 1),
+
+                  // 3. الجزء السفلي: المربع الرمادي الفاتح لعناصر العمليات المقتضبة
+                  Center(
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        maxWidth: AppDimensions.fuelCardMetricsMaxWidth,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppDimensions.spaceS - 1,
+                        horizontal: AppDimensions.spaceM,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: AppColors.highlightBackground,
+                        borderRadius: AppDimensions.borderRadiusL,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppFormatters.formatQuantity(
+                                      metrics.supplierSupplyQuota),
+                                  style: const TextStyle(
+                                    fontSize:
+                                        AppTypography.sizeBodySecondary + 0.5,
+                                    fontWeight: AppTypography.weightBold,
+                                    color: AppColors.textDarkSlate,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                const Text(
+                                  AppStrings.supplyQuota,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.sizeMicro,
+                                    color: AppColors.textMuted,
+                                    fontWeight: AppTypography.weightMedium,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppFormatters.formatQuantity(
+                                      metrics.supplierSupplyActual),
+                                  style: const TextStyle(
+                                    fontSize:
+                                        AppTypography.sizeBodySecondary + 0.5,
+                                    fontWeight: AppTypography.weightBold,
+                                    color: AppColors.supplyGreen,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                const Text(
+                                  AppStrings.supplyActual,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.sizeMicro,
+                                    color: AppColors.textMuted,
+                                    fontWeight: AppTypography.weightMedium,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppFormatters.formatQuantity(
+                                      metrics.supplierRemainingQuota),
+                                  style: const TextStyle(
+                                    fontSize:
+                                        AppTypography.sizeBodySecondary + 0.5,
+                                    fontWeight: AppTypography.weightBold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                const Text(
+                                  AppStrings.balanceQuota,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.sizeMicro,
+                                    color: AppColors.textMuted,
+                                    fontWeight: AppTypography.weightMedium,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // 4. شريط النسبة المدمج
+                  const SizedBox(height: AppDimensions.spaceS),
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusFull),
+                    child: LinearProgressIndicator(
+                      value: ratio,
+                      backgroundColor: AppColors.borderSubtle,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.supplyGreen,
+                      ),
+                      minHeight: 4.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 4. كرت مخزون وحركة المحطات (مطابق لتصميم FuelSummaryCard في كشف الحساب)
+  Widget _buildStationSummaryCard() {
+    return Consumer<TransactionsController>(
+      builder: (context, txCtrl, _) {
+        final metrics = txCtrl.currentDashboardFuelMetrics ??
+            FuelTypeMetrics(
+              fuelTypeId: 1,
+              fuelTypeName: AppStrings.fuelPetrol,
+              supplierSupplyQuota: 0.0,
+              supplierSupplyActual: 0.0,
+              stationSupplyActual: 0.0,
+              stationDispenseActual: 0.0,
+              stationAeration: 0.0,
+              stationCurrentStock: 0.0,
+              beneficiaryDispenseQuota: 0.0,
+              beneficiaryDispenseActual: 0.0,
+            );
+
+        final percent = metrics.stationDispensePercent.toStringAsFixed(1);
+        final ratio = metrics.stationDispenseRatio;
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppDimensions.fuelCardMaxWidth,
+            ),
+            child: Container(
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spaceXL,
+                vertical: AppDimensions.spaceS,
+              ),
+              padding: AppDimensions.paddingCard,
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: AppDimensions.borderRadius3XL,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowSubtle,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    _isStationsExpanded = !_isStationsExpanded;
+                  });
+                },
+                borderRadius: AppDimensions.borderRadius3XL,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 1. الصف العلوي: العنوان + شارة النسبة البيضاوية الداكنة + سهم التوسيع/الطي
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            AppStrings.stationBalanceAndFlow,
+                            style: TextStyle(
+                              fontSize: AppTypography.sizeH2,
+                              fontWeight: AppTypography.weightBold,
+                              color: AppColors.textDarkSlate,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.spaceM),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.spaceL - 2,
+                            vertical: AppDimensions.spaceXXS + 0.5,
+                          ),
+                          decoration: const BoxDecoration(
+                            color: AppColors.charcoal,
+                            borderRadius: AppDimensions.borderRadius2XL,
+                          ),
+                          child: Text(
+                            '$percent%',
+                            style: const TextStyle(
+                              fontSize: AppTypography.sizeSmall + 0.5,
+                              fontWeight: AppTypography.weightBold,
+                              color: AppColors.textWhite,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.spaceS),
+                        AnimatedRotation(
+                          turns: _isStationsExpanded ? 0.5 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: const Icon(
+                            AppIcons.dropdownArrow,
+                            color: AppColors.textSecondary,
+                            size: AppDimensions.iconMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // خط فاصل خفيف وناعم تحت الصف العلوي
+                    const Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppDimensions.spaceXS,
+                      ),
+                      child: Divider(
+                        height: AppDimensions.dividerHeight,
+                        thickness: AppDimensions.borderWidthHairline,
+                        color: AppColors.borderSubtle,
+                      ),
+                    ),
+
+                    // 2. الجزء الأوسط: الرقم الرئيسي مع أيقونة ✦
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          AppIcons.star,
+                          size: AppDimensions.space2XL - 5,
+                          color: AppColors.textDarkSlate,
+                        ),
+                        const SizedBox(width: AppDimensions.spaceXS + 1),
+                        Text(
+                          AppFormatters.formatQuantity(
+                              metrics.stationCurrentStock),
+                          style: const TextStyle(
+                            fontSize: AppTypography.sizeH2 + 1,
+                            fontWeight: AppTypography.weightBold,
+                            color: AppColors.textDarkSlate,
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.spaceS),
+                        Text(
+                          '${AppStrings.unitLiter} ${metrics.fuelTypeName}',
+                          style: const TextStyle(
+                            fontSize: AppTypography.sizeBody,
+                            fontWeight: AppTypography.weightSemiBold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimensions.spaceXS + 1),
+
+                    // 3. الجزء السفلي: المربع الرمادي الفاتح لعناصر العمليات المقتضبة
+                    Center(
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          maxWidth: AppDimensions.fuelCardMetricsMaxWidth,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppDimensions.spaceS - 1,
+                          horizontal: AppDimensions.spaceM,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: AppColors.highlightBackground,
+                          borderRadius: AppDimensions.borderRadiusL,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    AppFormatters.formatQuantity(
+                                        metrics.stationSupplyActual),
+                                    style: const TextStyle(
+                                      fontSize:
+                                          AppTypography.sizeBodySecondary + 0.5,
+                                      fontWeight: AppTypography.weightBold,
+                                      color: AppColors.supplyGreen,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  const Text(
+                                    AppStrings.actualSupply,
+                                    style: TextStyle(
+                                      fontSize: AppTypography.sizeMicro,
+                                      color: AppColors.textMuted,
+                                      fontWeight: AppTypography.weightMedium,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    AppFormatters.formatQuantity(
+                                        metrics.stationDispenseActual),
+                                    style: const TextStyle(
+                                      fontSize:
+                                          AppTypography.sizeBodySecondary + 0.5,
+                                      fontWeight: AppTypography.weightBold,
+                                      color: AppColors.dispenseRed,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  const Text(
+                                    AppStrings.actualDispense,
+                                    style: TextStyle(
+                                      fontSize: AppTypography.sizeMicro,
+                                      color: AppColors.textMuted,
+                                      fontWeight: AppTypography.weightMedium,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    AppFormatters.formatQuantity(
+                                        metrics.stationAeration),
+                                    style: const TextStyle(
+                                      fontSize:
+                                          AppTypography.sizeBodySecondary + 0.5,
+                                      fontWeight: AppTypography.weightBold,
+                                      color: AppColors.warning,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  const Text(
+                                    AppStrings.aerationCommission,
+                                    style: TextStyle(
+                                      fontSize: AppTypography.sizeMicro,
+                                      color: AppColors.textMuted,
+                                      fontWeight: AppTypography.weightMedium,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // 4. شريط النسبة المدمج
+                    const SizedBox(height: AppDimensions.spaceS),
+                    ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppDimensions.radiusFull),
+                      child: LinearProgressIndicator(
+                        value: ratio,
+                        backgroundColor: AppColors.borderSubtle,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.dispenseRed,
+                        ),
+                        minHeight: 4.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// قائمة المحطات التي يوجد فيها رصيد للصنف المختار مرتبة تنازلياً حسب الكمية (تظهر أسفل كرت مخزون وحركة المحطات عند فتحه)
+  Widget _buildExpandedStationsList() {
+    return Consumer2<StationsController, TransactionsController>(
+      builder: (context, stationsCtrl, txCtrl, _) {
+        final currentMetrics = txCtrl.currentDashboardFuelMetrics;
+        final currentFuelId = currentMetrics?.fuelTypeId;
+
+        // فلترة المحطات التي تمتلك رصيداً أكبر من الصفر في الصنف المختار وترتيبها تنازلياً حسب الرصيد
+        final stationsWithBalance = stationsCtrl.stations
+            .map((station) {
+              final balance = (station.id != null && currentFuelId != null)
+                  ? txCtrl.getStationFuelBalance(station.id!, currentFuelId)
+                  : 0.0;
+              return (station: station, balance: balance);
+            })
+            .where((item) => item.balance > 0.0)
+            .toList()
+          ..sort((a, b) => b.balance.compareTo(a.balance));
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppDimensions.fuelCardMaxWidth,
+            ),
+            child: Container(
+              margin: const EdgeInsets.only(
+                left: AppDimensions.spaceXL,
+                right: AppDimensions.spaceXL,
+                bottom: AppDimensions.spaceS,
+              ),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: AppDimensions.borderRadius3XL,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowSubtle,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: AppDimensions.borderRadius3XL,
+                child: stationsWithBalance.isEmpty
+                    ? const Padding(
+                        padding: AppDimensions.paddingCard,
+                        child: Center(
+                          child: Text(
+                            AppStrings.noStationsForFuelType,
+                            style: TextStyle(
+                              fontSize: AppTypography.sizeBodySecondary,
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ),
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: stationsWithBalance.map((item) {
+                          return OneUiTile(
+                            leading: const Icon(
+                              AppIcons.gasStationOutlined,
+                              color: AppColors.textSecondary,
+                              size: AppDimensions.iconMedium,
+                            ),
+                            title: item.station.name,
+                            subtitle:
+                                item.station.location ?? AppStrings.notSpecified,
+                            trailing: Text(
+                              '${AppFormatters.formatQuantity(item.balance)} ${AppStrings.unitLiter}',
+                              style: const TextStyle(
+                                fontSize: AppTypography.sizeBodySecondary,
+                                fontWeight: AppTypography.weightBold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => AccountTransactionsView(
+                                    account: item.station.toAccountModel(),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                      ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 5. كرت ميزان الاعتمادات (مطابق لتصميم FuelSummaryCard في كشف الحساب)
+  Widget _buildQuotaSummaryCard() {
+    return Consumer<TransactionsController>(
+      builder: (context, txCtrl, _) {
+        final metrics = txCtrl.currentDashboardFuelMetrics ??
+            FuelTypeMetrics(
+              fuelTypeId: 1,
+              fuelTypeName: AppStrings.fuelPetrol,
+              supplierSupplyQuota: 0.0,
+              supplierSupplyActual: 0.0,
+              stationSupplyActual: 0.0,
+              stationDispenseActual: 0.0,
+              stationAeration: 0.0,
+              stationCurrentStock: 0.0,
+              beneficiaryDispenseQuota: 0.0,
+              beneficiaryDispenseActual: 0.0,
+            );
+
+        final percent = metrics.beneficiaryDispensePercent.toStringAsFixed(1);
+        final ratio = metrics.beneficiaryDispenseRatio;
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AppDimensions.fuelCardMaxWidth,
+            ),
+            child: Container(
+              margin: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.spaceXL,
+                vertical: AppDimensions.spaceS,
+              ),
+              padding: AppDimensions.paddingCard,
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: AppDimensions.borderRadius3XL,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadowSubtle,
+                    blurRadius: 6,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 1. الصف العلوي: العنوان + شارة النسبة البيضاوية الداكنة
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          AppStrings.quotaBalanceTitle,
+                          style: TextStyle(
+                            fontSize: AppTypography.sizeH2,
+                            fontWeight: AppTypography.weightBold,
+                            color: AppColors.textDarkSlate,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.spaceM),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppDimensions.spaceL - 2,
+                          vertical: AppDimensions.spaceXXS + 0.5,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: AppColors.charcoal,
+                          borderRadius: AppDimensions.borderRadius2XL,
+                        ),
+                        child: Text(
+                          '$percent%',
+                          style: const TextStyle(
+                            fontSize: AppTypography.sizeSmall + 0.5,
+                            fontWeight: AppTypography.weightBold,
+                            color: AppColors.textWhite,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // خط فاصل خفيف وناعم تحت الصف العلوي
+                  const Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: AppDimensions.spaceXS,
+                    ),
+                    child: Divider(
+                      height: AppDimensions.dividerHeight,
+                      thickness: AppDimensions.borderWidthHairline,
+                      color: AppColors.borderSubtle,
+                    ),
+                  ),
+
+                  // 2. الجزء الأوسط: الرقم الرئيسي مع أيقونة ✦
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        AppIcons.star,
+                        size: AppDimensions.space2XL - 5,
+                        color: AppColors.textDarkSlate,
+                      ),
+                      const SizedBox(width: AppDimensions.spaceXS + 1),
+                      Text(
+                        AppFormatters.formatQuantity(
+                            metrics.beneficiaryRemainingQuota),
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeH2 + 1,
+                          fontWeight: AppTypography.weightBold,
+                          color: AppColors.textDarkSlate,
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.spaceS),
+                      Text(
+                        '${AppStrings.unitLiter} ${metrics.fuelTypeName}',
+                        style: const TextStyle(
+                          fontSize: AppTypography.sizeBody,
+                          fontWeight: AppTypography.weightSemiBold,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppDimensions.spaceXS + 1),
+
+                  // 3. الجزء السفلي: المربع الرمادي الفاتح لعناصر العمليات المقتضبة
+                  Center(
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        maxWidth: AppDimensions.fuelCardMetricsMaxWidth,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppDimensions.spaceS - 1,
+                        horizontal: AppDimensions.spaceM,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: AppColors.highlightBackground,
+                        borderRadius: AppDimensions.borderRadiusL,
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppFormatters.formatQuantity(
+                                      metrics.beneficiaryDispenseQuota),
+                                  style: const TextStyle(
+                                    fontSize:
+                                        AppTypography.sizeBodySecondary + 0.5,
+                                    fontWeight: AppTypography.weightBold,
+                                    color: AppColors.textDarkSlate,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                const Text(
+                                  AppStrings.dispenseQuota,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.sizeMicro,
+                                    color: AppColors.textMuted,
+                                    fontWeight: AppTypography.weightMedium,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppFormatters.formatQuantity(
+                                      metrics.beneficiaryDispenseActual),
+                                  style: const TextStyle(
+                                    fontSize:
+                                        AppTypography.sizeBodySecondary + 0.5,
+                                    fontWeight: AppTypography.weightBold,
+                                    color: AppColors.dispenseRed,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                const Text(
+                                  AppStrings.dispenseActual,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.sizeMicro,
+                                    color: AppColors.textMuted,
+                                    fontWeight: AppTypography.weightMedium,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppFormatters.formatQuantity(
+                                      metrics.beneficiaryRemainingQuota),
+                                  style: const TextStyle(
+                                    fontSize:
+                                        AppTypography.sizeBodySecondary + 0.5,
+                                    fontWeight: AppTypography.weightBold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(height: 1),
+                                const Text(
+                                  AppStrings.balanceQuota,
+                                  style: TextStyle(
+                                    fontSize: AppTypography.sizeMicro,
+                                    color: AppColors.textMuted,
+                                    fontWeight: AppTypography.weightMedium,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // 4. شريط النسبة المدمج
+                  const SizedBox(height: AppDimensions.spaceS),
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusFull),
+                    child: LinearProgressIndicator(
+                      value: ratio,
+                      backgroundColor: AppColors.borderSubtle,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        AppColors.primary,
+                      ),
+                      minHeight: 4.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 6. كرت الإجراءات السريعة
+  Widget _buildQuickActionsCard() {
+    return OneUiCard(
       children: [
-        _buildSectionHeader(
+        const OneUiTile(
+          leading: Icon(
+            AppIcons.bolt,
+            color: AppColors.primary,
+            size: AppDimensions.iconMedium + 2,
+          ),
           title: AppStrings.quickActions,
-          icon: AppIcons.flash,
         ),
-        OneUiCard(
+        Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.spaceL,
             vertical: AppDimensions.spaceL,
           ),
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // زر صرف مخصص
-                _buildQuickActionItem(
+          child: Row(
+            children: [
+              // زر صرف وقود
+              Expanded(
+                child: _buildQuickActionButton(
                   icon: AppIcons.dispense,
-                  label: AppStrings.dispenseQuotaAction,
-                  iconColor: AppColors.dispenseRed,
-                  backgroundColor: AppColors.dispenseLight,
-                  onTap: () {
-                    OperationEntrySheet.show(
+                  label: AppStrings.quickDispenseActual,
+                  color: AppColors.dispenseRed,
+                  bgColor: AppColors.dispenseLight,
+                  onTap: () async {
+                    final res = await OperationEntrySheet.show(
                       context: context,
-                      initialTabIndex: 0,
-                      initialDirection: 1, // صرف
-                    ).then((_) {
-                      if (mounted) _refreshAllData();
-                    });
+                      initialTabIndex: 1,
+                      initialDirection: 1,
+                    );
+                    if (res == true && mounted) {
+                      _loadDashboardData();
+                    }
                   },
                 ),
+              ),
+              const SizedBox(width: AppDimensions.spaceM),
 
-                // زر تغذية مخصص
-                _buildQuickActionItem(
+              // زر توريد لمحطة
+              Expanded(
+                child: _buildQuickActionButton(
                   icon: AppIcons.supply,
-                  label: AppStrings.supplyQuotaAction,
-                  iconColor: AppColors.supplyGreen,
-                  backgroundColor: AppColors.supplyLight,
-                  onTap: () {
-                    OperationEntrySheet.show(
+                  label: AppStrings.quickSupplyActual,
+                  color: AppColors.supplyGreen,
+                  bgColor: AppColors.supplyLight,
+                  onTap: () async {
+                    final res = await OperationEntrySheet.show(
+                      context: context,
+                      initialTabIndex: 1,
+                      initialDirection: 0,
+                    );
+                    if (res == true && mounted) {
+                      _loadDashboardData();
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: AppDimensions.spaceM),
+
+              // زر تحويل كمية
+              Expanded(
+                child: _buildQuickActionButton(
+                  icon: AppIcons.transfer,
+                  label: AppStrings.quickTransfer,
+                  color: AppColors.info,
+                  bgColor: AppColors.infoLight,
+                  onTap: () async {
+                    final res = await OperationEntrySheet.show(
                       context: context,
                       initialTabIndex: 0,
-                      initialDirection: 0, // توريد
-                    ).then((_) {
-                      if (mounted) _refreshAllData();
-                    });
+                      initialDirection: 0,
+                    );
+                    if (res == true && mounted) {
+                      _loadDashboardData();
+                    }
                   },
                 ),
-
-                // زر تحويل كميات
-                _buildQuickActionItem(
-                  icon: AppIcons.transfer,
-                  label: AppStrings.transferAction,
-                  iconColor: AppColors.info,
-                  backgroundColor: AppColors.infoLight,
-                  onTap: () {
-                    OperationEntrySheet.show(
-                      context: context,
-                      initialTabIndex: 3, // تحويل
-                    ).then((_) {
-                      if (mounted) _refreshAllData();
-                    });
-                  },
-                ),
-
-                // زر تسجيل حركة عامة
-                _buildQuickActionItem(
-                  icon: AppIcons.addRounded,
-                  label: AppStrings.registerOperation,
-                  iconColor: AppColors.textPrimary,
-                  backgroundColor: AppColors.chipBackground,
-                  onTap: () {
-                    OperationEntrySheet.show(context: context).then((_) {
-                      if (mounted) _refreshAllData();
-                    });
-                  },
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildQuickActionItem({
+  Widget _buildQuickActionButton({
     required IconData icon,
     required String label,
-    required Color iconColor,
-    required Color backgroundColor,
+    required Color color,
+    required Color bgColor,
     required VoidCallback onTap,
   }) {
-    return Expanded(
+    return Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusL),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.radiusL),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppDimensions.spaceXS),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppDimensions.spaceL,
+            horizontal: AppDimensions.spaceS,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Icon(
-                    icon,
-                    color: iconColor,
-                    size: AppDimensions.iconMedium + 2,
-                  ),
-                ),
+              Icon(
+                icon,
+                color: color,
+                size: AppDimensions.iconLarge,
               ),
               const SizedBox(height: AppDimensions.spaceS),
               Text(
                 label,
-                style: const TextStyle(
+                textAlign: TextAlign.center,
+                style: TextStyle(
                   fontSize: AppTypography.sizeCaption,
                   fontWeight: AppTypography.weightSemiBold,
-                  color: AppColors.textPrimary,
+                  color: color,
                 ),
-                textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -475,225 +1495,46 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  // --- 4. مخزون المحطات النشطة ---
-  Widget _buildStationsStockSection(StationsController stCtrl) {
-    final stations = stCtrl.stations;
-    if (stations.isEmpty) {
-      return const SizedBox.shrink();
-    }
+  /// 8. كرت آخر العمليات المسجلة
+  Widget _buildRecentTransactionsCard() {
+    return Consumer<TransactionsController>(
+      builder: (context, txCtrl, _) {
+        final recentList = txCtrl.recentTransactions;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildSectionHeader(
-          title: AppStrings.stationsOverview,
-          icon: AppIcons.gasStation,
-        ),
-        OneUiCard(
-          children: stations.take(4).map((station) {
-            return OneUiTile(
-              leading: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.chipBackground,
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                ),
-                child: const Icon(
-                  AppIcons.gasStation,
-                  color: AppColors.primary,
-                  size: AppDimensions.iconMedium,
-                ),
+        return OneUiCard(
+          children: [
+            const OneUiTile(
+              leading: Icon(
+                AppIcons.statement,
+                color: AppColors.primary,
+                size: AppDimensions.iconMedium + 2,
               ),
-              title: station.name,
-              subtitle: station.location ?? AppStrings.station,
-              trailing: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${AppFormatters.formatQuantity(station.currentBalance)} ${AppStrings.unitLiter}',
-                    style: const TextStyle(
-                      fontSize: AppTypography.sizeBody,
-                      fontWeight: AppTypography.weightBold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const Text(
-                    AppStrings.stationStock,
+              title: AppStrings.recentTransactions,
+            ),
+            if (recentList.isEmpty)
+              const Padding(
+                padding: AppDimensions.paddingTile,
+                child: Center(
+                  child: Text(
+                    AppStrings.noRecentTransactionsYet,
                     style: TextStyle(
-                      fontSize: AppTypography.sizeMicro,
+                      fontSize: AppTypography.sizeBodySecondary,
                       color: AppColors.textTertiary,
                     ),
                   ),
-                ],
-              ),
-              showChevron: true,
+                ),
+              )
+            else
+              ...recentList.map((tx) {
+                return _buildRecentTransactionTile(tx);
+              }),
+            OneUiTile(
+              title: AppStrings.viewAllTransactionsAndAccounts,
+              showChevron: false,
+              titleColor: AppColors.primary,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => StationTransactionsView(station: station),
-                  ),
-                ).then((_) {
-                  if (mounted) _refreshAllData();
-                });
+                widget.onNavigateToTab?.call(1);
               },
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  // --- 5. آخر العمليات الميدانية المسجلة ---
-  Widget _buildRecentTransactionsSection(TransactionsController txCtrl) {
-    final recent = txCtrl.recentTransactions;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildSectionHeader(
-          title: AppStrings.recentOperations,
-          icon: AppIcons.statement,
-        ),
-        if (recent.isNotEmpty)
-          OneUiCard(
-            children: recent.take(5).map((tx) {
-              final isSupply = tx.isSupply;
-              final isDispense = tx.isDispense;
-              final isTransfer = tx.typeId == 6 || tx.typeId == 7;
-
-              IconData txIcon = AppIcons.gasStation;
-              Color iconColor = AppColors.primary;
-              Color iconBg = AppColors.chipBackground;
-
-              if (isSupply) {
-                txIcon = AppIcons.supply;
-                iconColor = AppColors.supplyGreen;
-                iconBg = AppColors.supplyLight;
-              } else if (isDispense) {
-                txIcon = AppIcons.dispense;
-                iconColor = AppColors.dispenseRed;
-                iconBg = AppColors.dispenseLight;
-              } else if (isTransfer) {
-                txIcon = AppIcons.transfer;
-                iconColor = AppColors.info;
-                iconBg = AppColors.infoLight;
-              }
-
-              final title = tx.accountName ??
-                  tx.stationName ??
-                  tx.typeName ??
-                  AppStrings.operationLabel;
-
-              final subtitle = [
-                if (tx.fuelTypeName != null) tx.fuelTypeName!,
-                AppFormatters.formatTransactionDateTime(
-                    tx.transactionDate, tx.createdAt),
-                if (tx.recipientName != null && tx.recipientName!.isNotEmpty)
-                  tx.recipientName!,
-              ].join(' • ');
-
-              final quantityPrefix = isSupply ? '+' : (isDispense ? '-' : '');
-              final quantityColor = isSupply
-                  ? AppColors.supplyGreen
-                  : (isDispense ? AppColors.dispenseRed : AppColors.textPrimary);
-
-              return OneUiTile(
-                leading: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusM),
-                  ),
-                  child: Icon(
-                    txIcon,
-                    color: iconColor,
-                    size: AppDimensions.iconMedium,
-                  ),
-                ),
-                title: title,
-                subtitle: subtitle,
-                trailing: Text(
-                  '$quantityPrefix ${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter}',
-                  style: TextStyle(
-                    fontSize: AppTypography.sizeBody,
-                    fontWeight: AppTypography.weightBold,
-                    color: quantityColor,
-                  ),
-                ),
-                showChevron: true,
-                onTap: () {
-                  TransactionDetailsDialog.show(
-                    context: context,
-                    transaction: tx,
-                  );
-                },
-              );
-            }).toList(),
-          )
-        else
-          const OneUiCard(
-            padding: EdgeInsets.symmetric(vertical: AppDimensions.spaceXL),
-            children: [
-              EmptyStateWidget(
-                icon: AppIcons.statement,
-                title: AppStrings.noRecentOperations,
-              ),
-            ],
-          ),
-      ],
-    );
-  }
-
-  // --- 6. بطاقة أمان البيانات والنسخ الاحتياطي ---
-  Widget _buildBackupCard() {
-    return Consumer<BackupController>(
-      builder: (context, backupCtrl, _) {
-        final lastBackupText = backupCtrl.lastCloudSyncFormatted;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildSectionHeader(
-              title: AppStrings.backupAndSecurity,
-              icon: AppIcons.security,
-            ),
-            OneUiCard(
-              children: [
-                OneUiTile(
-                  leading: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: AppColors.infoLight,
-                      borderRadius:
-                          BorderRadius.circular(AppDimensions.radiusM),
-                    ),
-                    child: const Icon(
-                      AppIcons.backup,
-                      color: AppColors.info,
-                      size: AppDimensions.iconMedium,
-                    ),
-                  ),
-                  title: AppStrings.cloudBackup,
-                  subtitle: lastBackupText,
-                  showChevron: true,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const BackupSettingsView(),
-                      ),
-                    );
-                  },
-                ),
-              ],
             ),
           ],
         );
@@ -701,47 +1542,64 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  // --- عنوان القسم الموحد ---
-  Widget _buildSectionHeader({
-    required String title,
-    Widget? trailing,
-    IconData? icon,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppDimensions.spaceXL,
-        AppDimensions.spaceL,
-        AppDimensions.spaceXL,
-        AppDimensions.spaceS,
+  Widget _buildRecentTransactionTile(TransactionModel tx) {
+    IconData icon;
+    Color color;
+    Color bgColor;
+
+    if (tx.isDispense) {
+      icon = AppIcons.dispense;
+      color = AppColors.dispenseRed;
+      bgColor = AppColors.dispenseLight;
+    } else if (tx.isSupply) {
+      icon = AppIcons.supply;
+      color = AppColors.supplyGreen;
+      bgColor = AppColors.supplyLight;
+    } else if (tx.isTransfer) {
+      icon = AppIcons.transfer;
+      color = AppColors.info;
+      bgColor = AppColors.infoLight;
+    } else {
+      icon = AppIcons.tabQuota;
+      color = AppColors.primary;
+      bgColor = AppColors.chipBackground;
+    }
+
+    final displayName =
+        tx.stationName ?? tx.accountName ?? AppStrings.statement;
+    final fuelName = tx.fuelTypeName ?? AppStrings.fuelType;
+
+    return OneUiTile(
+      leading: Container(
+        width: AppDimensions.avatarSize - 8,
+        height: AppDimensions.avatarSize - 8,
+        decoration: BoxDecoration(
+          color: bgColor,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          color: color,
+          size: AppDimensions.iconMedium,
+        ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(
-                  icon,
-                  size: AppDimensions.iconSmall + 2,
-                  color: AppColors.textTertiary,
-                ),
-                const SizedBox(width: AppDimensions.spaceS),
-              ],
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: AppTypography.sizeBody + 1,
-                  fontWeight: AppTypography.weightBold,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-          if (trailing != null) trailing,
-        ],
+      title: '$displayName ($fuelName)',
+      subtitle:
+          '${AppFormatters.formatDate(tx.transactionDate)} • ${tx.typeName ?? ''}',
+      trailing: Text(
+        '${AppFormatters.formatQuantity(tx.baseQuantityLiters)} ${AppStrings.unitLiter}',
+        style: TextStyle(
+          fontSize: AppTypography.sizeBodySecondary,
+          fontWeight: AppTypography.weightBold,
+          color: color,
+        ),
       ),
+      onTap: () {
+        TransactionDetailsDialog.show(
+          context: context,
+          transaction: tx,
+        );
+      },
     );
   }
 }

@@ -1,3 +1,4 @@
+import '../../models/fuel_type_metrics.dart';
 import '../../models/transaction_model.dart';
 import '../local/database_helper.dart';
 
@@ -277,8 +278,9 @@ class TransactionRepository {
     final db = await _dbHelper.database;
     final txRows = await db.query('transactions',
         columns: ['parent_transaction_id'], where: 'id = ?', whereArgs: [id]);
-    final parentId =
-        txRows.isNotEmpty ? txRows.first['parent_transaction_id'] as int? : null;
+    final parentId = txRows.isNotEmpty
+        ? txRows.first['parent_transaction_id'] as int?
+        : null;
     final rootId = parentId ?? id;
 
     return await db.update(
@@ -294,8 +296,9 @@ class TransactionRepository {
     final db = await _dbHelper.database;
     final txRows = await db.query('transactions',
         columns: ['parent_transaction_id'], where: 'id = ?', whereArgs: [id]);
-    final parentId =
-        txRows.isNotEmpty ? txRows.first['parent_transaction_id'] as int? : null;
+    final parentId = txRows.isNotEmpty
+        ? txRows.first['parent_transaction_id'] as int?
+        : null;
     final rootId = parentId ?? id;
 
     await db.delete('transactions',
@@ -356,7 +359,8 @@ class TransactionRepository {
           'transaction_number': 'COM-$txNumber',
           'transaction_date': transaction.transactionDate,
           'type_id': 3, // عمولة تهوية
-          'account_id': null, // عمولة التهوية تخص المحطة حصراً ولا تظهر للموردين
+          'account_id':
+              null, // عمولة التهوية تخص المحطة حصراً ولا تظهر للموردين
           'station_id': transaction.stationId,
           'fuel_type_id': transaction.fuelTypeId,
           'unit_id': 1, // لتر
@@ -387,14 +391,14 @@ class TransactionRepository {
   /// حذف عملية مع أي قيود تابعة لها (نقل لسلة المحذوفات أو حذف نهائي)
   Future<int> deleteTransaction(int id, {bool? forcePermanent}) async {
     final db = await _dbHelper.database;
-    final isRecycle = forcePermanent == true
-        ? false
-        : await _dbHelper.isRecycleBinEnabled();
+    final isRecycle =
+        forcePermanent == true ? false : await _dbHelper.isRecycleBinEnabled();
 
     final txRows = await db.query('transactions',
         columns: ['parent_transaction_id'], where: 'id = ?', whereArgs: [id]);
-    final parentId =
-        txRows.isNotEmpty ? txRows.first['parent_transaction_id'] as int? : null;
+    final parentId = txRows.isNotEmpty
+        ? txRows.first['parent_transaction_id'] as int?
+        : null;
     final rootId = parentId ?? id;
 
     if (!isRecycle) {
@@ -527,5 +531,165 @@ class TransactionRepository {
       'transaction_types',
       orderBy: 'id ASC',
     );
+  }
+
+  /// جلب ملخص حركة الوقود منفصلاً لكل صنف (منع خلط الأصناف) مع دعم الفلترة بالسنة والشهر
+  Future<List<FuelTypeMetrics>> getFuelMetricsByFuelType({
+    int? year,
+    int? month,
+  }) async {
+    final db = await _dbHelper.database;
+
+    String dateCondition = '';
+    final List<dynamic> args = [];
+
+    if (year != null && month != null) {
+      final monthStr = month.toString().padLeft(2, '0');
+      dateCondition =
+          " AND (t.transaction_date LIKE ? OR t.transaction_date LIKE ?)";
+      args.add('$year-$monthStr%');
+      args.add('$year/$monthStr%');
+    } else if (year != null) {
+      dateCondition =
+          " AND (t.transaction_date LIKE ? OR t.transaction_date LIKE ?)";
+      args.add('$year-%');
+      args.add('$year/%');
+    } else if (month != null) {
+      final monthStr = month.toString().padLeft(2, '0');
+      dateCondition =
+          " AND (t.transaction_date LIKE ? OR t.transaction_date LIKE ?)";
+      args.add('%-$monthStr-%');
+      args.add('%/$monthStr/%');
+    }
+
+    final List<Map<String, dynamic>> rows = await db.rawQuery('''
+      SELECT 
+        ft.id AS fuel_type_id,
+        ft.name AS fuel_type_name,
+        COALESCE(SUM(CASE WHEN t.type_id = 1 THEN t.base_quantity_liters ELSE 0 END), 0.0) AS sup_quota,
+        COALESCE(SUM(CASE WHEN t.type_id = 2 THEN t.base_quantity_liters ELSE 0 END), 0.0) AS sup_actual,
+        COALESCE(SUM(CASE WHEN t.type_id = 5 THEN t.base_quantity_liters ELSE 0 END), 0.0) AS disp_actual,
+        COALESCE(SUM(CASE WHEN t.type_id = 3 THEN t.base_quantity_liters ELSE 0 END), 0.0) AS aeration,
+        COALESCE(SUM(CASE WHEN t.type_id = 4 THEN t.base_quantity_liters ELSE 0 END), 0.0) AS disp_quota
+      FROM fuel_types ft
+      LEFT JOIN transactions t ON t.fuel_type_id = ft.id AND t.is_deleted = 0 $dateCondition
+      WHERE ft.is_active = 1
+      GROUP BY ft.id, ft.name
+      ORDER BY ft.id ASC
+    ''', args);
+
+    final stationBalances = await getAllStationFuelBalances();
+
+    return rows.map((r) {
+      final fId = r['fuel_type_id'] as int;
+      final fName = r['fuel_type_name'] as String;
+      final supQuota = (r['sup_quota'] as num?)?.toDouble() ?? 0.0;
+      final supActual = (r['sup_actual'] as num?)?.toDouble() ?? 0.0;
+      final dispActual = (r['disp_actual'] as num?)?.toDouble() ?? 0.0;
+      final aeration = (r['aeration'] as num?)?.toDouble() ?? 0.0;
+      final dispQuota = (r['disp_quota'] as num?)?.toDouble() ?? 0.0;
+
+      // حساب رصيد المحطات الإجمالي المتاح لهذا الصنف فقط دون خلط
+      double stationStock = 0.0;
+      for (final stMap in stationBalances.values) {
+        final b = stMap[fId];
+        if (b != null && b > 0) {
+          stationStock += b;
+        }
+      }
+
+      return FuelTypeMetrics(
+        fuelTypeId: fId,
+        fuelTypeName: fName,
+        supplierSupplyQuota: supQuota,
+        supplierSupplyActual: supActual,
+        stationSupplyActual: supActual,
+        stationDispenseActual: dispActual,
+        stationAeration: aeration,
+        stationCurrentStock: stationStock,
+        beneficiaryDispenseQuota: dispQuota,
+        beneficiaryDispenseActual: dispActual,
+      );
+    }).toList();
+  }
+
+  /// جلب السنوات المتاحة في سجل العمليات
+  Future<List<int>> getTransactionYears() async {
+    final db = await _dbHelper.database;
+    final List<Map<String, dynamic>> rows = await db.rawQuery('''
+      SELECT DISTINCT SUBSTR(REPLACE(transaction_date, '/', '-'), 1, 4) AS yr
+      FROM transactions
+      WHERE is_deleted = 0 AND transaction_date IS NOT NULL AND LENGTH(transaction_date) >= 4
+      ORDER BY yr DESC
+    ''');
+
+    final set = <int>{DateTime.now().year};
+    for (final r in rows) {
+      final yStr = r['yr']?.toString();
+      if (yStr != null) {
+        final y = int.tryParse(yStr);
+        if (y != null && y >= 2000 && y <= 2100) {
+          set.add(y);
+        }
+      }
+    }
+    final list = set.toList()..sort((a, b) => b.compareTo(a));
+    return list;
+  }
+
+  /// جلب آخر العمليات المسجلة في النظام (للوحة التحكم الرئيسية) مع دعم الفلترة بالسنة والشهر
+  Future<List<TransactionModel>> getRecentTransactions({
+    int limit = 5,
+    int? year,
+    int? month,
+  }) async {
+    final db = await _dbHelper.database;
+    String whereClause = 't.is_deleted = 0';
+    final List<dynamic> args = [];
+
+    if (year != null && month != null) {
+      final monthStr = month.toString().padLeft(2, '0');
+      whereClause +=
+          " AND (t.transaction_date LIKE ? OR t.transaction_date LIKE ?)";
+      args.add('$year-$monthStr%');
+      args.add('$year/$monthStr%');
+    } else if (year != null) {
+      whereClause +=
+          " AND (t.transaction_date LIKE ? OR t.transaction_date LIKE ?)";
+      args.add('$year-%');
+      args.add('$year/%');
+    } else if (month != null) {
+      final monthStr = month.toString().padLeft(2, '0');
+      whereClause +=
+          " AND (t.transaction_date LIKE ? OR t.transaction_date LIKE ?)";
+      args.add('%-$monthStr-%');
+      args.add('%/$monthStr/%');
+    }
+
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT 
+        t.*,
+        tt.name AS type_name,
+        tt.code AS type_code,
+        s.name AS station_name,
+        rs.name AS reference_station_name,
+        ft.name AS fuel_type_name,
+        u.name AS unit_name,
+        u.conversion_factor AS unit_factor,
+        a.name AS account_name,
+        a.phone_number AS account_phone
+      FROM transactions t
+      LEFT JOIN transaction_types tt ON t.type_id = tt.id
+      LEFT JOIN accounts s ON t.station_id = s.id
+      LEFT JOIN accounts rs ON t.reference_station_id = rs.id
+      LEFT JOIN fuel_types ft ON t.fuel_type_id = ft.id
+      LEFT JOIN units u ON t.unit_id = u.id
+      LEFT JOIN accounts a ON t.account_id = a.id
+      WHERE $whereClause
+      ORDER BY t.transaction_date DESC, t.id DESC
+      LIMIT ?
+    ''', [...args, limit]);
+
+    return maps.map((m) => TransactionModel.fromMap(m)).toList();
   }
 }

@@ -18,13 +18,19 @@ class MainLayoutView extends StatefulWidget {
 }
 
 class _MainLayoutViewState extends State<MainLayoutView> {
-  int _currentIndex = 1; // نبدأ بتبويب الحسابات
+  int _currentIndex = 0; // نبدأ بالشاشة الرئيسية (لوحة التحكم)
 
-  final List<Widget> _screens = const [
-    HomeView(),
-    AccountsView(),
-    ReportsView(),
-    SettingsView(),
+  late final List<Widget> _screens = [
+    HomeView(
+      onNavigateToTab: (index) {
+        setState(() {
+          _currentIndex = index;
+        });
+      },
+    ),
+    const AccountsView(),
+    const ReportsView(),
+    const SettingsView(),
   ];
 
   @override
