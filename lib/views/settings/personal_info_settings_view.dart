@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/personal_info_controller.dart';
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
 import '../../core/constants/app_icons.dart';
@@ -189,6 +190,7 @@ class _PersonalInfoSettingsViewState extends State<PersonalInfoSettingsView> {
     required VoidCallback onRemove,
     required ValueChanged<int> onScaleChanged,
     required IconData defaultIcon,
+    String? defaultAssetImage,
   }) {
     final hasImage = imagePath != null &&
         imagePath.isNotEmpty &&
@@ -209,6 +211,9 @@ class _PersonalInfoSettingsViewState extends State<PersonalInfoSettingsView> {
               Container(
                 width: 52,
                 height: 52,
+                padding: (hasImage || defaultAssetImage == null)
+                    ? EdgeInsets.zero
+                    : const EdgeInsets.all(AppDimensions.spaceXS),
                 decoration: BoxDecoration(
                   color: AppColors.chipBackground,
                   borderRadius: BorderRadius.circular(AppDimensions.radiusL),
@@ -225,11 +230,16 @@ class _PersonalInfoSettingsViewState extends State<PersonalInfoSettingsView> {
                           color: AppColors.textSecondary,
                         ),
                       )
-                    : Icon(
-                        defaultIcon,
-                        size: AppDimensions.iconLarge,
-                        color: AppColors.textSecondary,
-                      ),
+                    : (defaultAssetImage != null
+                        ? Image.asset(
+                            defaultAssetImage,
+                            fit: BoxFit.contain,
+                          )
+                        : Icon(
+                            defaultIcon,
+                            size: AppDimensions.iconLarge,
+                            color: AppColors.textSecondary,
+                          )),
               ),
               const SizedBox(width: AppDimensions.spaceM),
 
@@ -250,7 +260,9 @@ class _PersonalInfoSettingsViewState extends State<PersonalInfoSettingsView> {
                     Text(
                       hasImage
                           ? AppStrings.changeImage
-                          : AppStrings.noImageSelected,
+                          : (defaultAssetImage != null
+                              ? AppStrings.defaultAppLogo
+                              : AppStrings.noImageSelected),
                       style: const TextStyle(
                         fontSize: AppTypography.sizeCaption,
                         color: AppColors.textSecondary,
@@ -462,6 +474,7 @@ class _PersonalInfoSettingsViewState extends State<PersonalInfoSettingsView> {
                     onRemove: controller.removeLogo,
                     onScaleChanged: controller.setLogoScale,
                     defaultIcon: AppIcons.image,
+                    defaultAssetImage: AppAssets.appIconTransparent,
                   ),
 
                   // الختم الرسمي (Stamp)

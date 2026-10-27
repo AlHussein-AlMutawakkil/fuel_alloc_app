@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_dimensions.dart';
-import '../../core/constants/app_icons.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/constants/app_typography.dart';
 import '../../core/widgets/custom_modal_sheet.dart';
@@ -64,7 +64,7 @@ class AboutAppView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       const Text(
-                        'Fuel Alloc',
+                        AppStrings.appNameEn,
                         style: TextStyle(
                           fontSize: AppTypography.sizeDisplay,
                           fontWeight: AppTypography.weightBold,
@@ -74,24 +74,29 @@ class AboutAppView extends StatelessWidget {
                       ),
                       const SizedBox(width: AppDimensions.spaceM),
                       Container(
-                        width: 44,
-                        height: 44,
+                        width: 48,
+                        height: 48,
+                        padding: const EdgeInsets.all(AppDimensions.spaceXS),
                         decoration: BoxDecoration(
-                          color: AppColors.primary,
+                          color: AppColors.surface,
                           borderRadius:
-                              BorderRadius.circular(AppDimensions.radiusM),
+                              BorderRadius.circular(AppDimensions.radiusL),
+                          border: Border.all(color: AppColors.borderLight),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.25),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
+                              color: AppColors.charcoal.withOpacity(0.06),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          AppIcons.gasStation,
-                          color: AppColors.textWhite,
-                          size: AppDimensions.iconLarge,
+                        child: ClipRRect(
+                          borderRadius:
+                              BorderRadius.circular(AppDimensions.radiusM),
+                          child: Image.asset(
+                            AppAssets.appIconTransparent,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       ),
                     ],

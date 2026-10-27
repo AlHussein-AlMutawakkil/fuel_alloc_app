@@ -3,8 +3,10 @@ class AppStrings {
   AppStrings._();
 
   // اسم التطبيق والعناوين العامة
+  static const String appNameEn = 'FuelFlow';
   static const String appTitle = 'نظام مخصصات الوقود';
   static const String appVersionOfficial = 'الإصدار: 1.0.0 (رسمي)';
+  static const String defaultAppLogo = 'الشعار الافتراضي للنظام';
   static const String aboutAppDescription =
       'نظام متكامل لإدارة ومحاسبة مخصصات واعتمادات الوقود ومطابقة كشوفات الحسابات والمحطات بدقة وموثوقية.';
 
