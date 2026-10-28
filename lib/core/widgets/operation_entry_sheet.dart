@@ -279,13 +279,21 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
         _recipientController.text = _selectedAccount!.name;
       }
 
+      if (txController.stations.isEmpty || txController.fuelTypes.isEmpty) {
+        await txController.loadFormData();
+      }
       if (_selectedFuelTypeId == null && txController.fuelTypes.isNotEmpty) {
         _selectedFuelTypeId = txController.fuelTypes.first['id'] as int?;
       }
       if (_selectedUnitId == null && txController.units.isNotEmpty) {
         _selectedUnitId = txController.units.first['id'] as int?;
       }
-      if (_selectedStationId == null && txController.stations.isNotEmpty) {
+      if (txController.allStationBalances.isEmpty) {
+        await txController.fetchAllBalancesSummary();
+      }
+      if (!_isEdit && widget.initialStationId == null) {
+        _setDefaultStationWithLargestQuantity(txController);
+      } else if (_selectedStationId == null && txController.stations.isNotEmpty) {
         _selectedStationId = txController.stations.first['id'] as int?;
       }
 
@@ -380,6 +388,48 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
       }
     } else {
       if (mounted) setState(() => _stationBalanceLiters = null);
+    }
+  }
+
+  /// ترتيب المحطات تنازلياً حسب الرصيد الفعلي لصنف الوقود المحدد
+  List<Map<String, dynamic>> _getSortedStations(
+    List<Map<String, dynamic>> stations,
+    TransactionsController txController,
+  ) {
+    final fuelId = _selectedFuelTypeId;
+    final sorted = List<Map<String, dynamic>>.from(stations);
+    sorted.sort((a, b) {
+      final aId = a['id'] as int?;
+      final bId = b['id'] as int?;
+      final balA = (aId != null && fuelId != null)
+          ? txController.getStationFuelBalance(aId, fuelId)
+          : 0.0;
+      final balB = (bId != null && fuelId != null)
+          ? txController.getStationFuelBalance(bId, fuelId)
+          : 0.0;
+      final cmp = balB.compareTo(balA);
+      if (cmp != 0) return cmp;
+      final nameA = (a['name'] as String?) ?? '';
+      final nameB = (b['name'] as String?) ?? '';
+      return nameA.compareTo(nameB);
+    });
+    return sorted;
+  }
+
+  /// تعيين المحطة الافتراضية بأنها المحطة صاحبة أكبر رصيد للصنف المختار
+  void _setDefaultStationWithLargestQuantity(
+    TransactionsController txController, {
+    bool force = false,
+  }) {
+    if (_isEdit && !force) return;
+    if (txController.stations.isEmpty) return;
+
+    final sorted = _getSortedStations(txController.stations, txController);
+    if (sorted.isNotEmpty) {
+      final topStationId = sorted.first['id'] as int?;
+      if (_selectedStationId == null || force || widget.initialStationId == null) {
+        _selectedStationId = topStationId;
+      }
     }
   }
 
@@ -763,6 +813,12 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               onChanged: (val) {
                                 setState(() {
                                   _selectedFuelTypeId = val;
+                                  if (!_isEdit && widget.initialStationId == null) {
+                                    _setDefaultStationWithLargestQuantity(
+                                      txController,
+                                      force: true,
+                                    );
+                                  }
                                 });
                                 _updateLiveBalances();
                               },
@@ -837,10 +893,23 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                             value: _selectedStationId,
                             borderColor: _fieldBorderColor,
                             backgroundColor: AppColors.background,
-                            items: txController.stations.map((st) {
+                            items: _getSortedStations(
+                              txController.stations,
+                              txController,
+                            ).map((st) {
+                              final stId = st['id'] as int;
+                              final balance = _selectedFuelTypeId != null
+                                  ? txController.getStationFuelBalance(
+                                      stId,
+                                      _selectedFuelTypeId!,
+                                    )
+                                  : 0.0;
                               return CustomDropdownItem<int?>(
-                                value: st['id'] as int,
+                                value: stId,
                                 label: st['name'] as String,
+                                selectedLabel: st['name'] as String,
+                                trailingText:
+                                    AppFormatters.formatQuantity(balance),
                               );
                             }).toList(),
                             onChanged: (val) {
@@ -860,10 +929,23 @@ class _OperationEntrySheetState extends State<OperationEntrySheet> {
                               value: _selectedReferenceStationId,
                               borderColor: _fieldBorderColor,
                               backgroundColor: AppColors.background,
-                              items: txController.stations.map((st) {
+                              items: _getSortedStations(
+                                txController.stations,
+                                txController,
+                              ).map((st) {
+                                final stId = st['id'] as int;
+                                final balance = _selectedFuelTypeId != null
+                                    ? txController.getStationFuelBalance(
+                                        stId,
+                                        _selectedFuelTypeId!,
+                                      )
+                                    : 0.0;
                                 return CustomDropdownItem<int?>(
-                                  value: st['id'] as int,
+                                  value: stId,
                                   label: st['name'] as String,
+                                  selectedLabel: st['name'] as String,
+                                  trailingText:
+                                      AppFormatters.formatQuantity(balance),
                                 );
                               }).toList(),
                               onChanged: (val) {

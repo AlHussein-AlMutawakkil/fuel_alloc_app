@@ -9,11 +9,15 @@ import '../constants/app_typography.dart';
 class CustomDropdownItem<T> {
   final T value;
   final String label;
+  final String? selectedLabel;
+  final String? trailingText;
   final Widget? icon;
 
   const CustomDropdownItem({
     required this.value,
     required this.label,
+    this.selectedLabel,
+    this.trailingText,
     this.icon,
   });
 }
@@ -93,11 +97,16 @@ class CustomDropdown<T> extends StatelessWidget {
       );
     }
 
+    final hasTrailing = items.any((it) => it.trailingText != null);
     final double triggerWidth = renderBox.size.width;
+    final double defaultMinWidth = hasTrailing ? 240.0 : 180.0;
+    final double defaultMaxWidth = hasTrailing ? 280.0 : 220.0;
     final double computedMinWidth = menuWidth ??
-        (triggerWidth < 180 ? 180.0 : triggerWidth).clamp(160.0, 500.0);
+        (triggerWidth < defaultMinWidth ? defaultMinWidth : triggerWidth)
+            .clamp(160.0, 500.0);
     final double computedMaxWidth = menuWidth ??
-        (triggerWidth < 220 ? 220.0 : triggerWidth).clamp(200.0, 500.0);
+        (triggerWidth < defaultMaxWidth ? defaultMaxWidth : triggerWidth)
+            .clamp(200.0, 500.0);
 
     final selected = await showMenu<T>(
       context: context,
@@ -171,6 +180,23 @@ class CustomDropdown<T> extends StatelessWidget {
                       ],
                     ),
                   ),
+                  // بجانب الصح: الكمية أو النص الإضافي إن وجد
+                  if (item.trailingText != null) ...[
+                    const SizedBox(width: AppDimensions.spaceM),
+                    Text(
+                      item.trailingText!,
+                      style: TextStyle(
+                        fontSize: AppTypography.sizeBodySecondary,
+                        fontWeight: isSelected
+                            ? AppTypography.weightBold
+                            : AppTypography.weightMedium,
+                        color: isSelected
+                            ? AppColors.textDarkSlate
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: AppDimensions.spaceS),
                   // علامة الصح في اليسار (RTL) عند الاختيار فقط
                   if (isSelected)
                     const Icon(
@@ -209,7 +235,7 @@ class CustomDropdown<T> extends StatelessWidget {
     Widget? currentIcon;
     try {
       final selectedItem = items.firstWhere((it) => it.value == value);
-      currentLabel = selectedItem.label;
+      currentLabel = selectedItem.selectedLabel ?? selectedItem.label;
       currentIcon = selectedItem.icon;
     } catch (_) {
       currentLabel = null;
