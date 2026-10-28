@@ -166,6 +166,7 @@ void main() {
         'lib/core/widgets/app_snackbar.dart',
         'lib/core/widgets/contact_picker_sheet.dart',
         'lib/core/widgets/transaction_details_dialog.dart',
+        'lib/core/widgets/custom_export_bottom_sheet.dart',
         'lib/views/settings/recycle_bin_view.dart',
         'lib/views/settings/archived_accounts_view.dart',
         'lib/views/settings/backup_settings_view.dart',
@@ -176,6 +177,18 @@ void main() {
         'lib/controllers/backup_controller.dart',
         'lib/services/google_drive_service.dart',
         'lib/models/backup_model.dart',
+        'lib/views/reports/reports_view.dart',
+        'lib/views/reports/account_statement_report_view.dart',
+        'lib/views/reports/reconciliation_report_view.dart',
+        'lib/controllers/reports_controller.dart',
+        'lib/data/repositories/report_repository.dart',
+        'lib/services/pdf_report_service.dart',
+        'lib/services/excel_report_service.dart',
+        'lib/views/reports/report_preview_table_view.dart',
+        'lib/views/reports/widgets/report_filter_sheet.dart',
+        'lib/views/reports/widgets/export_options_sheet.dart',
+        'lib/models/statement_item_model.dart',
+        'lib/models/reconciliation_item_model.dart',
         '.agents/rules/design.md',
       ];
 
@@ -266,7 +279,8 @@ void main() {
       );
     });
 
-    test('7. AppFormatters.formatTransactionDateTime formats date and time properly',
+    test(
+        '7. AppFormatters.formatTransactionDateTime formats date and time properly',
         () {
       expect(
         AppFormatters.formatTransactionDateTime(
@@ -353,7 +367,9 @@ void main() {
       expect(find.text('بيان الرصيد السابق'), findsOneWidget);
     });
 
-    test('9. Transfer design tokens and TransactionModel getters work accurately', () {
+    test(
+        '9. Transfer design tokens and TransactionModel getters work accurately',
+        () {
       expect(AppStrings.transfer, equals('تحويل'));
       expect(AppStrings.fromAccount, equals('من حساب'));
       expect(AppStrings.toAccount, equals('إلى حساب'));

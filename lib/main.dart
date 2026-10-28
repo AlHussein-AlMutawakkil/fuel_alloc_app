@@ -6,6 +6,7 @@ import 'controllers/auth_controller.dart';
 import 'controllers/backup_controller.dart';
 import 'controllers/messaging_controller.dart';
 import 'controllers/personal_info_controller.dart';
+import 'controllers/reports_controller.dart';
 import 'controllers/stations_controller.dart';
 import 'controllers/transactions_controller.dart';
 import 'core/constants/app_strings.dart';
@@ -34,6 +35,7 @@ class FuelAllocApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MessagingController()),
         ChangeNotifierProvider(create: (_) => PersonalInfoController()),
         ChangeNotifierProvider(create: (_) => AnalysisController()),
+        ChangeNotifierProvider(create: (_) => ReportsController()),
       ],
       child: MaterialApp(
         title: AppStrings.appTitle,

@@ -808,4 +808,144 @@ class AppStrings {
   static const String accountsCountSuffix = 'حساب';
   static const String storageAndDb = 'التخزين وقاعدة البيانات';
   static const String systemOverview = 'نظرة عامة على النظام';
+
+  static const String tabQuota = 'اعتماد';
+  static const String tabActual = 'فعلي';
+  static const String tabTransfer = 'تحويل';
+
+  // ==================== قسم التقارير والمطابقات ====================
+  // تبويبات التصنيف
+  static const String categoryStatements = 'كشوفات الحسابات';
+  static const String categoryReconciliations = 'تقارير المطابقة';
+  static const String categoryMovements = 'حركة الوقود';
+  static const String categoryAnalytics = 'الإحصائيات والتحليل';
+
+  // عناوين التقارير
+  static const String reportSupplierStatementTitle = 'كشف حساب مورد';
+  static const String reportSupplierStatementDesc =
+      'كشف تفصيلي بالاعتمادات والتوريدات الفعلية مع الرصيد الجاري';
+  static const String reportStationStatementTitle = 'كشف حساب محطة';
+  static const String reportStationStatementDesc =
+      'الوارد الفعلي والمنصرف وعمولة التهوية ورصيد المخزون المتاح';
+  static const String reportBeneficiaryStatementTitle = 'كشف حساب مستفيد';
+  static const String reportBeneficiaryStatementDesc =
+      'اعتمادات الصرف والمنصرف الفعلي وأسماء المستلمين والرصيد المتبقي';
+
+  static const String reportSupplierReconciliationTitle =
+      'مطابقة أرصدة الموردين';
+  static const String reportSupplierReconciliationDesc =
+      'جدول شامل بمطابقة اعتمادات وتوريدات كافة الموردين ونسب التنفيذ';
+  static const String reportStationReconciliationTitle = 'مطابقة مخزون المحطات';
+  static const String reportStationReconciliationDesc =
+      'مراقبة المخزون الفعلي المتاح وحركة الصرف في جميع المحطات';
+  static const String reportBeneficiaryReconciliationTitle =
+      'مطابقة اعتمادات المستفيدين';
+  static const String reportBeneficiaryReconciliationDesc =
+      'متابعة استهلاك وحصص المستفيدين ورصد الاعتمادات المنتهية';
+
+  static const String reportSupplyMovementsTitle = 'حركة التوريدات';
+  static const String reportSupplyMovementsDesc =
+      'سجل توريدات الوقود (اعتماد وفعلي) للمحطات خلال الفترة';
+  static const String reportDispenseMovementsTitle = 'حركة الصرف';
+  static const String reportDispenseMovementsDesc =
+      'سجل صرف الوقود للمستفيدين مع تتبع المستلمين والمرجع';
+  static const String reportTransfersTitle = 'حركة التحويلات';
+  static const String reportTransfersDesc =
+      'سجل التحويلات المزدوجة بين الحسابات والمحطات';
+  static const String reportAerationTitle = 'عمولات التهوية';
+  static const String reportAerationDesc =
+      'تفاصيل عمولات التبخر والتهوية المحتسبة للمحطات';
+
+  static const String reportGeneralOverviewTitle = 'التقرير العام لحركة الوقود';
+  static const String reportGeneralOverviewDesc =
+      'ملخص تنفيذي شامل لأرصدة وموازين الوقود في شاشة واحدة';
+  static const String reportPerformanceComparisonTitle =
+      'تقرير الأداء والمقارنات';
+  static const String reportPerformanceComparisonDesc =
+      'مقارنة الأداء بين الفترات وتحديد الحسابات الأكثر نشاطاً';
+
+  // عناصر الفلترة والتحديد
+  static const String selectAccountPrompt = 'اختر الحساب المطلوب';
+  static const String selectSupplierPrompt = 'اختر المورد المطلوب';
+  static const String selectStationPrompt = 'اختر المحطة المطلوبة';
+  static const String selectBeneficiaryPrompt = 'اختر المستفيد المطلوب';
+  static const String fromDateLabel = 'من تاريخ';
+  static const String toDateLabel = 'إلى تاريخ';
+  static const String allOperations = 'كافة العمليات';
+  static const String statementRunningBalance = 'الرصيد الجاري';
+  static const String statementStartingBalance = 'رصيد البداية';
+  static const String statementNetBalance = 'صافي الرصيد';
+  static const String statementPeriod = 'فترة الكشف';
+  static const String allDates = 'كامل السجل';
+  static const String selectDateRange = 'تحديد الفترة الزمنية';
+  static const String dateRangeCleared = 'تم إلغاء تحديد الفترة';
+
+  // أعمدة وعناصر الجداول
+  static const String serialCol = 'م';
+  static const String dateCol = 'التاريخ';
+  static const String txNumberCol = 'رقم القيد';
+  static const String operationCol = 'البيان';
+  static const String fuelTypeCol = 'الصنف';
+  static const String quantityCol = 'الكمية';
+  static const String unitCol = 'الوحدة';
+  static const String stationCol = 'المحطة';
+  static const String recipientCol = 'المستلم';
+  static const String refNumberCol = 'المرجع';
+  static const String notesCol = 'الملاحظات';
+  static const String runningBalanceCol = 'الرصيد';
+  static const String quotaCol = 'الاعتماد';
+  static const String actualCol = 'الفعلي';
+  static const String remainingCol = 'المتبقي';
+  static const String ratioCol = 'نسبة الإنجاز';
+  static const String statusCol = 'الحالة';
+
+  // حالات الأرصدة والمخزون
+  static const String statusAvailable = 'متوفر';
+  static const String statusWarning = 'وشيك على النفاد';
+  static const String statusDepleted = 'منتهي / نفد';
+  static const String statusCritical = 'حرج';
+  static const String filterAllStatuses = 'كافة الحالات';
+  static const String filterAvailableOnly = 'متوفر فقط';
+  static const String filterDepletedOnly = 'منتهي فقط';
+
+  // أزرار وإجراءات التقارير
+  static const String printReport = 'طباعة التقرير';
+  static const String exportPdf = 'تصدير PDF';
+  static const String shareReport = 'مشاركة التقرير';
+  static const String officialDocument = 'مستند رسمي';
+  static const String generatedAutomatically =
+      'تم إنشاء هذا المستند آلياً عبر نظام إدارة الوقود';
+  static const String authorizedSignature = 'توقيع المسؤول المعتمد';
+  static const String officialStamp = 'الختم الرسمي';
+  static const String noStatementTransactions =
+      'لا توجد عمليات مسجلة لهذا الحساب خلال الفترة المحددة';
+  static const String noReconciliationData =
+      'لا توجد بيانات مطابقة للعرض بحسب الفلاتر المحددة';
+  static const String totalSummaryRow = 'الإجمالي الكلي';
+  static const String totalStockBalance = 'إجمالي المخزون المتاح';
+  static const String totalRemainingQuota = 'إجمالي الاعتمادات المتبقية';
+  static const String totalDispensedFuel = 'إجمالي المنصرف الفعلي';
+
+  // واجهة الفلاتر والمعاينة والتصدير
+  static const String selectFilter = 'اختر الفلتر';
+  static const String reportOptions = 'خيارات التقرير';
+  static const String displayOptions = 'خيارات الإظهار';
+  static const String preview = 'معاينة';
+  static const String filterBtn = 'فلتر';
+  static const String exportBtn = 'تصدير';
+  static const String exportAs = 'تصدير كـ';
+  static const String exportToPdf = 'تصدير الى ملف Pdf';
+  static const String exportToExcel = 'تصدير الى ملف Excel';
+  static const String chooseColumns = 'الأعمدة المعروضة في التقرير';
+  static const String fromDateShort = 'من';
+  static const String toDateShort = 'الى';
+  static const String colDate = 'التاريخ';
+  static const String colTxNumber = 'رقم القيد';
+  static const String colType = 'نوع العملية';
+  static const String colFuelType = 'الصنف';
+  static const String colQuantity = 'الكمية';
+  static const String colUnit = 'الوحدة';
+  static const String colParty = 'المحطة / المستلم';
+  static const String colNotes = 'الملاحظات';
+  static const String colBalance = 'الرصيد';
 }

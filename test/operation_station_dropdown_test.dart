@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:fuel_alloc_app/core/constants/app_colors.dart';
 import 'package:fuel_alloc_app/core/utils/formatters.dart';
 import 'package:fuel_alloc_app/core/widgets/custom_dropdown.dart';
 

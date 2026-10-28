@@ -55,7 +55,7 @@ class BackupArchiveService {
 
     final zipEncoder = ZipEncoder(password: password?.isNotEmpty == true ? password : null);
     final encodedData = zipEncoder.encode(archive);
-    await targetZipFile.writeAsBytes(encodedData, flush: true);
+    await targetZipFile.writeAsBytes(encodedData ?? <int>[], flush: true);
     return targetZipFile;
   }
 

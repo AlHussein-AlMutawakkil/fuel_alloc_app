@@ -144,6 +144,8 @@ class OneUiTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool showChevron;
   final Color? titleColor;
+  final FontWeight? titleFontWeight;
+  final double? titleFontSize;
 
   const OneUiTile({
     super.key,
@@ -155,6 +157,8 @@ class OneUiTile extends StatelessWidget {
     this.onTap,
     this.showChevron = false,
     this.titleColor,
+    this.titleFontWeight,
+    this.titleFontSize,
   });
 
   @override
@@ -179,8 +183,8 @@ class OneUiTile extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: AppTypography.sizeBody + 1,
-                        fontWeight: AppTypography.weightSemiBold,
+                        fontSize: titleFontSize ?? (AppTypography.sizeBody + 1),
+                        fontWeight: titleFontWeight ?? AppTypography.weightSemiBold,
                         color: titleColor ?? AppColors.textPrimary,
                       ),
                     ),

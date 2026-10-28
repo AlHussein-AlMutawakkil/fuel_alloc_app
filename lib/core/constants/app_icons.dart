@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 /// أيقونات التطبيق الموحدة والمحددة دلالياً
 class AppIcons {
@@ -125,4 +125,16 @@ class AppIcons {
   static const IconData healthAndSafety = Icons.health_and_safety_outlined;
   static const IconData pieChart = Icons.pie_chart_outline_rounded;
   static const IconData memory = Icons.memory_rounded;
+    // --- التقارير والمطابقات ---
+  static const IconData print = Icons.print_outlined;
+  static const IconData pdf = Icons.picture_as_pdf_outlined;
+  static const IconData tableChart = Icons.table_chart_outlined;
+  static const IconData barChart = Icons.bar_chart_rounded;
+  static const IconData inventory = Icons.inventory_2_outlined;
+  static const IconData balance = Icons.account_balance_wallet_outlined;
+
+  static const IconData exportAction = Icons.open_in_new_rounded;
+  static const IconData filterAction = Icons.tune_rounded;
+  static const IconData excel = Icons.grid_on_outlined;
+  static const IconData previewAction = Icons.visibility_outlined;
 }
